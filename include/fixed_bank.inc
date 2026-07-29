@@ -79,6 +79,8 @@ call_bank00_frame   := $F32D  ; run bank $00's per-frame service
 player_palette_load := $F3BF  ; load player palette rows into PAL_BUF
 stage_state_init    := $F3F2  ; wipe scroll/override state for stage (re)load
 
+no_respawn_clear    := $F465  ; clear the $0100 killed-enemy bitmap
+
 ; --- Sound ---
 queue_sound_param   := $EC5B  ; set param + queue sound command
 queue_sound         := $EC5D  ; queue sound A into the NMI-pumped ring buffer

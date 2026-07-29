@@ -120,10 +120,17 @@ LD216           := $D216
 LDAFC           := $DAFC
 LDB23           := $DB23
 LF391           := $F391
-LF465           := $F465
 LFF20           := $FF20
 LFF24           := $FF24
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; GAME FLOW HUB — $17:8000 (called by the orchestrator task per cycle)
+; Dispatches on player state $30: $07 death -> game-over/continue
+; ($859C); $10 boss defeated -> stage clear ($8860; clears the $0100
+; no-respawn bitmap + furthest-screen $69); $23 -> ending via bank
+; $0E:A000; otherwise title/menu/stage-select flow using pseudo-stage
+; bank $10 for its screens.
+; =============================================================================
 L8000:  lda     #$00                            ; 8000 A9 00                    ..
         sta     $95                             ; 8002 85 95                    ..
         lda     $30                             ; 8004 A5 30                    .0
@@ -144,7 +151,7 @@ L801C:  jmp     L859C                           ; 801C 4C 9C 85                 
 ; ----------------------------------------------------------------------------
 L801F:  lda     #$00                            ; 801F A9 00                    ..
         sta     $69                             ; 8021 85 69                    .i
-        jsr     LF465                           ; 8023 20 65 F4                  e.
+        jsr     no_respawn_clear                           ; 8023 20 65 F4                  e.
         jmp     L8860                           ; 8026 4C 60 88                 L`.
 
 ; ----------------------------------------------------------------------------
@@ -846,7 +853,7 @@ L85E2:  lda     #$00                            ; 85E2 A9 00                    
         sta     $69                             ; 85E4 85 69                    .i
         lda     #$02                            ; 85E6 A9 02                    ..
         sta     $BF                             ; 85E8 85 BF                    ..
-        jsr     LF465                           ; 85EA 20 65 F4                  e.
+        jsr     no_respawn_clear                           ; 85EA 20 65 F4                  e.
         jsr     L866A                           ; 85ED 20 6A 86                  j.
         jsr     L87B9                           ; 85F0 20 B9 87                  ..
         ldx     #$02                            ; 85F3 A2 02                    ..
