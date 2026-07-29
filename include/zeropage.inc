@@ -105,3 +105,18 @@ sound_save_y    := $A8
 sound_q_guard   := $E4          ; $88 written after the 8 queue slots at reset
 prg_cur_8000    := $F3          ; bank last actually written to MMC3 R6
 prg_cur_a000    := $F4          ; bank last actually written to MMC3 R7
+
+; Tile collision engine ($C4A1-$C7E6; see fixed_bank.asm)
+coll_or         := $10          ; OR of all probe collision types
+probe_y         := $11          ; current probe Y pixel
+probe_x         := $12          ; current probe X pixel
+probe_screen    := $13          ; current probe screen index
+breakable_off   := $1E          ; nonzero: skip breakable-block bitmap check
+player_tile_max := $36          ; player: latched coll_max >= $D0 (spikes etc.)
+probe_row       := $40          ; extent record cursor
+coll_max        := $42          ; strongest collision type this probe set
+tile_ovr_cnt    := $43          ; dynamic tile override count * 4
+vscroll_flag    := $46          ; nonzero: vertical-scroll room coordinates
+coll_results    := $48          ; per-probe collision types ($48+)
+saved_bank_a000 := $F1          ; $A000 bank saved across collision/stage reads
+scroll_y_hi     := $FB          ; camera Y screen (pending, pairs with scroll_y)

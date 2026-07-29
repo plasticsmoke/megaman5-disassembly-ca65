@@ -742,27 +742,36 @@ LC49B:  iny                                     ; C49B C8                       
         inc     $05                             ; C49E E6 05                    ..
 LC4A0:  rts                                     ; C4A0 60                       `
 
-; ----------------------------------------------------------------------------
-LC4A1:  jsr     LC6DB                           ; C4A1 20 DB C6                  ..
+; =============================================================================
+; TILE COLLISION, HORIZONTAL MOVEMENT — $C4A1
+; Probes the entity's leading vertical edge. Shape (ent_shape via $40)
+; selects an extent record (shape_row_h/probe_rec_h): probe count, edge
+; X offset, per-probe Y deltas. Each probe resolves screen/block/quad
+; through the stage bank's layout to the metatile collision nibble
+; ($B100[id] & $F0), with dynamic-override and breakable-block checks.
+; Results: coll_results[] per probe, coll_max, coll_or.
+; Uses probe_y/x/screen ($11-$13), block index $22, quadrant temp_03.
+; =============================================================================
+tile_collide_horiz:  jsr     tile_collide_setup                           ; C4A1 20 DB C6                  ..
         lda     $17                             ; C4A4 A5 17                    ..
         and     #$08                            ; C4A6 29 08                    ).
         beq     LC4AD                           ; C4A8 F0 03                    ..
         jmp     LC5A7                           ; C4AA 4C A7 C5                 L..
 
 ; ----------------------------------------------------------------------------
-LC4AD:  lda     LC807,y                         ; C4AD B9 07 C8                 ...
+LC4AD:  lda     shape_row_h,y                         ; C4AD B9 07 C8                 ...
         sta     $40                             ; C4B0 85 40                    .@
         tay                                     ; C4B2 A8                       .
-        lda     LC837,y                         ; C4B3 B9 37 C8                 .7.
+        lda     probe_rec_h,y                         ; C4B3 B9 37 C8                 .7.
         sta     $06                             ; C4B6 85 06                    ..
         lda     #$00                            ; C4B8 A9 00                    ..
         sta     $02                             ; C4BA 85 02                    ..
-        jsr     LC7AA                           ; C4BC 20 AA C7                  ..
+        jsr     stage_y_clamp                           ; C4BC 20 AA C7                  ..
         .byte   $BD                             ; C4BF BD                       .
         .byte   $90                             ; C4C0 90                       .
 LC4C1:  .byte   $03                             ; C4C1 03                       .
         sta     $03                             ; C4C2 85 03                    ..
-        lda     LC838,y                         ; C4C4 B9 38 C8                 .8.
+        lda     probe_rec_h1,y                         ; C4C4 B9 38 C8                 .8.
         pha                                     ; C4C7 48                       H
         clc                                     ; C4C8 18                       .
         adc     $11                             ; C4C9 65 11                    e.
@@ -795,7 +804,7 @@ LC4F7:  lda     #$00                            ; C4F7 A9 00                    
 LC4FB:  sta     $48,y                           ; C4FB 99 48 00                 .H.
         dey                                     ; C4FE 88                       .
         bpl     LC4FB                           ; C4FF 10 FA                    ..
-        jmp     LC737                           ; C501 4C 37 C7                 L7.
+        jmp     tile_collide_done                           ; C501 4C 37 C7                 L7.
 
 ; ----------------------------------------------------------------------------
 LC504:  lda     $03                             ; C504 A5 03                    ..
@@ -812,7 +821,7 @@ LC504:  lda     $03                             ; C504 A5 03                    
         sta     $03                             ; C515 85 03                    ..
         lda     #$00                            ; C517 A9 00                    ..
         sta     L0004                           ; C519 85 04                    ..
-        lda     LC839,y                         ; C51B B9 39 C8                 .9.
+        lda     probe_rec_h2,y                         ; C51B B9 39 C8                 .9.
         bpl     LC522                           ; C51E 10 02                    ..
         dec     L0004                           ; C520 C6 04                    ..
 LC522:  clc                                     ; C522 18                       .
@@ -842,8 +851,8 @@ LC549:  ldy     $03                             ; C549 A4 03                    
         tay                                     ; C54D A8                       .
         lda     $B100,y                         ; C54E B9 00 B1                 ...
         and     #$F0                            ; C551 29 F0                    ).
-        jsr     LC74E                           ; C553 20 4E C7                  N.
-        jsr     LC77C                           ; C556 20 7C C7                  |.
+        jsr     tile_override_lookup                           ; C553 20 4E C7                  N.
+        jsr     breakable_block_check                           ; C556 20 7C C7                  |.
         ldy     $02                             ; C559 A4 02                    ..
         sta     $48,y                           ; C55B 99 48 00                 .H.
         cmp     $42                             ; C55E C5 42                    .B
@@ -863,7 +872,7 @@ LC564:  ora     $10                             ; C564 05 10                    
         sta     L0004                           ; C579 85 04                    ..
         pla                                     ; C57B 68                       h
         clc                                     ; C57C 18                       .
-        adc     LC839,y                         ; C57D 79 39 C8                 y9.
+        adc     probe_rec_h2,y                         ; C57D 79 39 C8                 y9.
         sta     $12                             ; C580 85 12                    ..
         and     #$10                            ; C582 29 10                    ).
         cmp     L0004                           ; C584 C5 04                    ..
@@ -885,27 +894,33 @@ LC564:  ora     $10                             ; C564 05 10                    
         jmp     LC541                           ; C5A4 4C 41 C5                 LA.
 
 ; ----------------------------------------------------------------------------
-LC5A7:  jmp     LC737                           ; C5A7 4C 37 C7                 L7.
+LC5A7:  jmp     tile_collide_done                           ; C5A7 4C 37 C7                 L7.
 
-; ----------------------------------------------------------------------------
-LC5AA:  jsr     LC6DB                           ; C5AA 20 DB C6                  ..
+; =============================================================================
+; TILE COLLISION, VERTICAL MOVEMENT — $C5AA
+; Vertical-edge counterpart of tile_collide_horiz (records via
+; shape_row_v/probe_rec_v: probe count, edge Y offset, per-probe X
+; deltas). Collision type $40 is treated as $20 (solid) here. Handles
+; screen-top/bottom crossing, incl. vertical-scroll rooms (vscroll $46).
+; =============================================================================
+tile_collide_vert:  jsr     tile_collide_setup                           ; C5AA 20 DB C6                  ..
         lda     $17                             ; C5AD A5 17                    ..
         and     #$08                            ; C5AF 29 08                    ).
         beq     LC5B6                           ; C5B1 F0 03                    ..
         jmp     LC6D8                           ; C5B3 4C D8 C6                 L..
 
 ; ----------------------------------------------------------------------------
-LC5B6:  lda     LC8E2,y                         ; C5B6 B9 E2 C8                 ...
+LC5B6:  lda     shape_row_v,y                         ; C5B6 B9 E2 C8                 ...
         sta     $40                             ; C5B9 85 40                    .@
         tay                                     ; C5BB A8                       .
-        lda     LC912,y                         ; C5BC B9 12 C9                 ...
+        lda     probe_rec_v,y                         ; C5BC B9 12 C9                 ...
         sta     $06                             ; C5BF 85 06                    ..
         lda     #$00                            ; C5C1 A9 00                    ..
         sta     $02                             ; C5C3 85 02                    ..
         lda     #$00                            ; C5C5 A9 00                    ..
         sta     L0004                           ; C5C7 85 04                    ..
         sta     $05                             ; C5C9 85 05                    ..
-        lda     LC913,y                         ; C5CB B9 13 C9                 ...
+        lda     probe_rec_v1,y                         ; C5CB B9 13 C9                 ...
         bpl     LC5D2                           ; C5CE 10 02                    ..
         dec     L0004                           ; C5D0 C6 04                    ..
 LC5D2:  clc                                     ; C5D2 18                       .
@@ -930,9 +945,9 @@ LC5D2:  clc                                     ; C5D2 18                       
         bne     LC618                           ; C5F2 D0 24                    .$
         lda     $11                             ; C5F4 A5 11                    ..
         clc                                     ; C5F6 18                       .
-        adc     LC914,y                         ; C5F7 79 14 C9                 y..
+        adc     probe_rec_v2,y                         ; C5F7 79 14 C9                 y..
         sta     $11                             ; C5FA 85 11                    ..
-        lda     LC914,y                         ; C5FC B9 14 C9                 ...
+        lda     probe_rec_v2,y                         ; C5FC B9 14 C9                 ...
 LC5FF:  bmi     LC620                           ; C5FF 30 1F                    0.
         bcs     LC609                           ; C601 B0 06                    ..
         lda     $11                             ; C603 A5 11                    ..
@@ -985,8 +1000,8 @@ LC651:  ldy     $03                             ; C651 A4 03                    
         cmp     #$40                            ; C65B C9 40                    .@
         bne     LC661                           ; C65D D0 02                    ..
         lda     #$20                            ; C65F A9 20                    . 
-LC661:  jsr     LC74E                           ; C661 20 4E C7                  N.
-        jsr     LC77C                           ; C664 20 7C C7                  |.
+LC661:  jsr     tile_override_lookup                           ; C661 20 4E C7                  N.
+        jsr     breakable_block_check                           ; C664 20 7C C7                  |.
         ldy     $02                             ; C667 A4 02                    ..
         sta     $48,y                           ; C669 99 48 00                 .H.
         cmp     $42                             ; C66C C5 42                    .B
@@ -1008,7 +1023,7 @@ LC672:  ora     $10                             ; C672 05 10                    
         sta     L0004                           ; C68B 85 04                    ..
         pla                                     ; C68D 68                       h
         clc                                     ; C68E 18                       .
-        adc     LC914,y                         ; C68F 79 14 C9                 y..
+        adc     probe_rec_v2,y                         ; C68F 79 14 C9                 y..
         sta     $11                             ; C692 85 11                    ..
         and     #$10                            ; C694 29 10                    ).
         cmp     L0004                           ; C696 C5 04                    ..
@@ -1046,10 +1061,16 @@ LC6C1:  lda     $11                             ; C6C1 A5 11                    
         jmp     LC649                           ; C6D5 4C 49 C6                 LI.
 
 ; ----------------------------------------------------------------------------
-LC6D8:  jmp     LC737                           ; C6D8 4C 37 C7                 L7.
+LC6D8:  jmp     tile_collide_done                           ; C6D8 4C 37 C7                 L7.
 
-; ----------------------------------------------------------------------------
-LC6DB:  lda     #$00                            ; C6DB A9 00                    ..
+; -----------------------------------------------------------------------------
+; TILE COLLISION SETUP — $C6DB
+; Clears coll_or/coll_max, saves the $A000 bank ($F1), seeds probe
+; screen/Y from the entity. In vertical-scroll rooms converts to
+; camera-relative coordinates via scroll_y/scroll_y_hi (stage banks
+; $0C/$0E get special-case handling).
+; -----------------------------------------------------------------------------
+tile_collide_setup:  lda     #$00                            ; C6DB A9 00                    ..
         sta     $10                             ; C6DD 85 10                    ..
         sta     $42                             ; C6DF 85 42                    .B
         lda     $F6                             ; C6E1 A5 F6                    ..
@@ -1098,8 +1119,12 @@ LC729:  sta     $11                             ; C729 85 11                    
         sta     $13                             ; C734 85 13                    ..
 LC736:  rts                                     ; C736 60                       `
 
-; ----------------------------------------------------------------------------
-LC737:  cpx     #$00                            ; C737 E0 00                    ..
+; -----------------------------------------------------------------------------
+; TILE COLLISION EPILOGUE — $C737
+; For the player: latches coll_max >= $D0 (spikes etc.) into $36.
+; Restores the saved $A000 bank and remaps.
+; -----------------------------------------------------------------------------
+tile_collide_done:  cpx     #$00                            ; C737 E0 00                    ..
         bne     LC747                           ; C739 D0 0C                    ..
         lda     $36                             ; C73B A5 36                    .6
         bne     LC747                           ; C73D D0 08                    ..
@@ -1111,8 +1136,12 @@ LC747:  lda     $F1                             ; C747 A5 F1                    
         sta     $F6                             ; C749 85 F6                    ..
         jmp     bank_load_shadow                ; C74B 4C 43 FF                 LC.
 
-; ----------------------------------------------------------------------------
-LC74E:  sta     $07                             ; C74E 85 07                    ..
+; -----------------------------------------------------------------------------
+; DYNAMIC TILE OVERRIDE — $C74E
+; Scans $43/4 records at $06C0 ([screen, block, quad, metatile id]);
+; on match returns the override metatile's collision nibble instead.
+; -----------------------------------------------------------------------------
+tile_override_lookup:  sta     $07                             ; C74E 85 07                    ..
         ldy     $43                             ; C750 A4 43                    .C
         beq     LC779                           ; C752 F0 25                    .%
 LC754:  lda     $06BC,y                         ; C754 B9 BC 06                 ...
@@ -1139,8 +1168,13 @@ LC773:  dey                                     ; C773 88                       
 LC779:  lda     $07                             ; C779 A5 07                    ..
         rts                                     ; C77B 60                       `
 
-; ----------------------------------------------------------------------------
-LC77C:  pha                                     ; C77C 48                       H
+; -----------------------------------------------------------------------------
+; BREAKABLE BLOCK CHECK — $C77C
+; Tests the block's bit in the $0680 destroyed-block bitmap (bit/byte
+; tables at probe-time via $F2B2/$F2C2). Destroyed solid -> passable.
+; $1E disables the check.
+; -----------------------------------------------------------------------------
+breakable_block_check:  pha                                     ; C77C 48                       H
         lda     $1E                             ; C77D A5 1E                    ..
         bne     LC7A8                           ; C77F D0 27                    .'
         lda     $22                             ; C781 A5 22                    ."
@@ -1168,12 +1202,16 @@ LC77C:  pha                                     ; C77C 48                       
 LC7A8:  pla                                     ; C7A8 68                       h
         rts                                     ; C7A9 60                       `
 
-; ----------------------------------------------------------------------------
-LC7AA:  sty     L0000                           ; C7AA 84 00                    ..
+; -----------------------------------------------------------------------------
+; PER-STAGE Y CLAMP — $C7AA
+; In vertical rooms, clamps probes below a per-stage-bank floor line
+; (stage_clamp_y/scr tables) back to the entity's own Y/screen.
+; -----------------------------------------------------------------------------
+stage_y_clamp:  sty     L0000                           ; C7AA 84 00                    ..
         ldy     $26                             ; C7AC A4 26                    .&
-        lda     LC7E7,y                         ; C7AE B9 E7 C7                 ...
+        lda     stage_clamp_y,y                         ; C7AE B9 E7 C7                 ...
         sta     $01                             ; C7B1 85 01                    ..
-        lda     LC7F7,y                         ; C7B3 B9 F7 C7                 ...
+        lda     stage_clamp_scr,y                         ; C7B3 B9 F7 C7                 ...
         sta     $03                             ; C7B6 85 03                    ..
         ldy     L0000                           ; C7B8 A4 00                    ..
         lda     $46                             ; C7BA A5 46                    .F
@@ -1185,7 +1223,7 @@ LC7AA:  sty     L0000                           ; C7AA 84 00                    
         bne     LC7CC                           ; C7C6 D0 04                    ..
         cpx     #$00                            ; C7C8 E0 00                    ..
         beq     LC7E6                           ; C7CA F0 1A                    ..
-LC7CC:  lda     LC838,y                         ; C7CC B9 38 C8                 .8.
+LC7CC:  lda     probe_rec_h1,y                         ; C7CC B9 38 C8                 .8.
         bmi     LC7E6                           ; C7CF 30 15                    0.
         clc                                     ; C7D1 18                       .
         adc     $0378,x                         ; C7D2 7D 78 03                 }x.
@@ -1200,361 +1238,65 @@ LC7CC:  lda     LC838,y                         ; C7CC B9 38 C8                 
 LC7E6:  rts                                     ; C7E6 60                       `
 
 ; ----------------------------------------------------------------------------
-LC7E7:  brk                                     ; C7E7 00                       .
-        brk                                     ; C7E8 00                       .
-        brk                                     ; C7E9 00                       .
-        cpy     #$00                            ; C7EA C0 00                    ..
-        brk                                     ; C7EC 00                       .
-        brk                                     ; C7ED 00                       .
-        brk                                     ; C7EE 00                       .
-        brk                                     ; C7EF 00                       .
-        brk                                     ; C7F0 00                       .
-        brk                                     ; C7F1 00                       .
-        cpy     #$D0                            ; C7F2 C0 D0                    ..
-        brk                                     ; C7F4 00                       .
-        brk                                     ; C7F5 00                       .
-        brk                                     ; C7F6 00                       .
-LC7F7:  brk                                     ; C7F7 00                       .
-        brk                                     ; C7F8 00                       .
-        brk                                     ; C7F9 00                       .
-        .byte   $13                             ; C7FA 13                       .
-        brk                                     ; C7FB 00                       .
-        brk                                     ; C7FC 00                       .
-        brk                                     ; C7FD 00                       .
-        brk                                     ; C7FE 00                       .
-        brk                                     ; C7FF 00                       .
-        brk                                     ; C800 00                       .
-        brk                                     ; C801 00                       .
-        brk                                     ; C802 00                       .
-        .byte   $FF                             ; C803 FF                       .
-        brk                                     ; C804 00                       .
-        brk                                     ; C805 00                       .
-        brk                                     ; C806 00                       .
-LC807:  brk                                     ; C807 00                       .
-        ora     $09                             ; C808 05 09                    ..
-        asl     $1813                           ; C80A 0E 13 18                 ...
-        ora     $2420,x                         ; C80D 1D 20 24                 . $
-        plp                                     ; C810 28                       (
-        and     $3632                           ; C811 2D 32 36                 -26
-        .byte   $3A                             ; C814 3A                       :
-        .byte   $3F                             ; C815 3F                       ?
-        .byte   $44                             ; C816 44                       D
-        eor     #$4E                            ; C817 49 4E                    IN
-        .byte   $52                             ; C819 52                       R
-        lsr     $59,x                           ; C81A 56 59                    VY
-        .byte   $5C                             ; C81C 5C                       \
-        adc     ($66,x)                         ; C81D 61 66                    af
-        ror     a                               ; C81F 6A                       j
-        ror     $7873                           ; C820 6E 73 78                 nsx
-        .byte   $7C                             ; C823 7C                       |
-        .byte   $7F                             ; C824 7F                       .
-        .byte   $82                             ; C825 82                       .
-        .byte   $87                             ; C826 87                       .
-        sty     $938F                           ; C827 8C 8F 93                 ...
-        .byte   $97                             ; C82A 97                       .
-        txs                                     ; C82B 9A                       .
-        sta     $A5A1,x                         ; C82C 9D A1 A5                 ...
-        tay                                     ; C82F A8                       .
-        .byte   $AB                             ; C830 AB                       .
-        .byte   $AB                             ; C831 AB                       .
-        .byte   $AB                             ; C832 AB                       .
-        .byte   $AB                             ; C833 AB                       .
-        .byte   $AB                             ; C834 AB                       .
-        .byte   $AB                             ; C835 AB                       .
-        .byte   $AB                             ; C836 AB                       .
-LC837:  .byte   $02                             ; C837 02                       .
-LC838:  .byte   $0C                             ; C838 0C                       .
-LC839:  sbc     $0707,y                         ; C839 F9 07 07                 ...
-        ora     ($F6,x)                         ; C83C 01 F6                    ..
-        sbc     $020E,y                         ; C83E F9 0E 02                 ...
-        .byte   $F2                             ; C841 F2                       .
-        .byte   $F2                             ; C842 F2                       .
-        asl     $020E                           ; C843 0E 0E 02                 ...
-        .byte   $0C                             ; C846 0C                       .
-        .byte   $F2                             ; C847 F2                       .
-        asl     $020E                           ; C848 0E 0E 02                 ...
-        asl     a                               ; C84B 0A                       .
-        .byte   $F2                             ; C84C F2                       .
-        asl     $020E                           ; C84D 0E 0E 02                 ...
-        sed                                     ; C850 F8                       .
-        .byte   $F2                             ; C851 F2                       .
-        asl     a:$0E                           ; C852 0E 0E 00                 ...
-        brk                                     ; C855 00                       .
-        brk                                     ; C856 00                       .
-LC857:  ora     ($06,x)                         ; C857 01 06                    ..
-        .byte   $FB                             ; C859 FB                       .
-        asl     a                               ; C85A 0A                       .
-        .byte   $01                             ; C85B 01                       .
-LC85C:  .byte   $FA                             ; C85C FA                       .
-        .byte   $FB                             ; C85D FB                       .
-        asl     a                               ; C85E 0A                       .
-        .byte   $02                             ; C85F 02                       .
-        bpl     LC857                           ; C860 10 F5                    ..
-        .byte   $0B                             ; C862 0B                       .
-        .byte   $0B                             ; C863 0B                       .
-        .byte   $02                             ; C864 02                       .
-LC865:  beq     LC85C                           ; C865 F0 F5                    ..
-        .byte   $0B                             ; C867 0B                       .
-        .byte   $0B                             ; C868 0B                       .
-        .byte   $01                             ; C869 01                       .
-LC86A:  .byte   $04                             ; C86A 04                       .
-        sbc     $010E,y                         ; C86B F9 0E 01                 ...
-        .byte   $FC                             ; C86E FC                       .
-        sbc     $020E,y                         ; C86F F9 0E 02                 ...
-        bpl     LC865                           ; C872 10 F1                    ..
-        .byte   $0F                             ; C874 0F                       .
-        .byte   $0F                             ; C875 0F                       .
-        .byte   $02                             ; C876 02                       .
-        beq     LC86A                           ; C877 F0 F1                    ..
-        .byte   $0F                             ; C879 0F                       .
-        .byte   $0F                             ; C87A 0F                       .
-        .byte   $02                             ; C87B 02                       .
-        .byte   $1C                             ; C87C 1C                       .
-        sbc     ($0F),y                         ; C87D F1 0F                    ..
-        .byte   $0F                             ; C87F 0F                       .
-        .byte   $02                             ; C880 02                       .
-        cpx     $F1                             ; C881 E4 F1                    ..
-        .byte   $0F                             ; C883 0F                       .
-        .byte   $0F                             ; C884 0F                       .
-        ora     ($14,x)                         ; C885 01 14                    ..
-        sbc     $010E,y                         ; C887 F9 0E 01                 ...
-        cpx     $0EF9                           ; C88A EC F9 0E                 ...
-        brk                                     ; C88D 00                       .
-        .byte   $04                             ; C88E 04                       .
-        brk                                     ; C88F 00                       .
-        brk                                     ; C890 00                       .
-        .byte   $FC                             ; C891 FC                       .
-        brk                                     ; C892 00                       .
-        .byte   $02                             ; C893 02                       .
-        .byte   $0C                             ; C894 0C                       .
-        sbc     $0B,x                           ; C895 F5 0B                    ..
-        .byte   $0B                             ; C897 0B                       .
-        .byte   $02                             ; C898 02                       .
-        .byte   $F4                             ; C899 F4                       .
-        sbc     $0B,x                           ; C89A F5 0B                    ..
-        .byte   $0B                             ; C89C 0B                       .
-        ora     ($08,x)                         ; C89D 01 08                    ..
-        sbc     $010E,y                         ; C89F F9 0E 01                 ...
-        sed                                     ; C8A2 F8                       .
-        sbc     $020E,y                         ; C8A3 F9 0E 02                 ...
-        .byte   $14                             ; C8A6 14                       .
-        sbc     $0B,x                           ; C8A7 F5 0B                    ..
-        .byte   $0B                             ; C8A9 0B                       .
-        .byte   $02                             ; C8AA 02                       .
-        cpx     $0BF5                           ; C8AB EC F5 0B                 ...
-        .byte   $0B                             ; C8AE 0B                       .
-        ora     (L0000,x)                       ; C8AF 01 00                    ..
-        sbc     $0E,y                           ; C8B1 F9 0E 00                 ...
-        bpl     LC8B6                           ; C8B4 10 00                    ..
-LC8B6:  brk                                     ; C8B6 00                       .
-        beq     LC8B9                           ; C8B7 F0 00                    ..
-LC8B9:  .byte   $02                             ; C8B9 02                       .
-        .byte   $0C                             ; C8BA 0C                       .
-        sbc     ($0F),y                         ; C8BB F1 0F                    ..
-        .byte   $0F                             ; C8BD 0F                       .
-        .byte   $02                             ; C8BE 02                       .
-        .byte   $F4                             ; C8BF F4                       .
-        sbc     ($0F),y                         ; C8C0 F1 0F                    ..
-        .byte   $0F                             ; C8C2 0F                       .
-        brk                                     ; C8C3 00                       .
-        rol     L0000,x                         ; C8C4 36 00                    6.
-        ora     ($0C,x)                         ; C8C6 01 0C                    ..
-        sbc     $010E,y                         ; C8C8 F9 0E 01                 ...
-        .byte   $F4                             ; C8CB F4                       .
-        sbc     $0E,y                           ; C8CC F9 0E 00                 ...
-        php                                     ; C8CF 08                       .
-        brk                                     ; C8D0 00                       .
-        brk                                     ; C8D1 00                       .
-        sed                                     ; C8D2 F8                       .
-        brk                                     ; C8D3 00                       .
-        ora     ($FA,x)                         ; C8D4 01 FA                    ..
-        sbc     $010E,y                         ; C8D6 F9 0E 01                 ...
-        ora     $F9                             ; C8D9 05 F9                    ..
-        asl     $0C00                           ; C8DB 0E 00 0C                 ...
-        brk                                     ; C8DE 00                       .
-        brk                                     ; C8DF 00                       .
-        .byte   $F4                             ; C8E0 F4                       .
-        brk                                     ; C8E1 00                       .
-LC8E2:  brk                                     ; C8E2 00                       .
-        ora     $0A                             ; C8E3 05 0A                    ..
-        .byte   $0F                             ; C8E5 0F                       .
-        .byte   $14                             ; C8E6 14                       .
-        clc                                     ; C8E7 18                       .
-        .byte   $1C                             ; C8E8 1C                       .
-        jsr     L2724                           ; C8E9 20 24 27                  $'
-        rol     a                               ; C8EC 2A                       *
-        .byte   $2F                             ; C8ED 2F                       /
-        .byte   $34                             ; C8EE 34                       4
-        sec                                     ; C8EF 38                       8
-        .byte   $3C                             ; C8F0 3C                       <
-        rti                                     ; C8F1 40                       @
-
-; ----------------------------------------------------------------------------
-        .byte   $44                             ; C8F2 44                       D
-        eor     #$4E                            ; C8F3 49 4E                    IN
-        eor     $5C,x                           ; C8F5 55 5C                    U\
-        .byte   $62                             ; C8F7 62                       b
-        pla                                     ; C8F8 68                       h
-        adc     $7772                           ; C8F9 6D 72 77                 mrw
-        .byte   $7C                             ; C8FC 7C                       |
-        .byte   $7F                             ; C8FD 7F                       .
-        .byte   $82                             ; C8FE 82                       .
-        stx     $8A                             ; C8FF 86 8A                    ..
-        sta     $9490                           ; C901 8D 90 94                 ...
-        tya                                     ; C904 98                       .
-        .byte   $9B                             ; C905 9B                       .
-        .byte   $9E                             ; C906 9E                       .
-        .byte   $A3                             ; C907 A3                       .
-        tay                                     ; C908 A8                       .
-        ldx     $B9B4                           ; C909 AE B4 B9                 ...
-        ldx     LC4C1,y                         ; C90C BE C1 C4                 ...
-        iny                                     ; C90F C8                       .
-        .byte   $CB                             ; C910 CB                       .
-        .byte   $CB                             ; C911 CB                       .
-LC912:  .byte   $02                             ; C912 02                       .
-LC913:  php                                     ; C913 08                       .
-LC914:  .byte   $F7                             ; C914 F7                       .
-        ora     #$0B                            ; C915 09 0B                    ..
-        .byte   $02                             ; C917 02                       .
-        sed                                     ; C918 F8                       .
-        .byte   $F7                             ; C919 F7                       .
-        ora     #$0B                            ; C91A 09 0B                    ..
-        .byte   $02                             ; C91C 02                       .
-        brk                                     ; C91D 00                       .
-        sbc     $0B,x                           ; C91E F5 0B                    ..
-        ora     $02                             ; C920 05 02                    ..
-        brk                                     ; C922 00                       .
-        .byte   $FB                             ; C923 FB                       .
-        ora     $0B                             ; C924 05 0B                    ..
-        ora     ($0F,x)                         ; C926 01 0F                    ..
-        .byte   $FB                             ; C928 FB                       .
-        asl     LF101                           ; C929 0E 01 F1                 ...
-        .byte   $FB                             ; C92C FB                       .
-        asl     $0F01                           ; C92D 0E 01 0F                 ...
-        sbc     L0100,y                         ; C930 F9 00 01                 ...
-        sbc     ($F9),y                         ; C933 F1 F9                    ..
-        brk                                     ; C935 00                       .
-        brk                                     ; C936 00                       .
-        .byte   $0F                             ; C937 0F                       .
-        .byte   $04                             ; C938 04                       .
-        brk                                     ; C939 00                       .
-        sbc     (L0004),y                       ; C93A F1 04                    ..
-        .byte   $02                             ; C93C 02                       .
-        .byte   $0C                             ; C93D 0C                       .
-        sbc     ($0F),y                         ; C93E F1 0F                    ..
-        .byte   $0F                             ; C940 0F                       .
-        .byte   $02                             ; C941 02                       .
-        .byte   $F4                             ; C942 F4                       .
-        sbc     ($0F),y                         ; C943 F1 0F                    ..
-        .byte   $0F                             ; C945 0F                       .
-        ora     ($08,x)                         ; C946 01 08                    ..
-LC948:  .byte   $FD                             ; C948 FD                       .
-        .byte   $06                             ; C949 06                       .
-LC94A:  ora     ($F8,x)                         ; C94A 01 F8                    ..
-        sbc     $0106,x                         ; C94C FD 06 01                 ...
-LC94F:  asl     $FB                             ; C94F 06 FB                    ..
-        asl     a                               ; C951 0A                       .
-        ora     ($FA,x)                         ; C952 01 FA                    ..
-        .byte   $FB                             ; C954 FB                       .
-        asl     a                               ; C955 0A                       .
-        .byte   $02                             ; C956 02                       .
-        bpl     LC94A                           ; C957 10 F1                    ..
-        .byte   $0F                             ; C959 0F                       .
-        .byte   $0F                             ; C95A 0F                       .
-        .byte   $02                             ; C95B 02                       .
-        beq     LC94F                           ; C95C F0 F1                    ..
-        .byte   $0F                             ; C95E 0F                       .
-        .byte   $0F                             ; C95F 0F                       .
-        .byte   $04                             ; C960 04                       .
-        bpl     LC948                           ; C961 10 E5                    ..
-        .byte   $0F                             ; C963 0F                       .
-        .byte   $0F                             ; C964 0F                       .
-        .byte   $0F                             ; C965 0F                       .
-        ora     #$04                            ; C966 09 04                    ..
-        beq     LC94F                           ; C968 F0 E5                    ..
-        .byte   $0F                             ; C96A 0F                       .
-        .byte   $0F                             ; C96B 0F                       .
-        .byte   $0F                             ; C96C 0F                       .
-        ora     #$03                            ; C96D 09 03                    ..
-        php                                     ; C96F 08                       .
-        sbc     $1010                           ; C970 ED 10 10                 ...
-        asl     $03                             ; C973 06 03                    ..
-        sed                                     ; C975 F8                       .
-        sbc     $1010                           ; C976 ED 10 10                 ...
-        asl     $02                             ; C979 06 02                    ..
-        .byte   $0C                             ; C97B 0C                       .
-        sbc     $0B,x                           ; C97C F5 0B                    ..
-        .byte   $0B                             ; C97E 0B                       .
-        .byte   $02                             ; C97F 02                       .
-        .byte   $F4                             ; C980 F4                       .
-        sbc     $0B,x                           ; C981 F5 0B                    ..
-        .byte   $0B                             ; C983 0B                       .
-        .byte   $02                             ; C984 02                       .
-        .byte   $07                             ; C985 07                       .
-        sbc     $0B,x                           ; C986 F5 0B                    ..
-        .byte   $0B                             ; C988 0B                       .
-        .byte   $02                             ; C989 02                       .
-        sbc     $0BF5,y                         ; C98A F9 F5 0B                 ...
-        .byte   $0B                             ; C98D 0B                       .
-        brk                                     ; C98E 00                       .
-        .byte   $04                             ; C98F 04                       .
-        brk                                     ; C990 00                       .
-        brk                                     ; C991 00                       .
-        .byte   $FC                             ; C992 FC                       .
-        brk                                     ; C993 00                       .
-        ora     ($08,x)                         ; C994 01 08                    ..
-        sbc     $010E,y                         ; C996 F9 0E 01                 ...
-        sed                                     ; C999 F8                       .
-        sbc     $0E,y                           ; C99A F9 0E 00                 ...
-        .byte   $0C                             ; C99D 0C                       .
-        brk                                     ; C99E 00                       .
-        brk                                     ; C99F 00                       .
-        .byte   $F4                             ; C9A0 F4                       .
-        brk                                     ; C9A1 00                       .
-        ora     ($10,x)                         ; C9A2 01 10                    ..
-        brk                                     ; C9A4 00                       .
-        .byte   $0C                             ; C9A5 0C                       .
-        ora     ($F1,x)                         ; C9A6 01 F1                    ..
-LC9A8:  brk                                     ; C9A8 00                       .
-        .byte   $0C                             ; C9A9 0C                       .
-        brk                                     ; C9AA 00                       .
-        .byte   $14                             ; C9AB 14                       .
-        brk                                     ; C9AC 00                       .
-LC9AD:  brk                                     ; C9AD 00                       .
-        cpx     L0200                           ; C9AE EC 00 02                 ...
-        bpl     LC9A8                           ; C9B1 10 F5                    ..
-        .byte   $0B                             ; C9B3 0B                       .
-        .byte   $0B                             ; C9B4 0B                       .
-        .byte   $02                             ; C9B5 02                       .
-        beq     LC9AD                           ; C9B6 F0 F5                    ..
-        .byte   $0B                             ; C9B8 0B                       .
-        .byte   $0B                             ; C9B9 0B                       .
-        .byte   $03                             ; C9BA 03                       .
-        .byte   $0C                             ; C9BB 0C                       .
-        sbc     $1010                           ; C9BC ED 10 10                 ...
-        asl     $03                             ; C9BF 06 03                    ..
-        .byte   $F4                             ; C9C1 F4                       .
-        sbc     $1010                           ; C9C2 ED 10 10                 ...
-        asl     $02                             ; C9C5 06 02                    ..
-        php                                     ; C9C7 08                       .
-        sbc     $0B,x                           ; C9C8 F5 0B                    ..
-        .byte   $0B                             ; C9CA 0B                       .
-        .byte   $02                             ; C9CB 02                       .
-        sed                                     ; C9CC F8                       .
-        sbc     $0B,x                           ; C9CD F5 0B                    ..
-        .byte   $0B                             ; C9CF 0B                       .
-        brk                                     ; C9D0 00                       .
-        php                                     ; C9D1 08                       .
-        brk                                     ; C9D2 00                       .
-        brk                                     ; C9D3 00                       .
-        sed                                     ; C9D4 F8                       .
-        brk                                     ; C9D5 00                       .
-        ora     (L0000,x)                       ; C9D6 01 00                    ..
-        .byte   $FA                             ; C9D8 FA                       .
-        php                                     ; C9D9 08                       .
-        brk                                     ; C9DA 00                       .
-        brk                                     ; C9DB 00                       .
-        .byte   $05                             ; C9DC 05                       .
+; -----------------------------------------------------------------------------
+; COLLISION SHAPE TABLES — $C7E7-$C9DC
+; shape_row_* index (from ent_shape) selects a variable-length extent
+; record: probe count-1, edge offset, then per-probe axis deltas.
+; -----------------------------------------------------------------------------
+stage_clamp_y:  ; per-stage-bank Y clamp threshold (vertical rooms)
+        .byte   $00,$00,$00,$C0,$00,$00,$00,$00,$00,$00,$00,$C0,$D0,$00,$00,$00   ; C7E7
+stage_clamp_scr:  ; per-stage-bank clamp screen value
+        .byte   $00,$00,$00,$13,$00,$00,$00,$00,$00,$00,$00,$00,$FF,$00,$00,$00   ; C7F7
+shape_row_h:  ; shape -> extent record offset (horizontal probes)
+        .byte   $00,$05,$09,$0E,$13,$18,$1D,$20,$24,$28,$2D,$32,$36,$3A,$3F,$44   ; C807
+        .byte   $49,$4E,$52,$56,$59,$5C,$61,$66,$6A,$6E,$73,$78,$7C,$7F,$82,$87   ; C817
+        .byte   $8C,$8F,$93,$97,$9A,$9D,$A1,$A5,$A8,$AB,$AB,$AB,$AB,$AB,$AB,$AB   ; C827
+probe_rec_h:  ; records: [count-1][y offset][x deltas...] (via +0/+1/+2 below)
+        .byte   $02   ; C837
+probe_rec_h1:
+        .byte   $0C   ; C838
+probe_rec_h2:
+        .byte   $F9,$07,$07,$01,$F6,$F9,$0E,$02,$F2,$F2,$0E,$0E,$02,$0C,$F2,$0E   ; C839
+        .byte   $0E,$02,$0A,$F2,$0E,$0E,$02,$F8,$F2,$0E,$0E,$00,$00,$00,$01,$06   ; C849
+        .byte   $FB,$0A,$01,$FA,$FB,$0A,$02,$10,$F5,$0B,$0B,$02,$F0,$F5,$0B,$0B   ; C859
+        .byte   $01,$04,$F9,$0E,$01,$FC,$F9,$0E,$02,$10,$F1,$0F,$0F,$02,$F0,$F1   ; C869
+        .byte   $0F,$0F,$02,$1C,$F1,$0F,$0F,$02,$E4,$F1,$0F,$0F,$01,$14,$F9,$0E   ; C879
+        .byte   $01,$EC,$F9,$0E,$00,$04,$00,$00,$FC,$00,$02,$0C,$F5,$0B,$0B,$02   ; C889
+        .byte   $F4,$F5,$0B,$0B,$01,$08,$F9,$0E,$01,$F8,$F9,$0E,$02,$14,$F5,$0B   ; C899
+        .byte   $0B,$02,$EC,$F5,$0B,$0B,$01,$00,$F9,$0E,$00,$10,$00,$00,$F0,$00   ; C8A9
+        .byte   $02,$0C,$F1,$0F,$0F,$02,$F4,$F1,$0F,$0F,$00,$36,$00,$01,$0C,$F9   ; C8B9
+        .byte   $0E,$01,$F4,$F9,$0E,$00,$08,$00,$00,$F8,$00,$01,$FA,$F9,$0E,$01   ; C8C9
+        .byte   $05,$F9,$0E,$00,$0C,$00,$00,$F4,$00   ; C8D9
+shape_row_v:  ; shape -> extent record offset (vertical probes)
+        .byte   $00,$05,$0A,$0F,$14,$18,$1C,$20,$24,$27,$2A,$2F,$34,$38,$3C,$40   ; C8E2
+        .byte   $44,$49,$4E,$55,$5C,$62,$68,$6D,$72,$77,$7C,$7F,$82,$86,$8A,$8D   ; C8F2
+        .byte   $90,$94,$98,$9B,$9E,$A3,$A8,$AE,$B4,$B9,$BE,$C1,$C4,$C8,$CB,$CB   ; C902
+probe_rec_v:  ; records: [count-1][x offset][y deltas...]
+        .byte   $02   ; C912
+probe_rec_v1:
+        .byte   $08   ; C913
+probe_rec_v2:
+        .byte   $F7,$09,$0B,$02,$F8,$F7,$09,$0B,$02,$00,$F5,$0B,$05,$02,$00,$FB   ; C914
+        .byte   $05,$0B,$01,$0F,$FB,$0E,$01,$F1,$FB,$0E,$01,$0F,$F9,$00,$01,$F1   ; C924
+        .byte   $F9,$00,$00,$0F,$04,$00,$F1,$04,$02,$0C,$F1,$0F,$0F,$02,$F4,$F1   ; C934
+        .byte   $0F,$0F,$01,$08   ; C944
+LC948:
+        .byte   $FD,$06   ; C948
+LC94A:
+        .byte   $01,$F8,$FD,$06,$01   ; C94A
+LC94F:
+        .byte   $06,$FB,$0A,$01,$FA,$FB,$0A,$02,$10,$F1,$0F,$0F,$02,$F0,$F1,$0F   ; C94F
+        .byte   $0F,$04,$10,$E5,$0F,$0F,$0F,$09,$04,$F0,$E5,$0F,$0F,$0F,$09,$03   ; C95F
+        .byte   $08,$ED,$10,$10,$06,$03,$F8,$ED,$10,$10,$06,$02,$0C,$F5,$0B,$0B   ; C96F
+        .byte   $02,$F4,$F5,$0B,$0B,$02,$07,$F5,$0B,$0B,$02,$F9,$F5,$0B,$0B,$00   ; C97F
+        .byte   $04,$00,$00,$FC,$00,$01,$08,$F9,$0E,$01,$F8,$F9,$0E,$00,$0C,$00   ; C98F
+        .byte   $00,$F4,$00,$01,$10,$00,$0C,$01,$F1   ; C99F
+LC9A8:
+        .byte   $00,$0C,$00,$14,$00   ; C9A8
+LC9AD:
+        .byte   $00,$EC,$00,$02,$10,$F5,$0B,$0B,$02,$F0,$F5,$0B,$0B,$03,$0C,$ED   ; C9AD
+        .byte   $10,$10,$06,$03,$F4,$ED,$10,$10,$06,$02,$08,$F5,$0B,$0B,$02,$F8   ; C9BD
+        .byte   $F5,$0B,$0B,$00,$08,$00,$00,$F8,$00,$01,$00,$FA,$08,$00,$00,$05   ; C9CD
 LC9DD:  lda     $26                             ; C9DD A5 26                    .&
         cmp     #$01                            ; C9DF C9 01                    ..
         bne     LCA31                           ; C9E1 D0 4E                    .N
@@ -5713,7 +5455,7 @@ LE6ED:  sbc     ($E6),y                         ; E6ED F1 E6                    
         jmp     LE738                           ; E6F6 4C 38 E7                 L8.
 
 ; ----------------------------------------------------------------------------
-LE6F9:  jsr     LC5AA                           ; E6F9 20 AA C5                  ..
+LE6F9:  jsr     tile_collide_vert                           ; E6F9 20 AA C5                  ..
         clc                                     ; E6FC 18                       .
         lda     $10                             ; E6FD A5 10                    ..
         and     #$10                            ; E6FF 29 10                    ).
@@ -5748,7 +5490,7 @@ LE732:  bcs     LE738                           ; E732 B0 04                    
         jmp     LE6F9                           ; E735 4C F9 E6                 L..
 
 ; ----------------------------------------------------------------------------
-LE738:  jsr     LC5AA                           ; E738 20 AA C5                  ..
+LE738:  jsr     tile_collide_vert                           ; E738 20 AA C5                  ..
         clc                                     ; E73B 18                       .
         lda     $10                             ; E73C A5 10                    ..
         and     #$10                            ; E73E 29 10                    ).
@@ -5781,7 +5523,7 @@ LE769:  bcc     LE771                           ; E769 90 06                    
         jmp     LE7A8                           ; E76E 4C A8 E7                 L..
 
 ; ----------------------------------------------------------------------------
-LE771:  jsr     LC4A1                           ; E771 20 A1 C4                  ..
+LE771:  jsr     tile_collide_horiz                           ; E771 20 A1 C4                  ..
         clc                                     ; E774 18                       .
         lda     $10                             ; E775 A5 10                    ..
         and     #$10                            ; E777 29 10                    ).
@@ -5813,7 +5555,7 @@ LE7A2:  bcs     LE7A8                           ; E7A2 B0 04                    
         jmp     LE771                           ; E7A5 4C 71 E7                 Lq.
 
 ; ----------------------------------------------------------------------------
-LE7A8:  jsr     LC4A1                           ; E7A8 20 A1 C4                  ..
+LE7A8:  jsr     tile_collide_horiz                           ; E7A8 20 A1 C4                  ..
         clc                                     ; E7AB 18                       .
         lda     $10                             ; E7AC A5 10                    ..
         and     #$10                            ; E7AE 29 10                    ).
@@ -5871,7 +5613,7 @@ LE814:  bcc     LE81C                           ; E814 90 06                    
 
 ; ----------------------------------------------------------------------------
 LE81C:  jsr     LE9B7                           ; E81C 20 B7 E9                  ..
-        jsr     LC4A1                           ; E81F 20 A1 C4                  ..
+        jsr     tile_collide_horiz                           ; E81F 20 A1 C4                  ..
         lda     $42                             ; E822 A5 42                    .B
         cmp     #$40                            ; E824 C9 40                    .@
         bne     LE830                           ; E826 D0 08                    ..
@@ -5906,7 +5648,7 @@ LE856:  bcs     LE85C                           ; E856 B0 04                    
 
 ; ----------------------------------------------------------------------------
 LE85C:  jsr     LE9B7                           ; E85C 20 B7 E9                  ..
-        jsr     LC4A1                           ; E85F 20 A1 C4                  ..
+        jsr     tile_collide_horiz                           ; E85F 20 A1 C4                  ..
         lda     $10                             ; E862 A5 10                    ..
         and     #$10                            ; E864 29 10                    ).
         beq     LE870                           ; E866 F0 08                    ..
@@ -5934,7 +5676,7 @@ LE888:  bcc     LE890                           ; E888 90 06                    
 
 ; ----------------------------------------------------------------------------
 LE890:  jsr     LE9E1                           ; E890 20 E1 E9                  ..
-        jsr     LC4A1                           ; E893 20 A1 C4                  ..
+        jsr     tile_collide_horiz                           ; E893 20 A1 C4                  ..
         lda     $10                             ; E896 A5 10                    ..
         and     #$10                            ; E898 29 10                    ).
         beq     LE8A2                           ; E89A F0 06                    ..
@@ -5959,7 +5701,7 @@ LE8B6:  bcs     LE8BC                           ; E8B6 B0 04                    
 
 ; ----------------------------------------------------------------------------
 LE8BC:  jsr     LE9E1                           ; E8BC 20 E1 E9                  ..
-        jsr     LC4A1                           ; E8BF 20 A1 C4                  ..
+        jsr     tile_collide_horiz                           ; E8BF 20 A1 C4                  ..
         lda     $42                             ; E8C2 A5 42                    .B
         cmp     #$40                            ; E8C4 C9 40                    .@
         bne     LE8D0                           ; E8C6 D0 08                    ..

@@ -58,6 +58,10 @@ queue_sound         := $EC5D  ; queue sound A into the NMI-pumped ring buffer
 div8                := $F207  ; 8-bit divide
 div16               := $F22D  ; 16-bit divide
 
+; --- Tile Collision ---
+tile_collide_horiz  := $C4A1  ; probe leading vertical edge (horizontal moves)
+tile_collide_vert   := $C5AA  ; probe leading horizontal edge (vertical moves)
+
 ; --- Tasks / System (see fixed_bank.asm tail) ---
 scheduler_run       := $FEAB  ; run ready tasks until all yield
 task_create         := $FEF3  ; create task X/4 with entry ptr in $93/$94
