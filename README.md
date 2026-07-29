@@ -119,6 +119,10 @@ Makefile                      build + byte-perfect verification
 - The **boss-rush teleporter room** (stage bank `$0E`) shows each robot
   master's scenery by borrowing *other stages' banks* per screen via a
   16-entry table (`stage0E_screen_banks`).
+- **Weapon damage tables are addressed by bank number**: weapon N's
+  per-enemy damage bytes sit at `$A800` of PRG bank N — the stage
+  banks double as damage-table hosts, and the damage engine just
+  writes the weapon id into the MMC3 bank register.
 - Sprite tile banks are claimed **per frame, per entity**: each sprite
   record names a CHR bank + 1KB slot (MMC3 R2-R5); first claimant wins,
   later entities needing a different bank in the same slot simply don't

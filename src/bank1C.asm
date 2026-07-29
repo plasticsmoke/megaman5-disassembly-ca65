@@ -95,7 +95,7 @@ L8073:  jsr     entity_hitbox_check                           ; 8073 20 F8 EF   
 L8078:  lda     $0408,x                         ; 8078 BD 08 04                 ...
         and     #$40                            ; 807B 29 40                    )@
         sta     L0000                           ; 807D 85 00                    ..
-        jsr     L809D                           ; 807F 20 9D 80                  ..
+        jsr     damage_engine                           ; 807F 20 9D 80                  ..
 L8082:  lda     $0408,x                         ; 8082 BD 08 04                 ...
         bpl     L809A                           ; 8085 10 13                    ..
         lda     $05B8                           ; 8087 AD B8 05                 ...
@@ -105,11 +105,23 @@ L8082:  lda     $0408,x                         ; 8082 BD 08 04                 
         bcs     L809A                           ; 8090 B0 08                    ..
         jsr     entity_player_collide                           ; 8092 20 87 EF                  ..
         bcs     L809A                           ; 8095 B0 03                    ..
-        jsr     L82C3                           ; 8097 20 C3 82                  ..
+        jsr     player_take_damage                           ; 8097 20 C3 82                  ..
 L809A:  jmp     L8039                           ; 809A 4C 39 80                 L9.
 
 ; ----------------------------------------------------------------------------
-L809D:  lda     $F6                             ; 809D A5 F6                    ..
+; =============================================================================
+; DAMAGE ENGINE — $1C:809D (weapon shot in slot $10 hit enemy X)
+; Damage table bank = the weapon id itself ($32 -> $F6): weapon N's
+; per-enemy-type damage bytes live at $A800 in bank N (the stage banks
+; double as damage-table hosts). Damage = $A800[type] & $7F; bit 7 =
+; special (weapons 1/9: instant kill/capture). Zero damage -> ricochet
+; (sound $1E, shot becomes type $46, reversed, up-back). Buster damage
+; from charge level $5B (>= $0E: 3). On kill: death_transform_tbl[type]
+; picks a second form, else explosion type $B8; sounds $2A hit/$2B kill.
+; Piercing weapons 7/8 keep their shot; type $79 shots deflect via a
+; behavior-PC rewrite; charged buster downgrades $A9 -> $A8 on hit.
+; =============================================================================
+damage_engine:  lda     $F6                             ; 809D A5 F6                    ..
         pha                                     ; 809F 48                       H
         lda     $32                             ; 80A0 A5 32                    .2
         sta     $F6                             ; 80A2 85 F6                    ..
@@ -242,7 +254,7 @@ L819F:  lda     #$2A                            ; 819F A9 2A                    
         bcs     L81E0                           ; 81B1 B0 2D                    .-
 L81B3:  lda     #$00                            ; 81B3 A9 00                    ..
         sta     $0450,x                         ; 81B5 9D 50 04                 .P.
-        lda     L87C3,y                         ; 81B8 B9 C3 87                 ...
+        lda     death_transform_tbl,y                         ; 81B8 B9 C3 87                 ...
         bne     L822C                           ; 81BB D0 6F                    .o
         lda     $32                             ; 81BD A5 32                    .2
         cmp     #$07                            ; 81BF C9 07                    ..
@@ -382,7 +394,7 @@ L82B8:  lda     $05B8                           ; 82B8 AD B8 05                 
         lda     $30                             ; 82BD A5 30                    .0
         cmp     #$06                            ; 82BF C9 06                    ..
         bcs     L8331                           ; 82C1 B0 6E                    .n
-L82C3:  jsr     L83FC                           ; 82C3 20 FC 83                  ..
+player_take_damage:  jsr     L83FC                           ; 82C3 20 FC 83                  ..
         beq     L8331                           ; 82C6 F0 69                    .i
         lda     $17                             ; 82C8 A5 17                    ..
         and     #$40                            ; 82CA 29 40                    )@
@@ -1130,7 +1142,7 @@ L8700:  ora     $1D1D,x                         ; 8700 1D 1D 1D                 
         ora     $1D1D,x                         ; 87BE 1D 1D 1D                 ...
         .byte   $1D                             ; 87C1 1D                       .
         .byte   $1D                             ; 87C2 1D                       .
-L87C3:  brk                                     ; 87C3 00                       .
+death_transform_tbl:  brk                                     ; 87C3 00                       .
         brk                                     ; 87C4 00                       .
         brk                                     ; 87C5 00                       .
         brk                                     ; 87C6 00                       .
@@ -1680,7 +1692,7 @@ L8ADF:  jsr     entity_hitbox_check                           ; 8ADF 20 F8 EF   
         pha                                     ; 8AEB 48                       H
         lda     $0468,x                         ; 8AEC BD 68 04                 .h.
         pha                                     ; 8AEF 48                       H
-        jsr     L809D                           ; 8AF0 20 9D 80                  ..
+        jsr     damage_engine                           ; 8AF0 20 9D 80                  ..
         pla                                     ; 8AF3 68                       h
         tay                                     ; 8AF4 A8                       .
         pla                                     ; 8AF5 68                       h
@@ -2907,7 +2919,7 @@ L9504:  lda     $0378,x                         ; 9504 BD 78 03                 
         bcs     L9528                           ; 951F B0 07                    ..
         lda     #$40                            ; 9521 A9 40                    .@
         sta     L0000                           ; 9523 85 00                    ..
-        jmp     L809D                           ; 9525 4C 9D 80                 L..
+        jmp     damage_engine                           ; 9525 4C 9D 80                 L..
 
 ; ----------------------------------------------------------------------------
 L9528:  lda     $0468,x                         ; 9528 BD 68 04                 .h.
