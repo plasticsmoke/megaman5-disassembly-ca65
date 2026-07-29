@@ -80,4 +80,58 @@ re-verified during annotation):
   queue at `$DC-$E3` (`$88` = empty slot, index `$DB`), pumped from
   the bank-switch path when `$F8` is set.
 
-*(Remaining sections TBD.)*
+## Boot and Tasks (established)
+
+Reset clears RAM, seeds the LFSR RNG ($E4-$E7 = $88...), and spawns
+**task 2** ($DDE8), the game orchestrator, into the 4-slot cooperative
+scheduler ($FEAB; 4-byte records at $80, frame_wait yield at $FF22).
+
+- **Task 0** ($DE70) — player task. Runs right after the pads are read
+  each frame; handles the START pause menu (banks $01/$08).
+- **Task 1** ($DB46) — permanent background service: steps the RNG and
+  does per-frame HUD/palette upkeep.
+- **Task 2** ($DDE8) — orchestrator: title/menus (bank $17 entry at
+  $8000 with $0C at $A000), player init, stage_load ($D311), then
+  spawns task 0 and exits.
+- **Task 3** — created by game code as needed (bosses/cutscenes; TBD).
+
+## Stage Data (established)
+
+Stage banks map at $A000 (zp $26 selects; $27 = alternate bank for
+cross-stage reads). Layout hierarchy, all within the stage bank:
+
+| table | contents |
+|---|---|
+| `$A900+scr` | screen → layout index |
+| `$A950/$A951` | section lists: screen (& $1F) + scroll/transition flags |
+| `$A968+sec` | section attributes (bit 7 = boss door) |
+| `$AD00-$B0FF` | metatile tile IDs (4 planes: TL/TR/BL/BR) |
+| `$B100+id` | metatile attribute: collision (hi nibble) + palette (2 bits) |
+| `$B200+id*4` | 32px block defs — 4 metatile IDs |
+| `$B600+idx*64` | screen layouts — 8×8 grid of block IDs |
+
+Camera: $FC/$F9 = X lo/screen; sections advance/retreat with a
+4px/frame slide. Vertical rooms use $FA/$FB with vscroll_flag $46.
+Dynamic tile overrides ($06C0 records) and the destroyed-block bitmap
+($0680) modify collision and decode on the fly.
+
+## Entity System (established)
+
+24 slots (0 = player), MM4's struct-of-arrays layout at $0300+ with
+stride $18 (type, position/velocity sub/px/screen, shape, dir, spawn
+index, HP, AI vars, flags, anim phase, sub-type, behavior PC, stun).
+
+**Rendering** ($DF5E): iteration order alternates each frame (flicker
+rotation). Per entity: anim_bank_tbl[type] ($E33B) selects one of three
+animation bank pairs ($12/$13, $14/$15, $16/$17); descriptor =
+($8600/$8700[sub_type]) → frame count/duration/frame→sprite-record
+map; sprite records claim a CHR bank in one of the four 1KB sprite
+slots (MMC3 R2-R5 shadows $EC-$EF) — first claimant per frame wins —
+then emit OAM with flip/priority bits and gravity-flip-aware mirroring.
+
+**Collision** ($C4A1/$C5AA): shape-indexed extent records probe the
+leading edge; per-probe results feed coll_results/coll_max/coll_or;
+player spike contact latches at $36.
+
+*(Remaining sections TBD: player state machine, weapons, damage,
+spawning, sound engine, per-bank walkthroughs.)*
