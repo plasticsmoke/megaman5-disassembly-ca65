@@ -89,6 +89,20 @@ cfg/
 Makefile                      build + byte-perfect verification
 ```
 
+## Curiosities found along the way
+
+- A **leftover debug task** in the fixed bank (`$E43B`): controller 2
+  DOWN toggles inverted gravity on the player, controller 2 A skips to
+  the next stage. Doubly disabled in retail — its spawn call was
+  removed *and* `read_controllers` zeroes pad 2 every frame.
+- The **boss-rush teleporter room** (stage bank `$0E`) shows each robot
+  master's scenery by borrowing *other stages' banks* per screen via a
+  16-entry table (`stage0E_screen_banks`).
+- Sprite tile banks are claimed **per frame, per entity**: each sprite
+  record names a CHR bank + 1KB slot (MMC3 R2-R5); first claimant wins,
+  later entities needing a different bank in the same slot simply don't
+  render that frame.
+
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.

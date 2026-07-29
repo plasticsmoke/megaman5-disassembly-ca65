@@ -4818,256 +4818,34 @@ LE316:  .byte   $04                             ; E316 04                       
         inx                                     ; E337 E8                       .
         tay                                     ; E338 A8                       .
         and     ($F4,x)                         ; E339 21 F4                    !.
-anim_bank_tbl:  .byte   $12                             ; E33B 12                       .
-        .byte   $12                             ; E33C 12                       .
-        .byte   $12                             ; E33D 12                       .
-        .byte   $12                             ; E33E 12                       .
-        .byte   $12                             ; E33F 12                       .
-        .byte   $12                             ; E340 12                       .
-        .byte   $12                             ; E341 12                       .
-        .byte   $12                             ; E342 12                       .
-        .byte   $12                             ; E343 12                       .
-        .byte   $12                             ; E344 12                       .
-        .byte   $12                             ; E345 12                       .
-        .byte   $12                             ; E346 12                       .
-        .byte   $12                             ; E347 12                       .
-        .byte   $12                             ; E348 12                       .
-        .byte   $12                             ; E349 12                       .
-        .byte   $12                             ; E34A 12                       .
-        .byte   $12                             ; E34B 12                       .
-        .byte   $12                             ; E34C 12                       .
-        .byte   $12                             ; E34D 12                       .
-        .byte   $12                             ; E34E 12                       .
-        .byte   $12                             ; E34F 12                       .
-        .byte   $12                             ; E350 12                       .
-        .byte   $12                             ; E351 12                       .
-        .byte   $12                             ; E352 12                       .
-        .byte   $12                             ; E353 12                       .
-        .byte   $12                             ; E354 12                       .
-        .byte   $12                             ; E355 12                       .
-        .byte   $12                             ; E356 12                       .
-        .byte   $12                             ; E357 12                       .
-        .byte   $12                             ; E358 12                       .
-        asl     $12,x                           ; E359 16 12                    ..
-        .byte   $12                             ; E35B 12                       .
-        .byte   $12                             ; E35C 12                       .
-        asl     $12,x                           ; E35D 16 12                    ..
-        .byte   $12                             ; E35F 12                       .
-        .byte   $12                             ; E360 12                       .
-        .byte   $12                             ; E361 12                       .
-        .byte   $12                             ; E362 12                       .
-        .byte   $12                             ; E363 12                       .
-        .byte   $12                             ; E364 12                       .
-        .byte   $12                             ; E365 12                       .
-        .byte   $12                             ; E366 12                       .
-        .byte   $12                             ; E367 12                       .
-        .byte   $12                             ; E368 12                       .
-        .byte   $12                             ; E369 12                       .
-        .byte   $12                             ; E36A 12                       .
-        .byte   $12                             ; E36B 12                       .
-        asl     $16,x                           ; E36C 16 16                    ..
-        .byte   $12                             ; E36E 12                       .
-        .byte   $12                             ; E36F 12                       .
-        .byte   $12                             ; E370 12                       .
-        asl     $12,x                           ; E371 16 12                    ..
-        .byte   $12                             ; E373 12                       .
-        .byte   $12                             ; E374 12                       .
-        .byte   $12                             ; E375 12                       .
-        .byte   $12                             ; E376 12                       .
-        .byte   $12                             ; E377 12                       .
-        asl     $12,x                           ; E378 16 12                    ..
-        .byte   $12                             ; E37A 12                       .
-        .byte   $12                             ; E37B 12                       .
-        .byte   $12                             ; E37C 12                       .
-        asl     $12,x                           ; E37D 16 12                    ..
-        .byte   $12                             ; E37F 12                       .
-        .byte   $12                             ; E380 12                       .
-        .byte   $12                             ; E381 12                       .
-        .byte   $14                             ; E382 14                       .
-        .byte   $12                             ; E383 12                       .
-        .byte   $12                             ; E384 12                       .
-        .byte   $12                             ; E385 12                       .
-        .byte   $12                             ; E386 12                       .
-        .byte   $12                             ; E387 12                       .
-        .byte   $12                             ; E388 12                       .
-        .byte   $12                             ; E389 12                       .
-        .byte   $12                             ; E38A 12                       .
-        .byte   $12                             ; E38B 12                       .
-        .byte   $12                             ; E38C 12                       .
-        .byte   $12                             ; E38D 12                       .
-        .byte   $12                             ; E38E 12                       .
-        .byte   $12                             ; E38F 12                       .
-        .byte   $12                             ; E390 12                       .
-        .byte   $12                             ; E391 12                       .
-        .byte   $14                             ; E392 14                       .
-        asl     $14,x                           ; E393 16 14                    ..
-        .byte   $12                             ; E395 12                       .
-        .byte   $12                             ; E396 12                       .
-        .byte   $12                             ; E397 12                       .
-        .byte   $12                             ; E398 12                       .
-        .byte   $14                             ; E399 14                       .
-        .byte   $12                             ; E39A 12                       .
-        .byte   $12                             ; E39B 12                       .
-        .byte   $12                             ; E39C 12                       .
-        .byte   $14                             ; E39D 14                       .
-        asl     $14,x                           ; E39E 16 14                    ..
-        .byte   $14                             ; E3A0 14                       .
-        .byte   $12                             ; E3A1 12                       .
-        .byte   $12                             ; E3A2 12                       .
-        .byte   $12                             ; E3A3 12                       .
-        .byte   $14                             ; E3A4 14                       .
-        .byte   $14                             ; E3A5 14                       .
-        .byte   $14                             ; E3A6 14                       .
-        .byte   $14                             ; E3A7 14                       .
-        .byte   $14                             ; E3A8 14                       .
-        .byte   $14                             ; E3A9 14                       .
-        .byte   $14                             ; E3AA 14                       .
-        .byte   $12                             ; E3AB 12                       .
-        .byte   $12                             ; E3AC 12                       .
-        .byte   $12                             ; E3AD 12                       .
-        .byte   $12                             ; E3AE 12                       .
-        .byte   $12                             ; E3AF 12                       .
-        .byte   $12                             ; E3B0 12                       .
-        .byte   $12                             ; E3B1 12                       .
-        .byte   $12                             ; E3B2 12                       .
-        .byte   $12                             ; E3B3 12                       .
-        .byte   $12                             ; E3B4 12                       .
-        .byte   $12                             ; E3B5 12                       .
-        .byte   $12                             ; E3B6 12                       .
-        .byte   $12                             ; E3B7 12                       .
-        .byte   $12                             ; E3B8 12                       .
-        .byte   $12                             ; E3B9 12                       .
-        .byte   $12                             ; E3BA 12                       .
-        .byte   $14                             ; E3BB 14                       .
-        .byte   $14                             ; E3BC 14                       .
-        .byte   $14                             ; E3BD 14                       .
-        .byte   $14                             ; E3BE 14                       .
-        .byte   $14                             ; E3BF 14                       .
-        .byte   $14                             ; E3C0 14                       .
-        .byte   $14                             ; E3C1 14                       .
-        .byte   $14                             ; E3C2 14                       .
-        .byte   $14                             ; E3C3 14                       .
-        .byte   $14                             ; E3C4 14                       .
-        .byte   $14                             ; E3C5 14                       .
-        .byte   $14                             ; E3C6 14                       .
-        .byte   $12                             ; E3C7 12                       .
-        .byte   $14                             ; E3C8 14                       .
-        .byte   $14                             ; E3C9 14                       .
-        .byte   $14                             ; E3CA 14                       .
-        .byte   $14                             ; E3CB 14                       .
-        .byte   $14                             ; E3CC 14                       .
-        .byte   $14                             ; E3CD 14                       .
-        .byte   $14                             ; E3CE 14                       .
-        .byte   $14                             ; E3CF 14                       .
-        .byte   $14                             ; E3D0 14                       .
-        .byte   $14                             ; E3D1 14                       .
-        .byte   $14                             ; E3D2 14                       .
-        .byte   $14                             ; E3D3 14                       .
-        .byte   $14                             ; E3D4 14                       .
-        .byte   $14                             ; E3D5 14                       .
-        .byte   $14                             ; E3D6 14                       .
-        .byte   $14                             ; E3D7 14                       .
-        .byte   $14                             ; E3D8 14                       .
-        .byte   $14                             ; E3D9 14                       .
-        .byte   $14                             ; E3DA 14                       .
-        .byte   $14                             ; E3DB 14                       .
-        .byte   $12                             ; E3DC 12                       .
-        .byte   $12                             ; E3DD 12                       .
-        .byte   $12                             ; E3DE 12                       .
-        .byte   $12                             ; E3DF 12                       .
-        .byte   $14                             ; E3E0 14                       .
-        .byte   $14                             ; E3E1 14                       .
-        .byte   $14                             ; E3E2 14                       .
-        .byte   $14                             ; E3E3 14                       .
-        .byte   $14                             ; E3E4 14                       .
-        .byte   $12                             ; E3E5 12                       .
-        .byte   $14                             ; E3E6 14                       .
-        .byte   $14                             ; E3E7 14                       .
-        .byte   $12                             ; E3E8 12                       .
-        .byte   $12                             ; E3E9 12                       .
-        .byte   $12                             ; E3EA 12                       .
-        .byte   $14                             ; E3EB 14                       .
-        .byte   $12                             ; E3EC 12                       .
-        .byte   $12                             ; E3ED 12                       .
-        .byte   $14                             ; E3EE 14                       .
-        .byte   $14                             ; E3EF 14                       .
-        .byte   $14                             ; E3F0 14                       .
-        .byte   $14                             ; E3F1 14                       .
-        .byte   $14                             ; E3F2 14                       .
-        .byte   $12                             ; E3F3 12                       .
-        .byte   $14                             ; E3F4 14                       .
-        .byte   $14                             ; E3F5 14                       .
-        .byte   $14                             ; E3F6 14                       .
-        .byte   $12                             ; E3F7 12                       .
-        .byte   $14                             ; E3F8 14                       .
-        .byte   $14                             ; E3F9 14                       .
-        .byte   $12                             ; E3FA 12                       .
-        .byte   $12                             ; E3FB 12                       .
-        .byte   $12                             ; E3FC 12                       .
-        .byte   $12                             ; E3FD 12                       .
-        .byte   $14                             ; E3FE 14                       .
-        .byte   $12                             ; E3FF 12                       .
-        .byte   $12                             ; E400 12                       .
-        .byte   $12                             ; E401 12                       .
-        .byte   $14                             ; E402 14                       .
-        asl     $12,x                           ; E403 16 12                    ..
-        .byte   $12                             ; E405 12                       .
-        .byte   $12                             ; E406 12                       .
-        .byte   $12                             ; E407 12                       .
-        .byte   $12                             ; E408 12                       .
-        .byte   $12                             ; E409 12                       .
-        .byte   $12                             ; E40A 12                       .
-        .byte   $12                             ; E40B 12                       .
-        .byte   $12                             ; E40C 12                       .
-        .byte   $12                             ; E40D 12                       .
-        .byte   $12                             ; E40E 12                       .
-        .byte   $12                             ; E40F 12                       .
-        .byte   $12                             ; E410 12                       .
-        .byte   $12                             ; E411 12                       .
-        .byte   $12                             ; E412 12                       .
-        .byte   $12                             ; E413 12                       .
-        .byte   $12                             ; E414 12                       .
-        .byte   $12                             ; E415 12                       .
-        .byte   $12                             ; E416 12                       .
-        .byte   $12                             ; E417 12                       .
-        .byte   $12                             ; E418 12                       .
-        .byte   $12                             ; E419 12                       .
-        .byte   $12                             ; E41A 12                       .
-        .byte   $12                             ; E41B 12                       .
-        .byte   $12                             ; E41C 12                       .
-        .byte   $12                             ; E41D 12                       .
-        .byte   $12                             ; E41E 12                       .
-        .byte   $12                             ; E41F 12                       .
-        .byte   $12                             ; E420 12                       .
-        .byte   $12                             ; E421 12                       .
-        .byte   $12                             ; E422 12                       .
-        .byte   $12                             ; E423 12                       .
-        .byte   $12                             ; E424 12                       .
-        .byte   $12                             ; E425 12                       .
-        .byte   $12                             ; E426 12                       .
-        .byte   $12                             ; E427 12                       .
-        .byte   $12                             ; E428 12                       .
-        .byte   $12                             ; E429 12                       .
-        .byte   $12                             ; E42A 12                       .
-        .byte   $12                             ; E42B 12                       .
-        .byte   $12                             ; E42C 12                       .
-        .byte   $12                             ; E42D 12                       .
-        .byte   $12                             ; E42E 12                       .
-        .byte   $12                             ; E42F 12                       .
-        .byte   $12                             ; E430 12                       .
-        .byte   $12                             ; E431 12                       .
-        .byte   $12                             ; E432 12                       .
-        .byte   $12                             ; E433 12                       .
-        .byte   $12                             ; E434 12                       .
-        .byte   $12                             ; E435 12                       .
-        .byte   $12                             ; E436 12                       .
-        .byte   $12                             ; E437 12                       .
-        .byte   $12                             ; E438 12                       .
-        .byte   $12                             ; E439 12                       .
-        .byte   $12                             ; E43A 12                       .
+; entity type -> animation bank pair ($12/$13, $14/$15, $16/$17)
+anim_bank_tbl:
+        .byte   $12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12   ; E33B
+        .byte   $12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$16,$12   ; E34B
+        .byte   $12,$12,$16,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12   ; E35B
+        .byte   $12,$16,$16,$12,$12,$12,$16,$12,$12,$12,$12,$12,$12,$16,$12,$12   ; E36B
+        .byte   $12,$12,$16,$12,$12,$12,$12,$14,$12,$12,$12,$12,$12,$12,$12,$12   ; E37B
+        .byte   $12,$12,$12,$12,$12,$12,$12,$14,$16,$14,$12,$12,$12,$12,$14,$12   ; E38B
+        .byte   $12,$12,$14,$16,$14,$14,$12,$12,$12,$14,$14,$14,$14,$14,$14,$14   ; E39B
+        .byte   $12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12   ; E3AB
+        .byte   $14,$14,$14,$14,$14,$14,$14,$14,$14,$14,$14,$14,$12,$14,$14,$14   ; E3BB
+        .byte   $14,$14,$14,$14,$14,$14,$14,$14,$14,$14,$14,$14,$14,$14,$14,$14   ; E3CB
+        .byte   $14,$12,$12,$12,$12,$14,$14,$14,$14,$14,$12,$14,$14,$12,$12,$12   ; E3DB
+        .byte   $14,$12,$12,$14,$14,$14,$14,$14,$12,$14,$14,$14,$12,$14,$14,$12   ; E3EB
+        .byte   $12,$12,$12,$14,$12,$12,$12,$14,$16,$12,$12,$12,$12,$12,$12,$12   ; E3FB
+        .byte   $12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12   ; E40B
+        .byte   $12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12   ; E41B
+        .byte   $12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12   ; E42B
+ ; -----------------------------------------------------------------------------
+; DEBUG PAD-2 TASK — $E43B (orphaned in retail)
+; A leftover debug task: pad 2 DOWN toggles gravity_flip + player
+; h-flip; pad 2 A skips to the next stage (debug_stage_next rotate
+; table) and restarts the main game task. Unreachable in retail: no
+; spawn site exists and read_controllers zeroes pad 2 every frame.
+; -----------------------------------------------------------------------------
         ldx     #$6F                            ; E43B A2 6F                    .o
         txs                                     ; E43D 9A                       .
-LE43E:  lda     $15                             ; E43E A5 15                    ..
+debug_pad2_loop:  lda     $15                             ; E43E A5 15                    ..
         and     #$04                            ; E440 29 04                    ).
         beq     LE455                           ; E442 F0 11                    ..
         lda     $0528                           ; E444 AD 28 05                 .(.
@@ -5083,7 +4861,7 @@ LE455:  lda     $15                             ; E455 A5 15                    
         and     #$80                            ; E457 29 80                    ).
         beq     LE48A                           ; E459 F0 2F                    ./
         ldy     $26                             ; E45B A4 26                    .&
-        lda     LE496,y                         ; E45D B9 96 E4                 ...
+        lda     debug_stage_next,y                         ; E45D B9 96 E4                 ...
         sta     $26                             ; E460 85 26                    .&
         sta     $6C                             ; E462 85 6C                    .l
         lda     #$00                            ; E464 A9 00                    ..
@@ -5109,10 +4887,10 @@ LE48A:  lda     $15                             ; E48A A5 15                    
         and     #$01                            ; E48C 29 01                    ).
         beq     LE490                           ; E48E F0 00                    ..
 LE490:  jsr     frame_wait                      ; E490 20 22 FF                  ".
-        jmp     LE43E                           ; E493 4C 3E E4                 L>.
+        jmp     debug_pad2_loop                           ; E493 4C 3E E4                 L>.
 
 ; ----------------------------------------------------------------------------
-LE496:  ora     ($02,x)                         ; E496 01 02                    ..
+debug_stage_next:  ora     ($02,x)                         ; E496 01 02                    ..
         .byte   $03                             ; E498 03                       .
         .byte   $04                             ; E499 04                       .
         ora     $06                             ; E49A 05 06                    ..
