@@ -74,8 +74,10 @@ CHR-RAM streaming. All to be verified against MM5 code.*
 ```
 src/
   header.asm                  iNES header (Mapper 4 / MMC3, 256KB PRG + 256KB CHR)
-  bank00-bank1D.asm           swappable 8KB PRG banks (raw dumps, being classified)
-  fixed_bank.asm              fixed bank $1E/$1F ($C000-$FFFF)
+  bank00-bank1D.asm           swappable 8KB PRG banks — code banks as raw da65
+                              disassembly (annotation in progress), data banks
+                              ($0B, $0F-$16, $19, $1A) as .byte dumps
+  fixed_bank.asm              fixed bank $1E/$1F ($C000-$FFFF), da65 disassembly
   chr.asm                     CHR ROM (.incbin of chr/chr.bin, extracted from ROM)
 include/
   hardware.inc                NES hardware registers (PPU, APU, MMC3)
