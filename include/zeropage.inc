@@ -137,3 +137,8 @@ boss_chr_flag   := $74          ; nonzero: boss CHR setup path in render loop
 flicker_parity  := $9D          ; frame parity: entity iteration direction
 render_slot     := $9E          ; current slot in render loop
 oam_offset      := $9F          ; OAM build cursor (4 = skip sprite 0)
+
+; Player
+player_state    := $30          ; player state machine index (7 = death)
+gravity_flip    := $AF          ; nonzero: gravity inverted (Gravity Man stage)
+status_flags    := $17          ; joy2_held slot reused: bit 6 = water (suspected)

@@ -4338,6 +4338,10 @@ LDFB8:  lda     $EF                             ; DFB8 A5 EF                    
 LDFC2:  rts                                     ; DFC2 60                       `
 
 ; ----------------------------------------------------------------------------
+; Per-entity: offscreen/despawn policy (types $4A/$4B/$78/$AB/$BA are
+; exempt), player fall-death (state 7 + sound $1D; gravity_flip-aware),
+; then entity_render_visible: anim bank from anim_bank_tbl[type],
+; descriptor from $8600/$8700[sub_type] in that bank, OAM build.
 entity_render_one:  lda     $0528,x                         ; DFC3 BD 28 05                 .(.
         and     #$7F                            ; DFC6 29 7F                    ).
         sta     $0528,x                         ; DFC8 9D 28 05                 .(.
@@ -4361,7 +4365,7 @@ LDFE9:  cmp     #$30                            ; DFE9 C9 30                    
         beq     LDFF6                           ; DFF0 F0 04                    ..
         bpl     LE017                           ; DFF2 10 23                    .#
         bmi     LE00D                           ; DFF4 30 17                    0.
-LDFF6:  jmp     LE08F                           ; DFF6 4C 8F E0                 L..
+LDFF6:  jmp     entity_render_visible                           ; DFF6 4C 8F E0                 L..
 
 ; ----------------------------------------------------------------------------
 LDFF9:  lda     $0378,x                         ; DFF9 BD 78 03                 .x.
@@ -4377,9 +4381,9 @@ LE001:  beq     LE082                           ; E001 F0 7F                    
         bne     LE01F                           ; E00B D0 12                    ..
 LE00D:  lda     $12                             ; E00D A5 12                    ..
         cmp     #$80                            ; E00F C9 80                    ..
-        bcs     LE08F                           ; E011 B0 7C                    .|
+        bcs     entity_render_visible                           ; E011 B0 7C                    .|
         cpx     #$00                            ; E013 E0 00                    ..
-        beq     LE08F                           ; E015 F0 78                    .x
+        beq     entity_render_visible                           ; E015 F0 78                    .x
 LE017:  cpx     #$00                            ; E017 E0 00                    ..
         bne     LE057                           ; E019 D0 3C                    .<
         lda     $AF                             ; E01B A5 AF                    ..
@@ -4418,15 +4422,15 @@ LE051:  lda     #$F4                            ; E051 A9 F4                    
 ; ----------------------------------------------------------------------------
 LE057:  lda     $0300,x                         ; E057 BD 00 03                 ...
         cmp     #$4A                            ; E05A C9 4A                    .J
-        beq     LE08F                           ; E05C F0 31                    .1
+        beq     entity_render_visible                           ; E05C F0 31                    .1
         cmp     #$4B                            ; E05E C9 4B                    .K
-        beq     LE08F                           ; E060 F0 2D                    .-
+        beq     entity_render_visible                           ; E060 F0 2D                    .-
         cmp     #$78                            ; E062 C9 78                    .x
-        beq     LE08F                           ; E064 F0 29                    .)
+        beq     entity_render_visible                           ; E064 F0 29                    .)
         cmp     #$AB                            ; E066 C9 AB                    ..
-        beq     LE08F                           ; E068 F0 25                    .%
+        beq     entity_render_visible                           ; E068 F0 25                    .%
         cmp     #$BA                            ; E06A C9 BA                    ..
-        beq     LE08F                           ; E06C F0 21                    .!
+        beq     entity_render_visible                           ; E06C F0 21                    .!
 entity_deactivate:
         lda     #$00                            ; E06E A9 00                    ..
         sta     $05A0,x                         ; E070 9D A0 05                 ...
@@ -4442,12 +4446,12 @@ LE082:  lda     $0528,x                         ; E082 BD 28 05                 
         ora     #$80                            ; E085 09 80                    ..
         sta     $0528,x                         ; E087 9D 28 05                 .(.
         and     #$04                            ; E08A 29 04                    ).
-        beq     LE08F                           ; E08C F0 01                    ..
+        beq     entity_render_visible                           ; E08C F0 01                    ..
 LE08E:  rts                                     ; E08E 60                       `
 
 ; ----------------------------------------------------------------------------
-LE08F:  ldy     $0300,x                         ; E08F BC 00 03                 ...
-        lda     LE33B,y                         ; E092 B9 3B E3                 .;.
+entity_render_visible:  ldy     $0300,x                         ; E08F BC 00 03                 ...
+        lda     anim_bank_tbl,y                         ; E092 B9 3B E3                 .;.
         cmp     $F5                             ; E095 C5 F5                    ..
         beq     LE09C                           ; E097 F0 03                    ..
         jsr     bank_load_pair                  ; E099 20 3D FF                  =.
@@ -4814,7 +4818,7 @@ LE316:  .byte   $04                             ; E316 04                       
         inx                                     ; E337 E8                       .
         tay                                     ; E338 A8                       .
         and     ($F4,x)                         ; E339 21 F4                    !.
-LE33B:  .byte   $12                             ; E33B 12                       .
+anim_bank_tbl:  .byte   $12                             ; E33B 12                       .
         .byte   $12                             ; E33C 12                       .
         .byte   $12                             ; E33D 12                       .
         .byte   $12                             ; E33E 12                       .
