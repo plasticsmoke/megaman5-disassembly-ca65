@@ -150,3 +150,14 @@ redraw_busy     := $1B          ; stage_load full-redraw in progress
 
 ; Physics
 gravity         := $A1          ; gravity per frame ($40 default; cf. MM4 $99)
+
+; Player state machine (bank $1B)
+iframe_timer    := $33          ; invulnerability flash timer
+iframe_sub_ofs  := $34          ; sub_type offset restored when flash ends
+weapon_fired    := $37          ; cleared each frame by the state dispatcher
+hit_freeze      := $54          ; damage/weapon-get freeze counter
+
+; Spawn engine (bank $1B $988A)
+spawn_ahead     := $AD          ; spawn-list cursor ahead of camera
+spawn_behind    := $AE          ; spawn-list cursor behind camera
+scroll_dir_cur  := $AC          ; scroll direction latch (mirrors $28)

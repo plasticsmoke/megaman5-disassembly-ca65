@@ -63,9 +63,9 @@ L800C:  lda     $54                             ; 800C A5 54                    
 L8025:  ldx     #$00                            ; 8025 A2 00                    ..
         stx     $37                             ; 8027 86 37                    .7
         ldy     $30                             ; 8029 A4 30                    .0
-        lda     L8045,y                         ; 802B B9 45 80                 .E.
+        lda     player_state_lo,y                         ; 802B B9 45 80                 .E.
         sta     L0000                           ; 802E 85 00                    ..
-        lda     L8069,y                         ; 8030 B9 69 80                 .i.
+        lda     player_state_hi,y                         ; 8030 B9 69 80                 .i.
         sta     $01                             ; 8033 85 01                    ..
         jmp     (L0000)                         ; 8035 6C 00 00                 l..
 
@@ -78,56 +78,22 @@ L8038:  lda     #$00                            ; 8038 A9 00                    
 L8044:  rts                                     ; 8044 60                       `
 
 ; ----------------------------------------------------------------------------
-L8045:  sta     L9915                           ; 8045 8D 15 99                 ...
-        rti                                     ; 8048 40                       @
-
-; ----------------------------------------------------------------------------
-        .byte   $DF                             ; 8049 DF                       .
-        lsr     $095F,x                         ; 804A 5E 5F 09                 ^_.
-        and     $06D4,y                         ; 804D 39 D4 06                 9..
-        rol     L9695                           ; 8050 2E 95 96                 ...
-        .byte   $E3                             ; 8053 E3                       .
-        eor     $6407,y                         ; 8054 59 07 64                 Y.d
-        tya                                     ; 8057 98                       .
-        dex                                     ; 8058 CA                       .
-        .byte   $8B                             ; 8059 8B                       .
-        .byte   $F3                             ; 805A F3                       .
-        and     $E45E,y                         ; 805B 39 5E E4                 9^.
-        lsr     a                               ; 805E 4A                       J
-        .byte   $63                             ; 805F 63                       c
-        .byte   $63                             ; 8060 63                       c
-        .byte   $64                             ; 8061 64                       d
-        .byte   $03                             ; 8062 03                       .
-        eor     $7B04,y                         ; 8063 59 04 7B                 Y.{
-        inc     $D096                           ; 8066 EE 96 D0                 ...
-L8069:  .byte   $80                             ; 8069 80                       .
-        .byte   $82                             ; 806A 82                       .
-        .byte   $82                             ; 806B 82                       .
-        .byte   $83                             ; 806C 83                       .
-        .byte   $83                             ; 806D 83                       .
-        sty     $84                             ; 806E 84 84                    ..
-        sta     $85                             ; 8070 85 85                    ..
-        sta     $86                             ; 8072 85 86                    ..
-        stx     $86                             ; 8074 86 86                    ..
-        stx     $86                             ; 8076 86 86                    ..
-        .byte   $87                             ; 8078 87                       .
-        dey                                     ; 8079 88                       .
-        dey                                     ; 807A 88                       .
-        dey                                     ; 807B 88                       .
-        dey                                     ; 807C 88                       .
-        .byte   $89                             ; 807D 89                       .
-        .byte   $89                             ; 807E 89                       .
-        txa                                     ; 807F 8A                       .
-        txa                                     ; 8080 8A                       .
-        txa                                     ; 8081 8A                       .
-        .byte   $8B                             ; 8082 8B                       .
-        .byte   $8B                             ; 8083 8B                       .
-        .byte   $8B                             ; 8084 8B                       .
-        .byte   $8B                             ; 8085 8B                       .
-        sty     L8D8C                           ; 8086 8C 8C 8D                 ...
-        sta     L8E8D                           ; 8089 8D 8D 8E                 ...
-        stx     $1520                           ; 808C 8E 20 15                 . .
-        .byte   $82                             ; 808F 82                       .
+; =============================================================================
+; PLAYER STATE MACHINE — $1B:8000 (called once per gameplay frame)
+; $30 = state (36 handlers, dispatched via the tables below). $54 =
+; damage/weapon-get freeze (counts down, restores palette). $33/$34 =
+; i-frame flash timer + sub_type offset restored on expiry.
+; State $00 = idle/ground (below): runs the jump/fall handler ($8215)
+; for shared physics, then handles jump input via a gravity-flip-aware
+; direction mask ($9067,y with y = gravity_flip).
+; =============================================================================
+player_state_lo:
+        .byte   $8D,$15,$99,$40,$DF,$5E,$5F,$09,$39,$D4,$06,$2E,$95,$96,$E3,$59,$07,$64,$98,$CA,$8B,$F3,$39,$5E,$E4,$4A,$63,$63,$64,$03,$59,$04,$7B,$EE,$96,$D0   ; 8045
+player_state_hi:
+        .byte   $80,$82,$82,$83,$83,$84,$84,$85,$85,$85,$86,$86,$86,$86,$86,$87,$88,$88,$88,$88,$89,$89,$8A,$8A,$8A,$8B,$8B,$8B,$8B,$8C,$8C,$8D,$8D,$8D,$8E,$8E   ; 8069
+; --- state $00: idle / ground ------------------------------------------------
+player_st_ground:
+        jsr     player_st_air                   ; 808D 20 15 82  shared air physics
         bcc     L8044                           ; 8090 90 B2                    ..
         lda     $14                             ; 8092 A5 14                    ..
         and     #$80                            ; 8094 29 80                    ).
@@ -145,14 +111,14 @@ L80A4:  lda     $AF                             ; 80A4 A5 AF                    
         sta     $03D8                           ; 80AA 8D D8 03                 ...
         lda     #$05                            ; 80AD A9 05                    ..
         sta     $03F0                           ; 80AF 8D F0 03                 ...
-        jmp     L8215                           ; 80B2 4C 15 82                 L..
+        jmp     player_st_air                           ; 80B2 4C 15 82                 L..
 
 ; ----------------------------------------------------------------------------
 L80B5:  lda     #$00                            ; 80B5 A9 00                    ..
         sta     $03D8                           ; 80B7 8D D8 03                 ...
         lda     #$FB                            ; 80BA A9 FB                    ..
         sta     $03F0                           ; 80BC 8D F0 03                 ...
-        jmp     L8215                           ; 80BF 4C 15 82                 L..
+        jmp     player_st_air                           ; 80BF 4C 15 82                 L..
 
 ; ----------------------------------------------------------------------------
 L80C2:  lda     #$02                            ; 80C2 A9 02                    ..
@@ -321,7 +287,7 @@ L820E:  jsr     L906B                           ; 820E 20 6B 90                 
 L8214:  rts                                     ; 8214 60                       `
 
 ; ----------------------------------------------------------------------------
-L8215:  ldy     #$00                            ; 8215 A0 00                    ..
+player_st_air:  ldy     #$00                            ; 8215 A0 00                    ..
         jsr     entity_gravity_collide                           ; 8217 20 B7 E7                  ..
         jsr     L97DF                           ; 821A 20 DF 97                  ..
         jsr     L964C                           ; 821D 20 4C 96                  L.
@@ -3211,6 +3177,17 @@ L9878:  lda     $0330                           ; 9878 AD 30 03                 
 L9889:  rts                                     ; 9889 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; SPAWN ENGINE — $1B:988A (runs each frame with the stage bank at $A000)
+; Walks the stage's position-sorted spawn list as the camera moves:
+; $AD = ahead cursor, $AE = behind cursor (leftward re-entry), camera
+; edges from scroll_x/scroll_x_hi. Stage-bank tables: $AA00[i] screen,
+; $AA80[i] X px, $AB80[i] code. Codes >= $C0 are palette / CHR-anim
+; commands (palette-cycle program slots $05F0+, static palette rows
+; into PAL_BUF + backup, background CHR-anim program $05D0); < $C0
+; spawn an enemy (entry at $9995).
+; =============================================================================
+spawn_engine:
         clc                                     ; 988A 18                       .
         lda     $FC                             ; 988B A5 FC                    ..
         sta     $02                             ; 988D 85 02                    ..
@@ -3233,7 +3210,7 @@ L98A1:  ldy     $AE                             ; 98A1 A4 AE                    
         cmp     $02                             ; 98B1 C5 02                    ..
         bcc     L98BD                           ; 98B3 90 08                    ..
 L98B5:  dey                                     ; 98B5 88                       .
-        jsr     L990A                           ; 98B6 20 0A 99                  ..
+        jsr     spawn_entry                           ; 98B6 20 0A 99                  ..
         dec     $AE                             ; 98B9 C6 AE                    ..
         bne     L98A1                           ; 98BB D0 E4                    ..
 L98BD:  ldy     $AD                             ; 98BD A4 AD                    ..
@@ -3259,7 +3236,7 @@ L98D9:  ldy     $AD                             ; 98D9 A4 AD                    
         lda     $04                             ; 98E4 A5 04                    ..
         cmp     $AA80,y                         ; 98E6 D9 80 AA                 ...
         bcc     L98F2                           ; 98E9 90 07                    ..
-L98EB:  jsr     L990A                           ; 98EB 20 0A 99                  ..
+L98EB:  jsr     spawn_entry                           ; 98EB 20 0A 99                  ..
         inc     $AD                             ; 98EE E6 AD                    ..
         bne     L98D9                           ; 98F0 D0 E7                    ..
 L98F2:  ldy     $AE                             ; 98F2 A4 AE                    ..
@@ -3276,7 +3253,7 @@ L9907:  sty     $AE                             ; 9907 84 AE                    
 L9909:  rts                                     ; 9909 60                       `
 
 ; ----------------------------------------------------------------------------
-L990A:  sty     $06                             ; 990A 84 06                    ..
+spawn_entry:  sty     $06                             ; 990A 84 06                    ..
         lda     $AB80,y                         ; 990C B9 80 AB                 ...
         cmp     #$C0                            ; 990F C9 C0                    ..
         bcs     L9916                           ; 9911 B0 03                    ..
@@ -3285,11 +3262,11 @@ L990A:  sty     $06                             ; 990A 84 06                    
 L9915:  .byte   $99                             ; 9915 99                       .
 L9916:  and     #$3F                            ; 9916 29 3F                    )?
         tay                                     ; 9918 A8                       .
-        ldx     L9DB2,y                         ; 9919 BE B2 9D                 ...
+        ldx     spawn_cmd_slot,y                         ; 9919 BE B2 9D                 ...
         bmi     L9933                           ; 991C 30 15                    0.
         cpx     #$10                            ; 991E E0 10                    ..
         bcs     L9985                           ; 9920 B0 63                    .c
-        lda     L9DE2,y                         ; 9922 B9 E2 9D                 ...
+        lda     spawn_cmd_prog,y                         ; 9922 B9 E2 9D                 ...
         bpl     L993F                           ; 9925 10 18                    ..
         sta     $05F0,x                         ; 9927 9D F0 05                 ...
         lda     #$00                            ; 992A A9 00                    ..
@@ -4141,7 +4118,7 @@ L9DAA:  ora     (L0000,x)                       ; 9DAA 01 00                    
         ora     (L0000,x)                       ; 9DAE 01 00                    ..
         .byte   $04                             ; 9DB0 04                       .
         .byte   $03                             ; 9DB1 03                       .
-L9DB2:  .byte   $82                             ; 9DB2 82                       .
+spawn_cmd_slot:  .byte   $82                             ; 9DB2 82                       .
         .byte   $83                             ; 9DB3 83                       .
         .byte   $12                             ; 9DB4 12                       .
         .byte   $14                             ; 9DB5 14                       .
@@ -4185,7 +4162,7 @@ L9DB2:  .byte   $82                             ; 9DB2 82                       
         .byte   $04                             ; 9DDF 04                       .
         brk                                     ; 9DE0 00                       .
         .byte   $10                             ; 9DE1 10                       .
-L9DE2:  brk                                     ; 9DE2 00                       .
+spawn_cmd_prog:  brk                                     ; 9DE2 00                       .
         brk                                     ; 9DE3 00                       .
         brk                                     ; 9DE4 00                       .
         brk                                     ; 9DE5 00                       .
