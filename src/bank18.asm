@@ -34,6 +34,16 @@ L716B           := $716B
 L716E           := $716E
 L7273           := $7273
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; SOUND DRIVER — bank $18 at $8000 (data in bank $19 at $A000)
+; Called via the fixed bank's sound queue pump with both banks mapped:
+;   $8000 -> snd_update  (per-frame driver tick)
+;   $8003 -> snd_play    (A = sound id)
+; IDs >= $F0 are control operations (snd_control: stop/pause/fade
+; family); ids wrap modulo snd_song_count. Song directory at
+; snd_song_dir (2 bytes/entry); SFX carry a priority byte compared
+; against the active priority ($CE) for channel preemption.
+; =============================================================================
 L8000:  .byte   $4C                             ; 8000 4C                       L
 L8001:  jmp     ($4C80)                         ; 8001 6C 80 4C                 l.L
 
@@ -106,7 +116,7 @@ L8047:  sec                                     ; 8047 38                       
         rts                                     ; 806B 60                       `
 
 ; ----------------------------------------------------------------------------
-L806C:  lda     $C0                             ; 806C A5 C0                    ..
+snd_update:  lda     $C0                             ; 806C A5 C0                    ..
         lsr     a                               ; 806E 4A                       J
         bcs     L80D7                           ; 806F B0 66                    .f
         lda     $D0                             ; 8071 A5 D0                    ..
@@ -196,7 +206,7 @@ L80EC:  pha                                     ; 80EC 48                       
         rts                                     ; 80FD 60                       `
 
 ; ----------------------------------------------------------------------------
-L80FE:  inc     $C0                             ; 80FE E6 C0                    ..
+snd_play:  inc     $C0                             ; 80FE E6 C0                    ..
         jsr     L8106                           ; 8100 20 06 81                  ..
         dec     $C0                             ; 8103 C6 C0                    ..
         rts                                     ; 8105 60                       `
@@ -204,21 +214,21 @@ L80FE:  inc     $C0                             ; 80FE E6 C0                    
 ; ----------------------------------------------------------------------------
 L8106:  cmp     #$F0                            ; 8106 C9 F0                    ..
         bcc     L810D                           ; 8108 90 03                    ..
-        jmp     L81AE                           ; 810A 4C AE 81                 L..
+        jmp     snd_control                           ; 810A 4C AE 81                 L..
 
 ; ----------------------------------------------------------------------------
-L810D:  cmp     L8A40                           ; 810D CD 40 8A                 .@.
+L810D:  cmp     snd_song_count                           ; 810D CD 40 8A                 .@.
         bcc     L8118                           ; 8110 90 06                    ..
         sec                                     ; 8112 38                       8
-        sbc     L8A40                           ; 8113 ED 40 8A                 .@.
+        sbc     snd_song_count                           ; 8113 ED 40 8A                 .@.
         bcs     L810D                           ; 8116 B0 F5                    ..
 L8118:  asl     a                               ; 8118 0A                       .
         tax                                     ; 8119 AA                       .
-        ldy     L8A44,x                         ; 811A BC 44 8A                 .D.
+        ldy     snd_song_dir1,x                         ; 811A BC 44 8A                 .D.
         tya                                     ; 811D 98                       .
-        ora     L8A43,x                         ; 811E 1D 43 8A                 .C.
+        ora     snd_song_dir,x                         ; 811E 1D 43 8A                 .C.
         beq     L816E                           ; 8121 F0 4B                    .K
-        lda     L8A43,x                         ; 8123 BD 43 8A                 .C.
+        lda     snd_song_dir,x                         ; 8123 BD 43 8A                 .C.
         jsr     L803A                           ; 8126 20 3A 80                  :.
         tay                                     ; 8129 A8                       .
         beq     L816F                           ; 812A F0 43                    .C
@@ -291,7 +301,7 @@ L819F:  ldy     L00C1                           ; 819F A4 C1                    
         dex                                     ; 81A9 CA                       .
         bpl     L8189                           ; 81AA 10 DD                    ..
         bmi     L81F1                           ; 81AC 30 43                    0C
-L81AE:  sty     $C3                             ; 81AE 84 C3                    ..
+snd_control:  sty     $C3                             ; 81AE 84 C3                    ..
         and     #$07                            ; 81B0 29 07                    ).
         jsr     L8023                           ; 81B2 20 23 80                  #.
         cmp     $81                             ; 81B5 C5 81                    ..
@@ -1559,11 +1569,11 @@ L8A35:  brk                                     ; 8A35 00                       
         brk                                     ; 8A3D 00                       .
         brk                                     ; 8A3E 00                       .
         brk                                     ; 8A3F 00                       .
-L8A40:  .byte   $4C                             ; 8A40 4C                       L
+snd_song_count:  .byte   $4C                             ; 8A40 4C                       L
 L8A41:  txa                                     ; 8A41 8A                       .
 L8A42:  .byte   $DB                             ; 8A42 DB                       .
-L8A43:  .byte   $8D                             ; 8A43 8D                       .
-L8A44:  .byte   $13                             ; 8A44 13                       .
+snd_song_dir:  .byte   $8D                             ; 8A43 8D                       .
+snd_song_dir1:  .byte   $13                             ; 8A44 13                       .
         .byte   $93                             ; 8A45 93                       .
         .byte   $02                             ; 8A46 02                       .
         .byte   $97                             ; 8A47 97                       .
