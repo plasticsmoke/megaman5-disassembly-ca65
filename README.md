@@ -44,11 +44,20 @@ MM5 returns to CHR-ROM with MMC3 CHR banking (as in MM3):
 
 | banks | contents |
 |---|---|
-| `$00-$1D` | *to be classified* (stage data, entity AI, animation data, sound engine, game engine code) |
-| `$1E/$1F` | fixed bank at `$C000-$FFFF` (NMI/IRQ/RESET, core engine) |
+| `$00-$0D` | stage data + stage/entity code (stage bank selected via zp `$26` → `$A000` window) |
+| `$0E-$11` | code + screen/data banks (menus, cutscene screens — being classified) |
+| `$12/$13` | animation data pair (descriptors at `$8000` + records at `$A000`) |
+| `$14/$15` | animation data pair (probable — same paired-pointer structure) |
+| `$16` | data (being classified) |
+| `$17` | title / menus / stage select + stage→bank directory |
+| `$18/$19` | sound engine (`$8000` update / `$8003` play) + sound data |
+| `$1A` | data incl. text (being classified) |
+| `$1B-$1D` | game engine code (entity AI, player, weapons — being classified) |
+| `$1E/$1F` | fixed bank at `$C000-$FFFF` (NMI/IRQ/RESET, scheduler, core engine) |
 | CHR `$00-$1F` | 32 x 8KB CHR-ROM banks (tiles, banked via MMC3 R0-R5) |
 
-*(Bank map to be filled in as classification proceeds.)*
+*(Provisional — classification in progress; per-bank contents firm up
+as annotation proceeds.)*
 
 ## Engine architecture
 
