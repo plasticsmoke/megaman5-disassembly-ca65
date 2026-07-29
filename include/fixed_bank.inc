@@ -58,7 +58,7 @@ entity_set_dir_velocity := $F470 ; dir byte + 8-dir velocity from sine tables
 ; --- Frame helpers ---
 render_frame_banksafe := $F34A ; oam_clear + entity_render_all, banks saved
 render_tick_frame   := $F363  ; render + frame_wait (quick NMI)
-call_bank00_frame   := $F32D  ; run bank \$00's per-frame service
+call_bank00_frame   := $F32D  ; run bank $00's per-frame service
 
 ; --- Player / stage state ---
 player_palette_load := $F3BF  ; load player palette rows into PAL_BUF
