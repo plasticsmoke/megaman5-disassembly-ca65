@@ -17,60 +17,37 @@ LA001           := $A001
 LA021           := $A021
 LA54D           := $A54D
 LA56C           := $A56C
-LC4A1           := $C4A1
 LE747           := $E747
-LE780           := $E780
 LE7A8           := $E7A8
-LE7B7           := $E7B7
-LE92A           := $E92A
-LE94A           := $E94A
-LE968           := $E968
 LE999           := $E999
-LE9E1           := $E9E1
-LEA1E           := $EA1E
 LEA29           := $EA29
 LEA34           := $EA34
-LEA3F           := $EA3F
-LEA52           := $EA52
-LEA65           := $EA65
-LEA86           := $EA86
-LEA98           := $EA98
-LEAA4           := $EAA4
-LEAE9           := $EAE9
-LEAF5           := $EAF5
-LEC16           := $EC16
-LEC30           := $EC30
-LEC4A           := $EC4A
-LEC5B           := $EC5B
-LEC5D           := $EC5D
-LEC76           := $EC76
-LEC94           := $EC94
-LECC2           := $ECC2
-LEF87           := $EF87
-LEFF8           := $EFF8
-LF16F           := $F16F
-LF22D           := $F22D
-LF2C4           := $F2C4
-LF2FE           := $F2FE
-LF3BF           := $F3BF
-LF470           := $F470
-LFF43           := $FF43
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR ENGINE — $1C:8000 (called once per frame by the player task)
+; For each active entity slot 1-$17 ($A6 = current): if bhv_pc_hi bit 7
+; is clear, seed the behavior PC from bhv_pc_lo/hi_tbl[type]; map the
+; type's AI bank (bhv_bank_tbl[type] -> $A000: bank $1D generic, or the
+; entity's own stage bank), push $805A and jmp (bhv PC) — behaviors run
+; as coroutines and rts back here. Types with $8xxx/$9xxx PCs execute
+; within this bank itself.
+; =============================================================================
+bhv_run_all:
         ldx     #$01                            ; 8000 A2 01                    ..
         stx     $A6                             ; 8002 86 A6                    ..
 L8004:  ldy     $0300,x                         ; 8004 BC 00 03                 ...
         beq     L8039                           ; 8007 F0 30                    .0
         lda     $05A0,x                         ; 8009 BD A0 05                 ...
         bmi     L801A                           ; 800C 30 0C                    0.
-        lda     L88C3,y                         ; 800E B9 C3 88                 ...
+        lda     bhv_pc_lo_tbl,y                         ; 800E B9 C3 88                 ...
         sta     $0588,x                         ; 8011 9D 88 05                 ...
-        lda     L8993,y                         ; 8014 B9 93 89                 ...
+        lda     bhv_pc_hi_tbl,y                         ; 8014 B9 93 89                 ...
         sta     $05A0,x                         ; 8017 9D A0 05                 ...
-L801A:  lda     L86C3,y                         ; 801A B9 C3 86                 ...
+L801A:  lda     bhv_bank_tbl,y                         ; 801A B9 C3 86                 ...
         cmp     $F6                             ; 801D C5 F6                    ..
         beq     L8026                           ; 801F F0 05                    ..
         sta     $F6                             ; 8021 85 F6                    ..
-        jsr     LFF43                           ; 8023 20 43 FF                  C.
+        jsr     bank_load_shadow                           ; 8023 20 43 FF                  C.
 L8026:  lda     $0588,x                         ; 8026 BD 88 05                 ...
         sta     L0000                           ; 8029 85 00                    ..
         lda     $05A0,x                         ; 802B BD A0 05                 ...
@@ -110,10 +87,10 @@ L8056:  lda     #$00                            ; 8056 A9 00                    
         lda     $0558                           ; 8065 AD 58 05                 .X.
         cmp     #$B0                            ; 8068 C9 B0                    ..
         bne     L8073                           ; 806A D0 07                    ..
-        jsr     LEF87                           ; 806C 20 87 EF                  ..
+        jsr     entity_player_collide                           ; 806C 20 87 EF                  ..
         bcs     L8082                           ; 806F B0 11                    ..
         bcc     L8078                           ; 8071 90 05                    ..
-L8073:  jsr     LEFF8                           ; 8073 20 F8 EF                  ..
+L8073:  jsr     entity_hitbox_check                           ; 8073 20 F8 EF                  ..
         bcs     L8082                           ; 8076 B0 0A                    ..
 L8078:  lda     $0408,x                         ; 8078 BD 08 04                 ...
         and     #$40                            ; 807B 29 40                    )@
@@ -126,7 +103,7 @@ L8082:  lda     $0408,x                         ; 8082 BD 08 04                 
         lda     $30                             ; 808C A5 30                    .0
         cmp     #$06                            ; 808E C9 06                    ..
         bcs     L809A                           ; 8090 B0 08                    ..
-        jsr     LEF87                           ; 8092 20 87 EF                  ..
+        jsr     entity_player_collide                           ; 8092 20 87 EF                  ..
         bcs     L809A                           ; 8095 B0 03                    ..
         jsr     L82C3                           ; 8097 20 C3 82                  ..
 L809A:  jmp     L8039                           ; 809A 4C 39 80                 L9.
@@ -143,7 +120,7 @@ L809D:  lda     $F6                             ; 809D A5 F6                    
         beq     L80B2                           ; 80AC F0 04                    ..
         lda     #$00                            ; 80AE A9 00                    ..
         sta     $F6                             ; 80B0 85 F6                    ..
-L80B2:  jsr     LFF43                           ; 80B2 20 43 FF                  C.
+L80B2:  jsr     bank_load_shadow                           ; 80B2 20 43 FF                  C.
         lda     $32                             ; 80B5 A5 32                    .2
         cmp     #$01                            ; 80B7 C9 01                    ..
         beq     L80BF                           ; 80B9 F0 04                    ..
@@ -152,13 +129,13 @@ L80B2:  jsr     LFF43                           ; 80B2 20 43 FF                 
 L80BF:  ldy     $0300,x                         ; 80BF BC 00 03                 ...
         lda     $A800,y                         ; 80C2 B9 00 A8                 ...
         bpl     L80DB                           ; 80C5 10 14                    ..
-        jsr     LF2C4                           ; 80C7 20 C4 F2                  ..
+        jsr     entity_wipe_x                           ; 80C7 20 C4 F2                  ..
         lda     $32                             ; 80CA A5 32                    .2
         cmp     #$09                            ; 80CC C9 09                    ..
         bne     L80D8                           ; 80CE D0 08                    ..
         jsr     L8244                           ; 80D0 20 44 82                  D.
         ldy     $10                             ; 80D3 A4 10                    ..
-        jsr     LF2FE                           ; 80D5 20 FE F2                  ..
+        jsr     entity_wipe_y                           ; 80D5 20 FE F2                  ..
 L80D8:  jmp     L8225                           ; 80D8 4C 25 82                 L%.
 
 ; ----------------------------------------------------------------------------
@@ -201,8 +178,8 @@ L8113:  ldy     $10                             ; 8113 A4 10                    
         cmp     #$79                            ; 812A C9 79                    .y
         beq     L8167                           ; 812C F0 39                    .9
         lda     #$1E                            ; 812E A9 1E                    ..
-        jsr     LEC5D                           ; 8130 20 5D EC                  ].
-        jsr     LF2FE                           ; 8133 20 FE F2                  ..
+        jsr     queue_sound                           ; 8130 20 5D EC                  ].
+        jsr     entity_wipe_y                           ; 8133 20 FE F2                  ..
         lda     #$46                            ; 8136 A9 46                    .F
         sta     $0300,y                         ; 8138 99 00 03                 ...
         lda     $0420,y                         ; 813B B9 20 04                 . .
@@ -219,7 +196,7 @@ L8113:  ldy     $10                             ; 8113 A4 10                    
         cmp     #$A9                            ; 8158 C9 A9                    ..
         bne     L8161                           ; 815A D0 05                    ..
         lda     #$A8                            ; 815C A9 A8                    ..
-        jsr     LEAE9                           ; 815E 20 E9 EA                  ..
+        jsr     entity_init_subtype_y                           ; 815E 20 E9 EA                  ..
 L8161:  jmp     L8225                           ; 8161 4C 25 82                 L%.
 
 ; ----------------------------------------------------------------------------
@@ -255,7 +232,7 @@ L8181:  bne     L81E0                           ; 8181 D0 5D                    
         ora     #$30                            ; 819A 09 30                    .0
         sta     $05B8,x                         ; 819C 9D B8 05                 ...
 L819F:  lda     #$2A                            ; 819F A9 2A                    .*
-        jsr     LEC5D                           ; 81A1 20 5D EC                  ].
+        jsr     queue_sound                           ; 81A1 20 5D EC                  ].
         lda     $0450,x                         ; 81A4 BD 50 04                 .P.
         sta     $12                             ; 81A7 85 12                    ..
         sec                                     ; 81A9 38                       8
@@ -273,14 +250,14 @@ L81B3:  lda     #$00                            ; 81B3 A9 00                    
         jmp     L8257                           ; 81C3 4C 57 82                 LW.
 
 ; ----------------------------------------------------------------------------
-L81C6:  jsr     LF2C4                           ; 81C6 20 C4 F2                  ..
+L81C6:  jsr     entity_wipe_x                           ; 81C6 20 C4 F2                  ..
         lda     #$2B                            ; 81C9 A9 2B                    .+
-        jsr     LEC5D                           ; 81CB 20 5D EC                  ].
+        jsr     queue_sound                           ; 81CB 20 5D EC                  ].
         lda     #$B8                            ; 81CE A9 B8                    ..
         sta     $0300,x                         ; 81D0 9D 00 03                 ...
         lda     #$42                            ; 81D3 A9 42                    .B
-        jsr     LEA98                           ; 81D5 20 98 EA                  ..
-        jsr     LEA1E                           ; 81D8 20 1E EA                  ..
+        jsr     entity_set_subtype                           ; 81D5 20 98 EA                  ..
+        jsr     entity_stop_y                           ; 81D8 20 1E EA                  ..
         lda     #$00                            ; 81DB A9 00                    ..
         sta     $0528,x                         ; 81DD 9D 28 05                 .(.
 L81E0:  ldy     $10                             ; 81E0 A4 10                    ..
@@ -300,14 +277,14 @@ L81E0:  ldy     $10                             ; 81E0 A4 10                    
         bcc     L8225                           ; 81FD 90 26                    .&
 L81FF:  lda     $0300,y                         ; 81FF B9 00 03                 ...
         pha                                     ; 8202 48                       H
-        jsr     LF2FE                           ; 8203 20 FE F2                  ..
+        jsr     entity_wipe_y                           ; 8203 20 FE F2                  ..
         pla                                     ; 8206 68                       h
         cmp     #$72                            ; 8207 C9 72                    .r
         bne     L8215                           ; 8209 D0 0A                    ..
         lda     #$C2                            ; 820B A9 C2                    ..
         sta     $0300,y                         ; 820D 99 00 03                 ...
         lda     #$42                            ; 8210 A9 42                    .B
-        jsr     LEAE9                           ; 8212 20 E9 EA                  ..
+        jsr     entity_init_subtype_y                           ; 8212 20 E9 EA                  ..
 L8215:  jmp     L8225                           ; 8215 4C 25 82                 L%.
 
 ; ----------------------------------------------------------------------------
@@ -318,14 +295,14 @@ L821B:  lda     #$C8                            ; 821B A9 C8                    
         sta     $05A0,y                         ; 8222 99 A0 05                 ...
 L8225:  pla                                     ; 8225 68                       h
         sta     $F6                             ; 8226 85 F6                    ..
-        jsr     LFF43                           ; 8228 20 43 FF                  C.
+        jsr     bank_load_shadow                           ; 8228 20 43 FF                  C.
         rts                                     ; 822B 60                       `
 
 ; ----------------------------------------------------------------------------
 L822C:  pha                                     ; 822C 48                       H
         lda     $0450,x                         ; 822D BD 50 04                 .P.
         pha                                     ; 8230 48                       H
-        jsr     LF2C4                           ; 8231 20 C4 F2                  ..
+        jsr     entity_wipe_x                           ; 8231 20 C4 F2                  ..
         pla                                     ; 8234 68                       h
         sta     $0450,x                         ; 8235 9D 50 04                 .P.
         pla                                     ; 8238 68                       h
@@ -351,7 +328,7 @@ L8257:  lda     $0300,x                         ; 8257 BD 00 03                 
         pha                                     ; 825A 48                       H
         lda     $0438,x                         ; 825B BD 38 04                 .8.
         pha                                     ; 825E 48                       H
-        jsr     LF2C4                           ; 825F 20 C4 F2                  ..
+        jsr     entity_wipe_x                           ; 825F 20 C4 F2                  ..
         pla                                     ; 8262 68                       h
         sta     $0438,x                         ; 8263 9D 38 04                 .8.
         pla                                     ; 8266 68                       h
@@ -359,7 +336,7 @@ L8257:  lda     $0300,x                         ; 8257 BD 00 03                 
         lda     #$14                            ; 8268 A9 14                    ..
         sta     $0468,x                         ; 826A 9D 68 04                 .h.
         lda     #$00                            ; 826D A9 00                    ..
-        sta     LEA1E,x                         ; 826F 9D 1E EA                 ...
+        sta     entity_stop_y,x                         ; 826F 9D 1E EA                 ...
         sta     $03F0,x                         ; 8272 9D F0 03                 ...
         sta     $0408,x                         ; 8275 9D 08 04                 ...
         lda     $E33B,y                         ; 8278 B9 3B E3                 .;.
@@ -440,32 +417,32 @@ L82F1:  sty     $0498                           ; 82F1 8C 98 04                 
         cpy     #$04                            ; 8307 C0 04                    ..
         bne     L830D                           ; 8309 D0 02                    ..
         lda     #$21                            ; 830B A9 21                    .!
-L830D:  jsr     LEA98                           ; 830D 20 98 EA                  ..
-        jsr     LEA1E                           ; 8310 20 1E EA                  ..
-        jsr     LF3BF                           ; 8313 20 BF F3                  ..
+L830D:  jsr     entity_set_subtype                           ; 830D 20 98 EA                  ..
+        jsr     entity_stop_y                           ; 8310 20 1E EA                  ..
+        jsr     player_palette_load                           ; 8313 20 BF F3                  ..
         lda     $0305                           ; 8316 AD 05 03                 ...
         bne     L832A                           ; 8319 D0 0F                    ..
         lda     #$12                            ; 831B A9 12                    ..
         ldy     #$05                            ; 831D A0 05                    ..
-        jsr     LEAA4                           ; 831F 20 A4 EA                  ..
+        jsr     entity_init_pos                           ; 831F 20 A4 EA                  ..
         stx     $040D                           ; 8322 8E 0D 04                 ...
         lda     #$01                            ; 8325 A9 01                    ..
         sta     $0305                           ; 8327 8D 05 03                 ...
 L832A:  ldx     $A6                             ; 832A A6 A6                    ..
         lda     #$1C                            ; 832C A9 1C                    ..
-        jsr     LEC5D                           ; 832E 20 5D EC                  ].
+        jsr     queue_sound                           ; 832E 20 5D EC                  ].
 L8331:  rts                                     ; 8331 60                       `
 
 ; ----------------------------------------------------------------------------
 L8332:  lda     #$F0                            ; 8332 A9 F0                    ..
-        jsr     LEC5B                           ; 8334 20 5B EC                  [.
+        jsr     queue_sound_param                           ; 8334 20 5B EC                  [.
         lda     #$1D                            ; 8337 A9 1D                    ..
-        jsr     LEC5D                           ; 8339 20 5D EC                  ].
+        jsr     queue_sound                           ; 8339 20 5D EC                  ].
         lda     #$80                            ; 833C A9 80                    ..
         sta     $B0                             ; 833E 85 B0                    ..
         lda     #$00                            ; 8340 A9 00                    ..
         sta     $54                             ; 8342 85 54                    .T
-        jsr     LF3BF                           ; 8344 20 BF F3                  ..
+        jsr     player_palette_load                           ; 8344 20 BF F3                  ..
         lda     $0528                           ; 8347 AD 28 05                 .(.
         and     #$DF                            ; 834A 29 DF                    ).
         ora     #$04                            ; 834C 09 04                    ..
@@ -487,7 +464,7 @@ L8365:  lda     $0300,y                         ; 8365 B9 00 03                 
         beq     L83B9                           ; 836F F0 48                    .H
 L8371:  ldx     #$00                            ; 8371 A2 00                    ..
         lda     #$19                            ; 8373 A9 19                    ..
-        jsr     LEAA4                           ; 8375 20 A4 EA                  ..
+        jsr     entity_init_pos                           ; 8375 20 A4 EA                  ..
         lda     #$80                            ; 8378 A9 80                    ..
         sta     $0528,y                         ; 837A 99 28 05                 .(.
         lda     #$03                            ; 837D A9 03                    ..
@@ -568,13 +545,13 @@ L83FC:  lda     $0558                           ; 83FC AD 58 05                 
         pha                                     ; 8405 48                       H
         lda     $32                             ; 8406 A5 32                    .2
         sta     $F6                             ; 8408 85 F6                    ..
-        jsr     LFF43                           ; 840A 20 43 FF                  C.
+        jsr     bank_load_shadow                           ; 840A 20 43 FF                  C.
         ldy     $0300,x                         ; 840D BC 00 03                 ...
         lda     $A800,y                         ; 8410 B9 00 A8                 ...
         sta     $10                             ; 8413 85 10                    ..
         pla                                     ; 8415 68                       h
         sta     $F6                             ; 8416 85 F6                    ..
-        jsr     LFF43                           ; 8418 20 43 FF                  C.
+        jsr     bank_load_shadow                           ; 8418 20 43 FF                  C.
         lda     $10                             ; 841B A5 10                    ..
         and     #$80                            ; 841D 29 80                    ).
 L841F:  rts                                     ; 841F 60                       `
@@ -637,7 +614,7 @@ L8489:  lda     $9D                             ; 8489 A5 9D                    
         and     #$03                            ; 848B 29 03                    ).
         bne     L84A4                           ; 848D D0 15                    ..
         lda     #$26                            ; 848F A9 26                    .&
-        jsr     LEC5D                           ; 8491 20 5D EC                  ].
+        jsr     queue_sound                           ; 8491 20 5D EC                  ].
         inc     $0450,x                         ; 8494 FE 50 04                 .P.
         lda     $0450,x                         ; 8497 BD 50 04                 .P.
         cmp     #$1C                            ; 849A C9 1C                    ..
@@ -662,18 +639,18 @@ L84A4:  sec                                     ; 84A4 38                       
         cpy     #$AA                            ; 84B4 C0 AA                    ..
         bne     L84BA                           ; 84B6 D0 02                    ..
         lda     #$16                            ; 84B8 A9 16                    ..
-L84BA:  jsr     LEC5B                           ; 84BA 20 5B EC                  [.
+L84BA:  jsr     queue_sound_param                           ; 84BA 20 5B EC                  [.
         clc                                     ; 84BD 18                       .
 L84BE:  rts                                     ; 84BE 60                       `
 
 ; ----------------------------------------------------------------------------
         lda     #$F0                            ; 84BF A9 F0                    ..
-        jsr     LEC5B                           ; 84C1 20 5B EC                  [.
+        jsr     queue_sound_param                           ; 84C1 20 5B EC                  [.
         stx     L0000                           ; 84C4 86 00                    ..
         ldy     #$17                            ; 84C6 A0 17                    ..
 L84C8:  cpy     L0000                           ; 84C8 C4 00                    ..
         beq     L84CF                           ; 84CA F0 03                    ..
-        jsr     LF2FE                           ; 84CC 20 FE F2                  ..
+        jsr     entity_wipe_y                           ; 84CC 20 FE F2                  ..
 L84CF:  dey                                     ; 84CF 88                       .
         cpy     #$07                            ; 84D0 C0 07                    ..
         bne     L84C8                           ; 84D2 D0 F4                    ..
@@ -702,8 +679,8 @@ L84CF:  dey                                     ; 84CF 88                       
 ; ----------------------------------------------------------------------------
 L84FC:  lda     $0528,x                         ; 84FC BD 28 05                 .(.
         pha                                     ; 84FF 48                       H
-        jsr     LEA65                           ; 8500 20 65 EA                  e.
-        jsr     LEA86                           ; 8503 20 86 EA                  ..
+        jsr     entity_facing_dispatch                           ; 8500 20 65 EA                  e.
+        jsr     entity_vert_dispatch_raw                           ; 8503 20 86 EA                  ..
         pla                                     ; 8506 68                       h
         sta     $0528,x                         ; 8507 9D 28 05                 .(.
         rts                                     ; 850A 60                       `
@@ -711,8 +688,8 @@ L84FC:  lda     $0528,x                         ; 84FC BD 28 05                 
 ; ----------------------------------------------------------------------------
 L850B:  lda     $0420,x                         ; 850B BD 20 04                 . .
         pha                                     ; 850E 48                       H
-        jsr     LEC16                           ; 850F 20 16 EC                  ..
-        jsr     LEC30                           ; 8512 20 30 EC                  0.
+        jsr     entity_set_facing                           ; 850F 20 16 EC                  ..
+        jsr     entity_facing_to_flags                           ; 8512 20 30 EC                  0.
         pla                                     ; 8515 68                       h
         sta     $0420,x                         ; 8516 9D 20 04                 . .
         rts                                     ; 8519 60                       `
@@ -720,7 +697,7 @@ L850B:  lda     $0420,x                         ; 850B BD 20 04                 
 ; ----------------------------------------------------------------------------
 L851A:  lda     $0528,x                         ; 851A BD 28 05                 .(.
         pha                                     ; 851D 48                       H
-        jsr     LEA3F                           ; 851E 20 3F EA                  ?.
+        jsr     entity_horiz_dispatch                           ; 851E 20 3F EA                  ?.
         pla                                     ; 8521 68                       h
         sta     $0528,x                         ; 8522 9D 28 05                 .(.
         rts                                     ; 8525 60                       `
@@ -746,13 +723,13 @@ L8538:  lda     $0420,x                         ; 8538 BD 20 04                 
 ; ----------------------------------------------------------------------------
         lda     $0528,x                         ; 8541 BD 28 05                 .(.
         pha                                     ; 8544 48                       H
-        jsr     LEA65                           ; 8545 20 65 EA                  e.
+        jsr     entity_facing_dispatch                           ; 8545 20 65 EA                  e.
         pla                                     ; 8548 68                       h
         sta     $0528,x                         ; 8549 9D 28 05                 .(.
         rts                                     ; 854C 60                       `
 
 ; ----------------------------------------------------------------------------
-L854D:  jsr     LEC94                           ; 854D 20 94 EC                  ..
+L854D:  jsr     entity_x_dist_px                           ; 854D 20 94 EC                  ..
         pha                                     ; 8550 48                       H
         lda     L857E,y                         ; 8551 B9 7E 85                 .~.
         sta     $03D8,x                         ; 8554 9D D8 03                 ...
@@ -802,7 +779,7 @@ L858A:  .byte   $03                             ; 858A 03                       
         lda     #$00                            ; 85A3 A9 00                    ..
         sta     L0000                           ; 85A5 85 00                    ..
         sta     $02                             ; 85A7 85 02                    ..
-        jsr     LF22D                           ; 85A9 20 2D F2                  -.
+        jsr     div16                           ; 85A9 20 2D F2                  -.
         lda     $04                             ; 85AC A5 04                    ..
         sta     $03A8,x                         ; 85AE 9D A8 03                 ...
         lda     $05                             ; 85B1 A5 05                    ..
@@ -1035,7 +1012,7 @@ L85C3:  brk                                     ; 85C3 00                       
         brk                                     ; 86C0 00                       .
         brk                                     ; 86C1 00                       .
         brk                                     ; 86C2 00                       .
-L86C3:  ora     $1D1D,x                         ; 86C3 1D 1D 1D                 ...
+bhv_bank_tbl:  ora     $1D1D,x                         ; 86C3 1D 1D 1D                 ...
         ora     $0A0A,x                         ; 86C6 1D 0A 0A                 ...
         ora     $05                             ; 86C9 05 05                    ..
         ora     $05                             ; 86CB 05 05                    ..
@@ -1386,7 +1363,7 @@ L87C3:  brk                                     ; 87C3 00                       
         brk                                     ; 88C0 00                       .
         brk                                     ; 88C1 00                       .
         brk                                     ; 88C2 00                       .
-L88C3:  .byte   $63                             ; 88C3 63                       c
+bhv_pc_lo_tbl:  .byte   $63                             ; 88C3 63                       c
         .byte   $63                             ; 88C4 63                       c
         .byte   $3F                             ; 88C5 3F                       ?
         .byte   $33                             ; 88C6 33                       3
@@ -1519,7 +1496,7 @@ L897C:  brk                                     ; 897C 00                       
         .byte   $64                             ; 8990 64                       d
         .byte   $64                             ; 8991 64                       d
         .byte   $64                             ; 8992 64                       d
-L8993:  txa                                     ; 8993 8A                       .
+bhv_pc_hi_tbl:  txa                                     ; 8993 8A                       .
         txa                                     ; 8994 8A                       .
         lda     ($B8),y                         ; 8995 B1 B8                    ..
         ldx     $A6                             ; 8997 A6 A6                    ..
@@ -1642,7 +1619,7 @@ L8A04:  txa                                     ; 8A04 8A                       
         rts                                     ; 8A64 60                       `
 
 ; ----------------------------------------------------------------------------
-        jsr     LF16F                           ; 8A65 20 6F F1                  o.
+        jsr     find_free_slot_y                           ; 8A65 20 6F F1                  o.
         lda     #$11                            ; 8A68 A9 11                    ..
         sta     $0300,y                         ; 8A6A 99 00 03                 ...
         lda     #$C1                            ; 8A6D A9 C1                    ..
@@ -1650,7 +1627,7 @@ L8A04:  txa                                     ; 8A04 8A                       
         lda     #$03                            ; 8A72 A9 03                    ..
         sta     $0450,y                         ; 8A74 99 50 04                 .P.
         lda     #$47                            ; 8A77 A9 47                    .G
-        jsr     LEAA4                           ; 8A79 20 A4 EA                  ..
+        jsr     entity_init_pos                           ; 8A79 20 A4 EA                  ..
         lda     $0528,y                         ; 8A7C B9 28 05                 .(.
         ora     #$08                            ; 8A7F 09 08                    ..
         sta     $0528,y                         ; 8A81 99 28 05                 .(.
@@ -1689,13 +1666,13 @@ L8AA8:  .byte   $04                             ; 8AA8 04                       
         jmp     LA54D                           ; 8ACC 4C 4D A5                 LM.
 
 ; ----------------------------------------------------------------------------
-L8ACF:  jsr     LEA65                           ; 8ACF 20 65 EA                  e.
+L8ACF:  jsr     entity_facing_dispatch                           ; 8ACF 20 65 EA                  e.
         dec     $0480,x                         ; 8AD2 DE 80 04                 ...
         bne     L8ADF                           ; 8AD5 D0 08                    ..
         lda     #$3C                            ; 8AD7 A9 3C                    .<
         sta     $0480,x                         ; 8AD9 9D 80 04                 ...
-        jsr     LEC4A                           ; 8ADC 20 4A EC                  J.
-L8ADF:  jsr     LEFF8                           ; 8ADF 20 F8 EF                  ..
+        jsr     entity_flip_direction                           ; 8ADC 20 4A EC                  J.
+L8ADF:  jsr     entity_hitbox_check                           ; 8ADF 20 F8 EF                  ..
         bcs     L8B11                           ; 8AE2 B0 2D                    .-
         lda     #$40                            ; 8AE4 A9 40                    .@
         sta     L0000                           ; 8AE6 85 00                    ..
@@ -1738,21 +1715,21 @@ L8B11:  rts                                     ; 8B11 60                       
         lda     #$14                            ; 8B37 A9 14                    ..
         sta     $0480,x                         ; 8B39 9D 80 04                 ...
         jsr     L8538                           ; 8B3C 20 38 85                  8.
-L8B3F:  jmp     LEA86                           ; 8B3F 4C 86 EA                 L..
+L8B3F:  jmp     entity_vert_dispatch_raw                           ; 8B3F 4C 86 EA                 L..
 
 ; ----------------------------------------------------------------------------
         ldy     #$07                            ; 8B42 A0 07                    ..
-        jsr     LE7B7                           ; 8B44 20 B7 E7                  ..
+        jsr     entity_gravity_collide                           ; 8B44 20 B7 E7                  ..
         bcc     L8B53                           ; 8B47 90 0A                    ..
         lda     #$A8                            ; 8B49 A9 A8                    ..
         sta     $03D8,x                         ; 8B4B 9D D8 03                 ...
         lda     #$05                            ; 8B4E A9 05                    ..
         sta     $03F0,x                         ; 8B50 9D F0 03                 ...
 L8B53:  ldy     #$0E                            ; 8B53 A0 0E                    ..
-        jsr     LEA3F                           ; 8B55 20 3F EA                  ?.
+        jsr     entity_horiz_dispatch                           ; 8B55 20 3F EA                  ?.
         bcc     L8B60                           ; 8B58 90 06                    ..
-        jsr     LEC4A                           ; 8B5A 20 4A EC                  J.
-        jsr     LEA1E                           ; 8B5D 20 1E EA                  ..
+        jsr     entity_flip_direction                           ; 8B5A 20 4A EC                  J.
+        jsr     entity_stop_y                           ; 8B5D 20 1E EA                  ..
 L8B60:  rts                                     ; 8B60 60                       `
 
 ; ----------------------------------------------------------------------------
@@ -1762,10 +1739,10 @@ L8B60:  rts                                     ; 8B60 60                       
         beq     L8B70                           ; 8B69 F0 05                    ..
         dec     $0468,x                         ; 8B6B DE 68 04                 .h.
         bne     L8B60                           ; 8B6E D0 F0                    ..
-L8B70:  jsr     LEC94                           ; 8B70 20 94 EC                  ..
+L8B70:  jsr     entity_x_dist_px                           ; 8B70 20 94 EC                  ..
         cmp     #$50                            ; 8B73 C9 50                    .P
         bcs     L8B60                           ; 8B75 B0 E9                    ..
-        jsr     LEC76                           ; 8B77 20 76 EC                  v.
+        jsr     entity_y_dist_abs                           ; 8B77 20 76 EC                  v.
         cmp     #$20                            ; 8B7A C9 20                    . 
         bcs     L8B60                           ; 8B7C B0 E2                    ..
         lda     #$8D                            ; 8B7E A9 8D                    ..
@@ -1793,10 +1770,10 @@ L8BA8:  lda     #$B7                            ; 8BA8 A9 B7                    
         lda     #$8B                            ; 8BAD A9 8B                    ..
         sta     $05A0,x                         ; 8BAF 9D A0 05                 ...
         lda     #$45                            ; 8BB2 A9 45                    .E
-        jsr     LEA98                           ; 8BB4 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; 8BB4 20 98 EA                  ..
         lda     $0420,x                         ; 8BB7 BD 20 04                 . .
         sta     $01                             ; 8BBA 85 01                    ..
-        jsr     LEC16                           ; 8BBC 20 16 EC                  ..
+        jsr     entity_set_facing                           ; 8BBC 20 16 EC                  ..
         ldy     $0420,x                         ; 8BBF BC 20 04                 . .
         lda     $01                             ; 8BC2 A5 01                    ..
         sta     $0420,x                         ; 8BC4 9D 20 04                 . .
@@ -1809,7 +1786,7 @@ L8BA8:  lda     #$B7                            ; 8BA8 A9 B7                    
         lda     #$44                            ; 8BD5 A9 44                    .D
         cmp     $0558,x                         ; 8BD7 DD 58 05                 .X.
         beq     L8BED                           ; 8BDA F0 11                    ..
-        jsr     LEA98                           ; 8BDC 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; 8BDC 20 98 EA                  ..
         lda     #$94                            ; 8BDF A9 94                    ..
         sta     $0408,x                         ; 8BE1 9D 08 04                 ...
         lda     $0378,x                         ; 8BE4 BD 78 03                 .x.
@@ -1824,7 +1801,7 @@ L8BED:  lda     $0570,x                         ; 8BED BD 70 05                 
         beq     L8C02                           ; 8BF9 F0 07                    ..
         cmp     #$01                            ; 8BFB C9 01                    ..
         bne     L8C0C                           ; 8BFD D0 0D                    ..
-        jmp     LEC4A                           ; 8BFF 4C 4A EC                 LJ.
+        jmp     entity_flip_direction                           ; 8BFF 4C 4A EC                 LJ.
 
 ; ----------------------------------------------------------------------------
 L8C02:  lda     #$B7                            ; 8C02 A9 B7                    ..
@@ -1838,7 +1815,7 @@ L8C0C:  rts                                     ; 8C0C 60                       
 L8C0D:  lda     #$45                            ; 8C0D A9 45                    .E
         cmp     $0558,x                         ; 8C0F DD 58 05                 .X.
         beq     L8C25                           ; 8C12 F0 11                    ..
-        jsr     LEA98                           ; 8C14 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; 8C14 20 98 EA                  ..
         lda     #$D5                            ; 8C17 A9 D5                    ..
         sta     $0408,x                         ; 8C19 9D 08 04                 ...
         lda     $0378,x                         ; 8C1C BD 78 03                 .x.
@@ -1871,8 +1848,8 @@ L8C25:  lda     #$00                            ; 8C25 A9 00                    
         cpy     #$03                            ; 8C5D C0 03                    ..
         bne     L8CAF                           ; 8C5F D0 4E                    .N
         lda     #$3C                            ; 8C61 A9 3C                    .<
-        jsr     LEC5D                           ; 8C63 20 5D EC                  ].
-        jsr     LF16F                           ; 8C66 20 6F F1                  o.
+        jsr     queue_sound                           ; 8C63 20 5D EC                  ].
+        jsr     find_free_slot_y                           ; 8C66 20 6F F1                  o.
         bcs     L8CAF                           ; 8C69 B0 44                    .D
         lda     #$1C                            ; 8C6B A9 1C                    ..
         sta     $0300,y                         ; 8C6D 99 00 03                 ...
@@ -1887,7 +1864,7 @@ L8C25:  lda     #$00                            ; 8C25 A9 00                    
         adc     #$02                            ; 8C83 69 02                    i.
         sta     $10                             ; 8C85 85 10                    ..
         lda     #$46                            ; 8C87 A9 46                    .F
-        jsr     LEAF5                           ; 8C89 20 F5 EA                  ..
+        jsr     entity_speed_preset                           ; 8C89 20 F5 EA                  ..
         lda     #$00                            ; 8C8C A9 00                    ..
         sta     $03A8,y                         ; 8C8E 99 A8 03                 ...
         lda     #$02                            ; 8C91 A9 02                    ..
@@ -1899,7 +1876,7 @@ L8C94:  cpy     #$03                            ; 8C94 C0 03                    
 
 ; ----------------------------------------------------------------------------
 L8C9B:  lda     #$43                            ; 8C9B A9 43                    .C
-        jsr     LEA98                           ; 8C9D 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; 8C9D 20 98 EA                  ..
         lda     #$61                            ; 8CA0 A9 61                    .a
         sta     $0588,x                         ; 8CA2 9D 88 05                 ...
         lda     #$8B                            ; 8CA5 A9 8B                    ..
@@ -1920,17 +1897,17 @@ L8CB6:  cmp     $D4,x                           ; 8CB6 D5 D4                    
         cld                                     ; 8CB9 D8                       .
         .byte   $D4                             ; 8CBA D4                       .
         .byte   $93                             ; 8CBB 93                       .
-        jsr     LEA65                           ; 8CBC 20 65 EA                  e.
-        jmp     LEA86                           ; 8CBF 4C 86 EA                 L..
+        jsr     entity_facing_dispatch                           ; 8CBC 20 65 EA                  e.
+        jmp     entity_vert_dispatch_raw                           ; 8CBF 4C 86 EA                 L..
 
 ; ----------------------------------------------------------------------------
         jsr     L8DCA                           ; 8CC2 20 CA 8D                  ..
-        jsr     LEC16                           ; 8CC5 20 16 EC                  ..
-        jsr     LEC30                           ; 8CC8 20 30 EC                  0.
-        jsr     LEC94                           ; 8CCB 20 94 EC                  ..
+        jsr     entity_set_facing                           ; 8CC5 20 16 EC                  ..
+        jsr     entity_facing_to_flags                           ; 8CC8 20 30 EC                  0.
+        jsr     entity_x_dist_px                           ; 8CCB 20 94 EC                  ..
         cmp     #$60                            ; 8CCE C9 60                    .`
         bcs     L8CD9                           ; 8CD0 B0 07                    ..
-        jsr     LEC76                           ; 8CD2 20 76 EC                  v.
+        jsr     entity_y_dist_abs                           ; 8CD2 20 76 EC                  v.
         cmp     #$20                            ; 8CD5 C9 20                    . 
         bcc     L8CDE                           ; 8CD7 90 05                    ..
 L8CD9:  lda     #$3C                            ; 8CD9 A9 3C                    .<
@@ -1946,11 +1923,11 @@ L8CDE:  dec     $0480,x                         ; 8CDE DE 80 04                 
         lda     #$8D                            ; 8CF2 A9 8D                    ..
         sta     $05A0,x                         ; 8CF4 9D A0 05                 ...
         lda     #$0D                            ; 8CF7 A9 0D                    ..
-        jsr     LEA98                           ; 8CF9 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; 8CF9 20 98 EA                  ..
         lda     $0528,x                         ; 8CFC BD 28 05                 .(.
         and     #$40                            ; 8CFF 29 40                    )@
         beq     L8D06                           ; 8D01 F0 03                    ..
-        jmp     LEA1E                           ; 8D03 4C 1E EA                 L..
+        jmp     entity_stop_y                           ; 8D03 4C 1E EA                 L..
 
 ; ----------------------------------------------------------------------------
 L8D06:  jsr     LEA29                           ; 8D06 20 29 EA                  ).
@@ -1958,7 +1935,7 @@ L8D09:  rts                                     ; 8D09 60                       
 
 ; ----------------------------------------------------------------------------
 L8D0A:  lda     #$0C                            ; 8D0A A9 0C                    ..
-        jsr     LEA98                           ; 8D0C 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; 8D0C 20 98 EA                  ..
         lda     #$19                            ; 8D0F A9 19                    ..
         sta     $0588,x                         ; 8D11 9D 88 05                 ...
         lda     #$8D                            ; 8D14 A9 8D                    ..
@@ -1975,12 +1952,12 @@ L8D0A:  lda     #$0C                            ; 8D0A A9 0C                    
         lda     #$3C                            ; 8D2F A9 3C                    .<
         sta     $0480,x                         ; 8D31 9D 80 04                 ...
         lda     #$0A                            ; 8D34 A9 0A                    ..
-        jmp     LEA98                           ; 8D36 4C 98 EA                 L..
+        jmp     entity_set_subtype                           ; 8D36 4C 98 EA                 L..
 
 ; ----------------------------------------------------------------------------
 L8D39:  lda     #$01                            ; 8D39 A9 01                    ..
         sta     $0E                             ; 8D3B 85 0E                    ..
-L8D3D:  jsr     LF16F                           ; 8D3D 20 6F F1                  o.
+L8D3D:  jsr     find_free_slot_y                           ; 8D3D 20 6F F1                  o.
         bcs     L8D70                           ; 8D40 B0 2E                    ..
         lda     #$58                            ; 8D42 A9 58                    .X
         sta     $0300,y                         ; 8D44 99 00 03                 ...
@@ -1992,7 +1969,7 @@ L8D3D:  jsr     LF16F                           ; 8D3D 20 6F F1                 
         adc     #$13                            ; 8D50 69 13                    i.
         sta     $10                             ; 8D52 85 10                    ..
         lda     #$0E                            ; 8D54 A9 0E                    ..
-        jsr     LEAF5                           ; 8D56 20 F5 EA                  ..
+        jsr     entity_speed_preset                           ; 8D56 20 F5 EA                  ..
         pla                                     ; 8D59 68                       h
         clc                                     ; 8D5A 18                       .
         adc     #$01                            ; 8D5B 69 01                    i.
@@ -2013,7 +1990,7 @@ L8D70:  rts                                     ; 8D70 60                       
         lda     $0540,x                         ; 8D78 BD 40 05                 .@.
         beq     L8D8F                           ; 8D7B F0 12                    ..
         lda     #$0A                            ; 8D7D A9 0A                    ..
-        jsr     LEA98                           ; 8D7F 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; 8D7F 20 98 EA                  ..
         lda     #$97                            ; 8D82 A9 97                    ..
         sta     $0588,x                         ; 8D84 9D 88 05                 ...
         lda     #$8D                            ; 8D87 A9 8D                    ..
@@ -2029,12 +2006,12 @@ L8D97:  .byte   $BD                             ; 8D97 BD                       
 L8D99:  .byte   $03                             ; 8D99 03                       .
         bpl     L8DA4                           ; 8D9A 10 08                    ..
         ldy     #$21                            ; 8D9C A0 21                    .!
-        jsr     LE7B7                           ; 8D9E 20 B7 E7                  ..
+        jsr     entity_gravity_collide                           ; 8D9E 20 B7 E7                  ..
         bcs     L8DB1                           ; 8DA1 B0 0E                    ..
         rts                                     ; 8DA3 60                       `
 
 ; ----------------------------------------------------------------------------
-L8DA4:  jsr     LE9E1                           ; 8DA4 20 E1 E9                  ..
+L8DA4:  jsr     entity_apply_gravity                           ; 8DA4 20 E1 E9                  ..
         jsr     LE999                           ; 8DA7 20 99 E9                  ..
         ldy     #$22                            ; 8DAA A0 22                    ."
         jsr     LE7A8                           ; 8DAC 20 A8 E7                  ..
@@ -2044,11 +2021,11 @@ L8DB1:  lda     #$C0                            ; 8DB1 A9 C0                    
         lda     #$8D                            ; 8DB6 A9 8D                    ..
         sta     $05A0,x                         ; 8DB8 9D A0 05                 ...
         lda     #$0B                            ; 8DBB A9 0B                    ..
-        jsr     LEA98                           ; 8DBD 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; 8DBD 20 98 EA                  ..
         lda     $0540,x                         ; 8DC0 BD 40 05                 .@.
         beq     L8DE1                           ; 8DC3 F0 1C                    ..
         lda     #$0A                            ; 8DC5 A9 0A                    ..
-        jsr     LEA98                           ; 8DC7 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; 8DC7 20 98 EA                  ..
 L8DCA:  lda     $0528                           ; 8DCA AD 28 05                 .(.
         and     #$40                            ; 8DCD 29 40                    )@
         sta     $0468,x                         ; 8DCF 9D 68 04                 .h.
@@ -2061,15 +2038,15 @@ L8DCA:  lda     $0528                           ; 8DCA AD 28 05                 
 L8DE1:  rts                                     ; 8DE1 60                       `
 
 ; ----------------------------------------------------------------------------
-        jmp     LEA65                           ; 8DE2 4C 65 EA                 Le.
+        jmp     entity_facing_dispatch                           ; 8DE2 4C 65 EA                 Le.
 
 ; ----------------------------------------------------------------------------
-        jsr     LEA65                           ; 8DE5 20 65 EA                  e.
-        jsr     LEC94                           ; 8DE8 20 94 EC                  ..
+        jsr     entity_facing_dispatch                           ; 8DE5 20 65 EA                  e.
+        jsr     entity_x_dist_px                           ; 8DE8 20 94 EC                  ..
         cmp     #$08                            ; 8DEB C9 08                    ..
         bcs     L8E56                           ; 8DED B0 67                    .g
         lda     #$28                            ; 8DEF A9 28                    .(
-        jsr     LEA98                           ; 8DF1 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; 8DF1 20 98 EA                  ..
         lda     #$FE                            ; 8DF4 A9 FE                    ..
         sta     $0588,x                         ; 8DF6 9D 88 05                 ...
         lda     #$8D                            ; 8DF9 A9 8D                    ..
@@ -2087,15 +2064,15 @@ L8DE1:  rts                                     ; 8DE1 60                       
         lda     #$8E                            ; 8E15 A9 8E                    ..
         sta     $05A0,x                         ; 8E17 9D A0 05                 ...
         lda     #$29                            ; 8E1A A9 29                    .)
-        jmp     LEA98                           ; 8E1C 4C 98 EA                 L..
+        jmp     entity_set_subtype                           ; 8E1C 4C 98 EA                 L..
 
 ; ----------------------------------------------------------------------------
-L8E1F:  jsr     LF16F                           ; 8E1F 20 6F F1                  o.
+L8E1F:  jsr     find_free_slot_y                           ; 8E1F 20 6F F1                  o.
         bcs     L8E56                           ; 8E22 B0 32                    .2
         lda     #$14                            ; 8E24 A9 14                    ..
         sta     $0300,y                         ; 8E26 99 00 03                 ...
         lda     #$2B                            ; 8E29 A9 2B                    .+
-        jsr     LEAA4                           ; 8E2B 20 A4 EA                  ..
+        jsr     entity_init_pos                           ; 8E2B 20 A4 EA                  ..
         lda     #$C1                            ; 8E2E A9 C1                    ..
         sta     $0408,y                         ; 8E30 99 08 04                 ...
         lda     #$01                            ; 8E33 A9 01                    ..
@@ -2105,28 +2082,28 @@ L8E1F:  jsr     LF16F                           ; 8E1F 20 6F F1                 
         adc     #$10                            ; 8E3C 69 10                    i.
         sta     $0378,y                         ; 8E3E 99 78 03                 .x.
         jsr     LEA34                           ; 8E41 20 34 EA                  4.
-        jsr     LF16F                           ; 8E44 20 6F F1                  o.
+        jsr     find_free_slot_y                           ; 8E44 20 6F F1                  o.
         bcs     L8E56                           ; 8E47 B0 0D                    ..
         lda     #$01                            ; 8E49 A9 01                    ..
         sta     $0300,y                         ; 8E4B 99 00 03                 ...
         lda     #$2A                            ; 8E4E A9 2A                    .*
-        jmp     LEAA4                           ; 8E50 4C A4 EA                 L..
+        jmp     entity_init_pos                           ; 8E50 4C A4 EA                 L..
 
 ; ----------------------------------------------------------------------------
-        jsr     LEA65                           ; 8E53 20 65 EA                  e.
+        jsr     entity_facing_dispatch                           ; 8E53 20 65 EA                  e.
 L8E56:  rts                                     ; 8E56 60                       `
 
 ; ----------------------------------------------------------------------------
         ldy     #$07                            ; 8E57 A0 07                    ..
-        jsr     LE7B7                           ; 8E59 20 B7 E7                  ..
+        jsr     entity_gravity_collide                           ; 8E59 20 B7 E7                  ..
         bcc     L8E56                           ; 8E5C 90 F8                    ..
         jmp     LA54D                           ; 8E5E 4C 4D A5                 LM.
 
 ; ----------------------------------------------------------------------------
         lda     $0498,x                         ; 8E61 BD 98 04                 ...
         beq     L8E71                           ; 8E64 F0 0B                    ..
-        jsr     LEC16                           ; 8E66 20 16 EC                  ..
-        jsr     LEC30                           ; 8E69 20 30 EC                  0.
+        jsr     entity_set_facing                           ; 8E66 20 16 EC                  ..
+        jsr     entity_facing_to_flags                           ; 8E69 20 30 EC                  0.
         dec     $0498,x                         ; 8E6C DE 98 04                 ...
         bne     L8E56                           ; 8E6F D0 E5                    ..
 L8E71:  inc     $0468,x                         ; 8E71 FE 68 04                 .h.
@@ -2134,8 +2111,8 @@ L8E71:  inc     $0468,x                         ; 8E71 FE 68 04                 
         cmp     #$08                            ; 8E77 C9 08                    ..
         beq     L8E9B                           ; 8E79 F0 20                    . 
         bcs     L8E83                           ; 8E7B B0 06                    ..
-        jsr     LEC16                           ; 8E7D 20 16 EC                  ..
-        jmp     LEC30                           ; 8E80 4C 30 EC                 L0.
+        jsr     entity_set_facing                           ; 8E7D 20 16 EC                  ..
+        jmp     entity_facing_to_flags                           ; 8E80 4C 30 EC                 L0.
 
 ; ----------------------------------------------------------------------------
 L8E83:  cmp     #$3C                            ; 8E83 C9 3C                    .<
@@ -2147,10 +2124,10 @@ L8E83:  cmp     #$3C                            ; 8E83 C9 3C                    
         lda     #$C0                            ; 8E91 A9 C0                    ..
         sta     $0408,x                         ; 8E93 9D 08 04                 ...
         lda     #$7D                            ; 8E96 A9 7D                    .}
-        jmp     LEA98                           ; 8E98 4C 98 EA                 L..
+        jmp     entity_set_subtype                           ; 8E98 4C 98 EA                 L..
 
 ; ----------------------------------------------------------------------------
-L8E9B:  jsr     LF16F                           ; 8E9B 20 6F F1                  o.
+L8E9B:  jsr     find_free_slot_y                           ; 8E9B 20 6F F1                  o.
         bcs     L8E56                           ; 8E9E B0 B6                    ..
         lda     #$2D                            ; 8EA0 A9 2D                    .-
         sta     $0300,y                         ; 8EA2 99 00 03                 ...
@@ -2163,7 +2140,7 @@ L8E9B:  jsr     LF16F                           ; 8E9B 20 6F F1                 
         adc     #$2A                            ; 8EB3 69 2A                    i*
         sta     $10                             ; 8EB5 85 10                    ..
         lda     #$5A                            ; 8EB7 A9 5A                    .Z
-        jsr     LEAF5                           ; 8EB9 20 F5 EA                  ..
+        jsr     entity_speed_preset                           ; 8EB9 20 F5 EA                  ..
         lda     #$00                            ; 8EBC A9 00                    ..
         sta     $03A8,y                         ; 8EBE 99 A8 03                 ...
         lda     #$02                            ; 8EC1 A9 02                    ..
@@ -2197,7 +2174,7 @@ L8E9B:  jsr     LF16F                           ; 8E9B 20 6F F1                 
         lda     #$00                            ; 8EFE A9 00                    ..
         sta     $0468,x                         ; 8F00 9D 68 04                 .h.
         lda     #$4D                            ; 8F03 A9 4D                    .M
-        jsr     LEA98                           ; 8F05 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; 8F05 20 98 EA                  ..
         lda     #$78                            ; 8F08 A9 78                    .x
         sta     $0498,x                         ; 8F0A 9D 98 04                 ...
         lda     #$80                            ; 8F0D A9 80                    ..
@@ -2219,7 +2196,7 @@ L8F22:  lda     #$36                            ; 8F22 A9 36                    
         lda     #$8F                            ; 8F27 A9 8F                    ..
         sta     $05A0,x                         ; 8F29 9D A0 05                 ...
         lda     #$7C                            ; 8F2C A9 7C                    .|
-        jsr     LEA98                           ; 8F2E 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; 8F2E 20 98 EA                  ..
         lda     #$85                            ; 8F31 A9 85                    ..
         sta     $0408,x                         ; 8F33 9D 08 04                 ...
         ldy     $0480,x                         ; 8F36 BC 80 04                 ...
@@ -2233,12 +2210,12 @@ L8F43:  lda     $0558,y                         ; 8F43 B9 58 05                 
         cmp     #$7D                            ; 8F46 C9 7D                    .}
         bne     L8F5C                           ; 8F48 D0 12                    ..
         lda     #$96                            ; 8F4A A9 96                    ..
-        jsr     LEA98                           ; 8F4C 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; 8F4C 20 98 EA                  ..
         lda     #$59                            ; 8F4F A9 59                    .Y
         sta     $0588,x                         ; 8F51 9D 88 05                 ...
         lda     #$8F                            ; 8F54 A9 8F                    ..
         sta     $05A0,x                         ; 8F56 9D A0 05                 ...
-        jsr     LEA65                           ; 8F59 20 65 EA                  e.
+        jsr     entity_facing_dispatch                           ; 8F59 20 65 EA                  e.
 L8F5C:  rts                                     ; 8F5C 60                       `
 
 ; ----------------------------------------------------------------------------
@@ -2254,7 +2231,7 @@ L8F5C:  rts                                     ; 8F5C 60                       
         and     #$10                            ; 8F73 29 10                    ).
         beq     L8F7E                           ; 8F75 F0 07                    ..
         ldy     #$0C                            ; 8F77 A0 0C                    ..
-        jsr     LEA3F                           ; 8F79 20 3F EA                  ?.
+        jsr     entity_horiz_dispatch                           ; 8F79 20 3F EA                  ?.
         bcc     L8F9F                           ; 8F7C 90 21                    .!
 L8F7E:  lda     #$1E                            ; 8F7E A9 1E                    ..
         sta     $0468,x                         ; 8F80 9D 68 04                 .h.
@@ -2268,12 +2245,12 @@ L8F7E:  lda     #$1E                            ; 8F7E A9 1E                    
         sta     $0588,x                         ; 8F94 9D 88 05                 ...
         lda     #$8F                            ; 8F97 A9 8F                    ..
         sta     $05A0,x                         ; 8F99 9D A0 05                 ...
-        jsr     LEC4A                           ; 8F9C 20 4A EC                  J.
+        jsr     entity_flip_direction                           ; 8F9C 20 4A EC                  J.
 L8F9F:  rts                                     ; 8F9F 60                       `
 
 ; ----------------------------------------------------------------------------
-        jsr     LEA65                           ; 8FA0 20 65 EA                  e.
-        jsr     LECC2                           ; 8FA3 20 C2 EC                  ..
+        jsr     entity_facing_dispatch                           ; 8FA0 20 65 EA                  e.
+        jsr     entity_distance_calc                           ; 8FA3 20 C2 EC                  ..
         cmp     #$06                            ; 8FA6 C9 06                    ..
         beq     L8FAE                           ; 8FA8 F0 04                    ..
         cmp     #$0A                            ; 8FAA C9 0A                    ..
@@ -2283,7 +2260,7 @@ L8FAE:  lda     #$BD                            ; 8FAE A9 BD                    
         lda     #$8F                            ; 8FB3 A9 8F                    ..
         sta     $05A0,x                         ; 8FB5 9D A0 05                 ...
         lda     #$32                            ; 8FB8 A9 32                    .2
-        jsr     LEA98                           ; 8FBA 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; 8FBA 20 98 EA                  ..
         lda     $0570,x                         ; 8FBD BD 70 05                 .p.
         cmp     #$04                            ; 8FC0 C9 04                    ..
         bne     L900D                           ; 8FC2 D0 49                    .I
@@ -2301,9 +2278,9 @@ L8FAE:  lda     #$BD                            ; 8FAE A9 BD                    
         lda     #$90                            ; 8FDC A9 90                    ..
         sta     $05A0,x                         ; 8FDE 9D A0 05                 ...
         lda     #$34                            ; 8FE1 A9 34                    .4
-        jsr     LEA98                           ; 8FE3 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; 8FE3 20 98 EA                  ..
         beq     L900D                           ; 8FE6 F0 25                    .%
-L8FE8:  jsr     LF16F                           ; 8FE8 20 6F F1                  o.
+L8FE8:  jsr     find_free_slot_y                           ; 8FE8 20 6F F1                  o.
         bcs     L9010                           ; 8FEB B0 23                    .#
         lda     #$1A                            ; 8FED A9 1A                    ..
         sta     $0300,y                         ; 8FEF 99 00 03                 ...
@@ -2312,24 +2289,24 @@ L8FE8:  jsr     LF16F                           ; 8FE8 20 6F F1                 
         lda     #$01                            ; 8FF7 A9 01                    ..
         sta     $0450,y                         ; 8FF9 99 50 04                 .P.
         lda     #$33                            ; 8FFC A9 33                    .3
-        jsr     LEAA4                           ; 8FFE 20 A4 EA                  ..
+        jsr     entity_init_pos                           ; 8FFE 20 A4 EA                  ..
         lda     $0378,x                         ; 9001 BD 78 03                 .x.
         clc                                     ; 9004 18                       .
         adc     #$14                            ; 9005 69 14                    i.
         sta     $0378,y                         ; 9007 99 78 03                 .x.
         jsr     LEA34                           ; 900A 20 34 EA                  4.
-L900D:  jsr     LEA65                           ; 900D 20 65 EA                  e.
+L900D:  jsr     entity_facing_dispatch                           ; 900D 20 65 EA                  e.
 L9010:  rts                                     ; 9010 60                       `
 
 ; ----------------------------------------------------------------------------
         ldy     #$06                            ; 9011 A0 06                    ..
-        jsr     LE7B7                           ; 9013 20 B7 E7                  ..
+        jsr     entity_gravity_collide                           ; 9013 20 B7 E7                  ..
         bcc     L9010                           ; 9016 90 F8                    ..
         jmp     LA54D                           ; 9018 4C 4D A5                 LM.
 
 ; ----------------------------------------------------------------------------
-        jsr     LEA65                           ; 901B 20 65 EA                  e.
-        jsr     LECC2                           ; 901E 20 C2 EC                  ..
+        jsr     entity_facing_dispatch                           ; 901B 20 65 EA                  e.
+        jsr     entity_distance_calc                           ; 901E 20 C2 EC                  ..
         cmp     #$07                            ; 9021 C9 07                    ..
         beq     L9029                           ; 9023 F0 04                    ..
         cmp     #$09                            ; 9025 C9 09                    ..
@@ -2339,7 +2316,7 @@ L9029:  lda     #$38                            ; 9029 A9 38                    
         lda     #$90                            ; 902E A9 90                    ..
         sta     $05A0,x                         ; 9030 9D A0 05                 ...
         lda     #$30                            ; 9033 A9 30                    .0
-        jsr     LEA98                           ; 9035 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; 9035 20 98 EA                  ..
         lda     $0540,x                         ; 9038 BD 40 05                 .@.
         cmp     #$02                            ; 903B C9 02                    ..
         bne     L9065                           ; 903D D0 26                    .&
@@ -2352,17 +2329,17 @@ L9029:  lda     #$38                            ; 9029 A9 38                    
         sta     $05A0,x                         ; 904D 9D A0 05                 ...
         lda     #$CC                            ; 9050 A9 CC                    ..
         sta     $0408,x                         ; 9052 9D 08 04                 ...
-        jsr     LEA1E                           ; 9055 20 1E EA                  ..
+        jsr     entity_stop_y                           ; 9055 20 1E EA                  ..
         lda     #$3B                            ; 9058 A9 3B                    .;
-        jsr     LEC5D                           ; 905A 20 5D EC                  ].
+        jsr     queue_sound                           ; 905A 20 5D EC                  ].
         lda     #$00                            ; 905D A9 00                    ..
         sta     $0570,x                         ; 905F 9D 70 05                 .p.
-        jsr     LE968                           ; 9062 20 68 E9                  h.
+        jsr     entity_process_y_vel                           ; 9062 20 68 E9                  h.
 L9065:  rts                                     ; 9065 60                       `
 
 ; ----------------------------------------------------------------------------
         lda     #$2B                            ; 9066 A9 2B                    .+
-        jsr     LEC5D                           ; 9068 20 5D EC                  ].
+        jsr     queue_sound                           ; 9068 20 5D EC                  ].
         lda     #$75                            ; 906B A9 75                    .u
         sta     $0588,x                         ; 906D 9D 88 05                 ...
         lda     #$90                            ; 9070 A9 90                    ..
@@ -2379,7 +2356,7 @@ L9088:  sta     $0E                             ; 9088 85 0E                    
         stx     $0F                             ; 908A 86 0F                    ..
         lda     #$02                            ; 908C A9 02                    ..
         sta     $0468,x                         ; 908E 9D 68 04                 .h.
-L9091:  jsr     LF16F                           ; 9091 20 6F F1                  o.
+L9091:  jsr     find_free_slot_y                           ; 9091 20 6F F1                  o.
         bcs     L90B2                           ; 9094 B0 1C                    ..
         lda     #$01                            ; 9096 A9 01                    ..
         sta     $0300,y                         ; 9098 99 00 03                 ...
@@ -2392,7 +2369,7 @@ L9091:  jsr     LF16F                           ; 9091 20 6F F1                 
         adc     #$10                            ; 90A9 69 10                    i.
         sta     $10                             ; 90AB 85 10                    ..
         lda     #$42                            ; 90AD A9 42                    .B
-        jsr     LEAF5                           ; 90AF 20 F5 EA                  ..
+        jsr     entity_speed_preset                           ; 90AF 20 F5 EA                  ..
 L90B2:  inc     $0480,x                         ; 90B2 FE 80 04                 ...
         dec     $0E                             ; 90B5 C6 0E                    ..
         bpl     L9091                           ; 90B7 10 D8                    ..
@@ -2406,10 +2383,10 @@ L90B9:  rts                                     ; 90B9 60                       
 L90C4:  lda     #$10                            ; 90C4 A9 10                    ..
         sta     $0468,x                         ; 90C6 9D 68 04                 .h.
         stx     $0F                             ; 90C9 86 0F                    ..
-        jsr     LF16F                           ; 90CB 20 6F F1                  o.
+        jsr     find_free_slot_y                           ; 90CB 20 6F F1                  o.
         bcs     L90EC                           ; 90CE B0 1C                    ..
         lda     #$2C                            ; 90D0 A9 2C                    .,
-        jsr     LEC5D                           ; 90D2 20 5D EC                  ].
+        jsr     queue_sound                           ; 90D2 20 5D EC                  ].
         lda     #$2F                            ; 90D5 A9 2F                    ./
         sta     $0300,y                         ; 90D7 99 00 03                 ...
         lda     #$00                            ; 90DA A9 00                    ..
@@ -2419,12 +2396,12 @@ L90C4:  lda     #$10                            ; 90C4 A9 10                    
         adc     #$19                            ; 90E3 69 19                    i.
         sta     $10                             ; 90E5 85 10                    ..
         lda     #$42                            ; 90E7 A9 42                    .B
-        jsr     LEAF5                           ; 90E9 20 F5 EA                  ..
+        jsr     entity_speed_preset                           ; 90E9 20 F5 EA                  ..
 L90EC:  inc     $0480,x                         ; 90EC FE 80 04                 ...
         lda     $0480,x                         ; 90EF BD 80 04                 ...
         cmp     #$05                            ; 90F2 C9 05                    ..
         bne     L90F9                           ; 90F4 D0 03                    ..
-        jsr     LF2C4                           ; 90F6 20 C4 F2                  ..
+        jsr     entity_wipe_x                           ; 90F6 20 C4 F2                  ..
 L90F9:  rts                                     ; 90F9 60                       `
 
 ; ----------------------------------------------------------------------------
@@ -2439,7 +2416,7 @@ L90F9:  rts                                     ; 90F9 60                       
         sta     $0588,x                         ; 9108 9D 88 05                 ...
         lda     #$91                            ; 910B A9 91                    ..
         sta     $05A0,x                         ; 910D 9D A0 05                 ...
-        jsr     LEF87                           ; 9110 20 87 EF                  ..
+        jsr     entity_player_collide                           ; 9110 20 87 EF                  ..
         bcs     L912D                           ; 9113 B0 18                    ..
         lda     #$00                            ; 9115 A9 00                    ..
         sta     $0480,x                         ; 9117 9D 80 04                 ...
@@ -2453,12 +2430,12 @@ L911A:  lda     #$1E                            ; 911A A9 1E                    
 L912C:  rts                                     ; 912C 60                       `
 
 ; ----------------------------------------------------------------------------
-L912D:  jsr     LEA65                           ; 912D 20 65 EA                  e.
-        jsr     LEA86                           ; 9130 20 86 EA                  ..
-        jsr     LEC94                           ; 9133 20 94 EC                  ..
+L912D:  jsr     entity_facing_dispatch                           ; 912D 20 65 EA                  e.
+        jsr     entity_vert_dispatch_raw                           ; 9130 20 86 EA                  ..
+        jsr     entity_x_dist_px                           ; 9133 20 94 EC                  ..
         cmp     #$32                            ; 9136 C9 32                    .2
         bcs     L915E                           ; 9138 B0 24                    .$
-        jsr     LEC76                           ; 913A 20 76 EC                  v.
+        jsr     entity_y_dist_abs                           ; 913A 20 76 EC                  v.
         cmp     #$32                            ; 913D C9 32                    .2
         bcs     L915E                           ; 913F B0 1D                    ..
         lda     $0480,x                         ; 9141 BD 80 04                 ...
@@ -2469,10 +2446,10 @@ L914B:  dec     $0480,x                         ; 914B DE 80 04                 
         bne     L919D                           ; 914E D0 4D                    .M
         lda     #$1E                            ; 9150 A9 1E                    ..
         sta     $0480,x                         ; 9152 9D 80 04                 ...
-        jsr     LECC2                           ; 9155 20 C2 EC                  ..
+        jsr     entity_distance_calc                           ; 9155 20 C2 EC                  ..
         tay                                     ; 9158 A8                       .
         lda     #$20                            ; 9159 A9 20                    . 
-        jmp     LF470                           ; 915B 4C 70 F4                 Lp.
+        jmp     entity_set_dir_velocity                           ; 915B 4C 70 F4                 Lp.
 
 ; ----------------------------------------------------------------------------
 L915E:  lda     $0480,x                         ; 915E BD 80 04                 ...
@@ -2484,8 +2461,8 @@ L915E:  lda     $0480,x                         ; 915E BD 80 04                 
         bne     L9174                           ; 916D D0 05                    ..
 L916F:  lda     #$00                            ; 916F A9 00                    ..
         sta     $0480,x                         ; 9171 9D 80 04                 ...
-L9174:  jsr     LEC16                           ; 9174 20 16 EC                  ..
-        jsr     LEC30                           ; 9177 20 30 EC                  0.
+L9174:  jsr     entity_set_facing                           ; 9174 20 16 EC                  ..
+        jsr     entity_facing_to_flags                           ; 9177 20 30 EC                  0.
         ldy     #$08                            ; 917A A0 08                    ..
         lda     $0378,x                         ; 917C BD 78 03                 .x.
         cmp     $0378                           ; 917F CD 78 03                 .x.
@@ -2537,7 +2514,7 @@ L91DC:  dey                                     ; 91DC 88                       
         cmp     #$03                            ; 91E3 C9 03                    ..
         bcs     L923E                           ; 91E5 B0 57                    .W
         stx     $0F                             ; 91E7 86 0F                    ..
-        jsr     LF16F                           ; 91E9 20 6F F1                  o.
+        jsr     find_free_slot_y                           ; 91E9 20 6F F1                  o.
         bcs     L923E                           ; 91EC B0 50                    .P
         lda     #$39                            ; 91EE A9 39                    .9
         sta     $0300,y                         ; 91F0 99 00 03                 ...
@@ -2546,7 +2523,7 @@ L91DC:  dey                                     ; 91DC 88                       
         lda     #$00                            ; 91F8 A9 00                    ..
         sta     $0450,y                         ; 91FA 99 50 04                 .P.
         lda     #$4B                            ; 91FD A9 4B                    .K
-        jsr     LEAA4                           ; 91FF 20 A4 EA                  ..
+        jsr     entity_init_pos                           ; 91FF 20 A4 EA                  ..
         lda     $E6                             ; 9202 A5 E6                    ..
         adc     $E4                             ; 9204 65 E4                    e.
         sta     $E6                             ; 9206 85 E6                    ..
@@ -2572,7 +2549,7 @@ L920F:  sta     $0E                             ; 920F 85 0E                    
         dey                                     ; 922F 88                       .
 L9230:  ldx     $0E                             ; 9230 A6 0E                    ..
         lda     #$28                            ; 9232 A9 28                    .(
-        jsr     LF470                           ; 9234 20 70 F4                  p.
+        jsr     entity_set_dir_velocity                           ; 9234 20 70 F4                  p.
         ldx     $0F                             ; 9237 A6 0F                    ..
         lda     #$0A                            ; 9239 A9 0A                    ..
         sta     $0468,x                         ; 923B 9D 68 04                 .h.
@@ -2582,18 +2559,18 @@ L923E:  rts                                     ; 923E 60                       
         lda     #$00                            ; 923F A9 00                    ..
         sta     $0570,x                         ; 9241 9D 70 05                 .p.
         ldy     #$17                            ; 9244 A0 17                    ..
-        jsr     LEA52                           ; 9246 20 52 EA                  R.
+        jsr     entity_vert_dispatch                           ; 9246 20 52 EA                  R.
         bcs     L9252                           ; 9249 B0 07                    ..
         ldy     #$1C                            ; 924B A0 1C                    ..
         jsr     L851A                           ; 924D 20 1A 85                  ..
         bcc     L923E                           ; 9250 90 EC                    ..
 L9252:  lda     #$01                            ; 9252 A9 01                    ..
         sta     $0540,x                         ; 9254 9D 40 05                 .@.
-        jsr     LF2C4                           ; 9257 20 C4 F2                  ..
+        jsr     entity_wipe_x                           ; 9257 20 C4 F2                  ..
         lda     #$01                            ; 925A A9 01                    ..
         sta     $0300,x                         ; 925C 9D 00 03                 ...
         lda     #$2B                            ; 925F A9 2B                    .+
-        jmp     LEC5D                           ; 9261 4C 5D EC                 L].
+        jmp     queue_sound                           ; 9261 4C 5D EC                 L].
 
 ; ----------------------------------------------------------------------------
         lda     #$3C                            ; 9264 A9 3C                    .<
@@ -2612,15 +2589,15 @@ L9278:  lda     #$C4                            ; 9278 A9 C4                    
         sta     $03D8,x                         ; 9284 9D D8 03                 ...
         lda     #$05                            ; 9287 A9 05                    ..
         sta     $03F0,x                         ; 9289 9D F0 03                 ...
-        jsr     LEC16                           ; 928C 20 16 EC                  ..
-        jsr     LEC30                           ; 928F 20 30 EC                  0.
+        jsr     entity_set_facing                           ; 928C 20 16 EC                  ..
+        jsr     entity_facing_to_flags                           ; 928F 20 30 EC                  0.
         lda     #$A1                            ; 9292 A9 A1                    ..
         sta     $0588,x                         ; 9294 9D 88 05                 ...
         lda     #$92                            ; 9297 A9 92                    ..
         sta     $05A0,x                         ; 9299 9D A0 05                 ...
         lda     #$01                            ; 929C A9 01                    ..
         sta     $0540,x                         ; 929E 9D 40 05                 .@.
-        jsr     LECC2                           ; 92A1 20 C2 EC                  ..
+        jsr     entity_distance_calc                           ; 92A1 20 C2 EC                  ..
         cmp     #$08                            ; 92A4 C9 08                    ..
         bne     L92B8                           ; 92A6 D0 10                    ..
         lda     #$CF                            ; 92A8 A9 CF                    ..
@@ -2635,12 +2612,12 @@ L9278:  lda     #$C4                            ; 9278 A9 C4                    
 L92B8:  lda     #$00                            ; 92B8 A9 00                    ..
         sta     $0570,x                         ; 92BA 9D 70 05                 .p.
         ldy     #$0F                            ; 92BD A0 0F                    ..
-        jsr     LE7B7                           ; 92BF 20 B7 E7                  ..
+        jsr     entity_gravity_collide                           ; 92BF 20 B7 E7                  ..
         bcs     L9307                           ; 92C2 B0 43                    .C
         ldy     #$12                            ; 92C4 A0 12                    ..
-        jsr     LEA3F                           ; 92C6 20 3F EA                  ?.
+        jsr     entity_horiz_dispatch                           ; 92C6 20 3F EA                  ?.
         bcc     L92CE                           ; 92C9 90 03                    ..
-        jsr     LEC4A                           ; 92CB 20 4A EC                  J.
+        jsr     entity_flip_direction                           ; 92CB 20 4A EC                  J.
 L92CE:  rts                                     ; 92CE 60                       `
 
 ; ----------------------------------------------------------------------------
@@ -2652,12 +2629,12 @@ L92CE:  rts                                     ; 92CE 60                       
         beq     L92F1                           ; 92DC F0 13                    ..
         cmp     #$04                            ; 92DE C9 04                    ..
         bne     L92CE                           ; 92E0 D0 EC                    ..
-        jsr     LF16F                           ; 92E2 20 6F F1                  o.
+        jsr     find_free_slot_y                           ; 92E2 20 6F F1                  o.
         bcs     L92CE                           ; 92E5 B0 E7                    ..
         lda     #$01                            ; 92E7 A9 01                    ..
         sta     $0300,y                         ; 92E9 99 00 03                 ...
         lda     #$3B                            ; 92EC A9 3B                    .;
-        jmp     LEAA4                           ; 92EE 4C A4 EA                 L..
+        jmp     entity_init_pos                           ; 92EE 4C A4 EA                 L..
 
 ; ----------------------------------------------------------------------------
 L92F1:  lda     #$00                            ; 92F1 A9 00                    ..
@@ -2670,13 +2647,13 @@ L92FB:  lda     #$00                            ; 92FB A9 00                    
         jsr     LE747                           ; 9302 20 47 E7                  G.
         bcc     L92CE                           ; 9305 90 C7                    ..
 L9307:  lda     #$3A                            ; 9307 A9 3A                    .:
-        jsr     LEA98                           ; 9309 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; 9309 20 98 EA                  ..
         lda     #$1B                            ; 930C A9 1B                    ..
         sta     $0588,x                         ; 930E 9D 88 05                 ...
         lda     #$93                            ; 9311 A9 93                    ..
         sta     $05A0,x                         ; 9313 9D A0 05                 ...
         lda     #$36                            ; 9316 A9 36                    .6
-        jsr     LEC5D                           ; 9318 20 5D EC                  ].
+        jsr     queue_sound                           ; 9318 20 5D EC                  ].
         lda     $0540,x                         ; 931B BD 40 05                 .@.
         cmp     #$03                            ; 931E C9 03                    ..
         bne     L92CE                           ; 9320 D0 AC                    ..
@@ -2684,7 +2661,7 @@ L9307:  lda     #$3A                            ; 9307 A9 3A                    
         cmp     #$04                            ; 9325 C9 04                    ..
         bne     L92CE                           ; 9327 D0 A5                    ..
         lda     #$39                            ; 9329 A9 39                    .9
-        jsr     LEA98                           ; 932B 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; 932B 20 98 EA                  ..
         lda     #$2A                            ; 932E A9 2A                    .*
 L9330:  sta     $0468,x                         ; 9330 9D 68 04                 .h.
         lda     #$69                            ; 9333 A9 69                    .i
@@ -2698,10 +2675,10 @@ L9330:  sta     $0468,x                         ; 9330 9D 68 04                 
         lda     $04C8,x                         ; 9341 BD C8 04                 ...
         cmp     #$3C                            ; 9344 C9 3C                    .<
         bne     L92CE                           ; 9346 D0 86                    ..
-        jsr     LECC2                           ; 9348 20 C2 EC                  ..
+        jsr     entity_distance_calc                           ; 9348 20 C2 EC                  ..
         tay                                     ; 934B A8                       .
         lda     #$18                            ; 934C A9 18                    ..
-        jsr     LF470                           ; 934E 20 70 F4                  p.
+        jsr     entity_set_dir_velocity                           ; 934E 20 70 F4                  p.
         lda     #$60                            ; 9351 A9 60                    .`
         sta     $0588,x                         ; 9353 9D 88 05                 ...
         lda     #$93                            ; 9356 A9 93                    ..
@@ -2720,7 +2697,7 @@ L936C:  jsr     L9417                           ; 936C 20 17 94                 
         lda     $0300,y                         ; 9372 B9 00 03                 ...
         cmp     #$55                            ; 9375 C9 55                    .U
         beq     L93CB                           ; 9377 F0 52                    .R
-        jsr     LF16F                           ; 9379 20 6F F1                  o.
+        jsr     find_free_slot_y                           ; 9379 20 6F F1                  o.
         bcs     L93CB                           ; 937C B0 4D                    .M
         stx     $0F                             ; 937E 86 0F                    ..
         lda     #$86                            ; 9380 A9 86                    ..
@@ -2747,7 +2724,7 @@ L936C:  jsr     L9417                           ; 936C 20 17 94                 
         lda     $0558,x                         ; 93B7 BD 58 05                 .X.
         clc                                     ; 93BA 18                       .
         adc     #$03                            ; 93BB 69 03                    i.
-        jsr     LEAF5                           ; 93BD 20 F5 EA                  ..
+        jsr     entity_speed_preset                           ; 93BD 20 F5 EA                  ..
         lda     #$08                            ; 93C0 A9 08                    ..
         sta     $0498,x                         ; 93C2 9D 98 04                 ...
         lda     #$00                            ; 93C5 A9 00                    ..
@@ -2773,7 +2750,7 @@ L93CB:  dec     $0468,x                         ; 93CB DE 68 04                 
         lda     #$04                            ; 93F0 A9 04                    ..
         sta     $0420,x                         ; 93F2 9D 20 04                 . .
 L93F5:  jsr     L9417                           ; 93F5 20 17 94                  ..
-        jsr     LEA86                           ; 93F8 20 86 EA                  ..
+        jsr     entity_vert_dispatch_raw                           ; 93F8 20 86 EA                  ..
         lda     $0378,x                         ; 93FB BD 78 03                 .x.
         sec                                     ; 93FE 38                       8
         sbc     #$40                            ; 93FF E9 40                    .@
@@ -2794,7 +2771,7 @@ L9417:  lda     $04B0,x                         ; 9417 BD B0 04                 
         inc     $04B0,x                         ; 941A FE B0 04                 ...
         and     #$07                            ; 941D 29 07                    ).
         bne     L9416                           ; 941F D0 F5                    ..
-        jsr     LECC2                           ; 9421 20 C2 EC                  ..
+        jsr     entity_distance_calc                           ; 9421 20 C2 EC                  ..
         tay                                     ; 9424 A8                       .
         lsr     a                               ; 9425 4A                       J
         sta     $0480,x                         ; 9426 9D 80 04                 ...
@@ -2802,7 +2779,7 @@ L9417:  lda     $04B0,x                         ; 9417 BD B0 04                 
         sta     $0F                             ; 942C 85 0F                    ..
         lda     $ED4B,y                         ; 942E B9 4B ED                 .K.
         sta     $0420,x                         ; 9431 9D 20 04                 . .
-        jsr     LEC30                           ; 9434 20 30 EC                  0.
+        jsr     entity_facing_to_flags                           ; 9434 20 30 EC                  0.
         lda     $0F                             ; 9437 A5 0F                    ..
         sta     $0420,x                         ; 9439 9D 20 04                 . .
         lda     $0480,x                         ; 943C BD 80 04                 ...
@@ -2856,7 +2833,7 @@ L9477:  brk                                     ; 9477 00                       
         ora     ($02,x)                         ; 947A 01 02                    ..
         ora     (L0000,x)                       ; 947C 01 00                    ..
         brk                                     ; 947E 00                       .
-        jsr     LEC94                           ; 947F 20 94 EC                  ..
+        jsr     entity_x_dist_px                           ; 947F 20 94 EC                  ..
         cmp     #$5A                            ; 9482 C9 5A                    .Z
         bcc     L948F                           ; 9484 90 09                    ..
         lda     $14                             ; 9486 A5 14                    ..
@@ -2870,14 +2847,14 @@ L948F:  lda     #$9E                            ; 948F A9 9E                    
         lda     #$94                            ; 9494 A9 94                    ..
         sta     $05A0,x                         ; 9496 9D A0 05                 ...
         lda     #$8A                            ; 9499 A9 8A                    ..
-        jsr     LEA98                           ; 949B 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; 949B 20 98 EA                  ..
         lda     $9D                             ; 949E A5 9D                    ..
         and     #$0F                            ; 94A0 29 0F                    ).
         bne     L94A9                           ; 94A2 D0 05                    ..
         lda     #$47                            ; 94A4 A9 47                    .G
-        jsr     LEC5D                           ; 94A6 20 5D EC                  ].
+        jsr     queue_sound                           ; 94A6 20 5D EC                  ].
 L94A9:  ldy     #$19                            ; 94A9 A0 19                    ..
-        jsr     LC4A1                           ; 94AB 20 A1 C4                  ..
+        jsr     tile_collide_horiz                           ; 94AB 20 A1 C4                  ..
         lda     $0420,x                         ; 94AE BD 20 04                 . .
         and     #$01                            ; 94B1 29 01                    ).
         asl     a                               ; 94B3 0A                       .
@@ -2922,7 +2899,7 @@ L9504:  lda     $0378,x                         ; 9504 BD 78 03                 
         sta     $0378,x                         ; 950B 9D 78 03                 .x.
         lda     #$CE                            ; 950E A9 CE                    ..
         sta     $0408,x                         ; 9510 9D 08 04                 ...
-        jsr     LEFF8                           ; 9513 20 F8 EF                  ..
+        jsr     entity_hitbox_check                           ; 9513 20 F8 EF                  ..
         pla                                     ; 9516 68                       h
         sta     $0378,x                         ; 9517 9D 78 03                 .x.
         lda     #$8F                            ; 951A A9 8F                    ..
@@ -2951,8 +2928,8 @@ L9532:  ldy     $0480,x                         ; 9532 BC 80 04                 
         sta     $0E                             ; 954A 85 0E                    ..
         stx     $0F                             ; 954C 86 0F                    ..
         lda     #$48                            ; 954E A9 48                    .H
-        jsr     LEC5D                           ; 9550 20 5D EC                  ].
-        jsr     LF16F                           ; 9553 20 6F F1                  o.
+        jsr     queue_sound                           ; 9550 20 5D EC                  ].
+        jsr     find_free_slot_y                           ; 9553 20 6F F1                  o.
         bcs     L958E                           ; 9556 B0 36                    .6
         lda     #$87                            ; 9558 A9 87                    ..
         sta     $0408,y                         ; 955A 99 08 04                 ...
@@ -2969,7 +2946,7 @@ L956F:  lda     $0D                             ; 956F A5 0D                    
         lda     $0480,x                         ; 9573 BD 80 04                 ...
         clc                                     ; 9576 18                       .
         adc     #$8C                            ; 9577 69 8C                    i.
-        jsr     LEAF5                           ; 9579 20 F5 EA                  ..
+        jsr     entity_speed_preset                           ; 9579 20 F5 EA                  ..
         lda     $0378,y                         ; 957C B9 78 03                 .x.
         sec                                     ; 957F 38                       8
         sbc     #$0C                            ; 9580 E9 0C                    ..
@@ -2978,7 +2955,7 @@ L956F:  lda     $0D                             ; 956F A5 0D                    
         tax                                     ; 9586 AA                       .
         ldy     $0E                             ; 9587 A4 0E                    ..
         lda     #$28                            ; 9589 A9 28                    .(
-        jsr     LF470                           ; 958B 20 70 F4                  p.
+        jsr     entity_set_dir_velocity                           ; 958B 20 70 F4                  p.
 L958E:  ldx     $0F                             ; 958E A6 0F                    ..
         inc     $0480,x                         ; 9590 FE 80 04                 ...
         lda     $0480,x                         ; 9593 BD 80 04                 ...
@@ -3013,7 +2990,7 @@ L95BE:  lda     $0540,x                         ; 95BE BD 40 05                 
         lda     $0570,x                         ; 95C6 BD 70 05                 .p.
         bne     L95D0                           ; 95C9 D0 05                    ..
         lda     #$38                            ; 95CB A9 38                    .8
-        jsr     LEC5D                           ; 95CD 20 5D EC                  ].
+        jsr     queue_sound                           ; 95CD 20 5D EC                  ].
 L95D0:  lda     $0378,x                         ; 95D0 BD 78 03                 .x.
         sta     $0D                             ; 95D3 85 0D                    ..
         lda     $0528,x                         ; 95D5 BD 28 05                 .(.
@@ -3048,7 +3025,7 @@ L960D:  lda     $0E                             ; 960D A5 0E                    
         lda     $0F                             ; 9616 A5 0F                    ..
         adc     #$00                            ; 9618 69 00                    i.
 L961A:  sta     $0348,x                         ; 961A 9D 48 03                 .H.
-        jsr     LEF87                           ; 961D 20 87 EF                  ..
+        jsr     entity_player_collide                           ; 961D 20 87 EF                  ..
         bcs     L9625                           ; 9620 B0 03                    ..
         jsr     L82B8                           ; 9622 20 B8 82                  ..
 L9625:  lda     $0D                             ; 9625 A5 0D                    ..
@@ -3085,7 +3062,7 @@ L9651:  tay                                     ; 9651 A8                       
         asl     a                               ; 9659 0A                       .
         tay                                     ; 965A A8                       .
         lda     #$08                            ; 965B A9 08                    ..
-        jsr     LF470                           ; 965D 20 70 F4                  p.
+        jsr     entity_set_dir_velocity                           ; 965D 20 70 F4                  p.
         lda     #$6A                            ; 9660 A9 6A                    .j
         sta     $0588,x                         ; 9662 9D 88 05                 ...
         lda     #$96                            ; 9665 A9 96                    ..
@@ -3093,7 +3070,7 @@ L9651:  tay                                     ; 9651 A8                       
         lda     $30                             ; 966A A5 30                    .0
         bne     L96D3                           ; 966C D0 65                    .e
         dec     $0378,x                         ; 966E DE 78 03                 .x.
-        jsr     LEF87                           ; 9671 20 87 EF                  ..
+        jsr     entity_player_collide                           ; 9671 20 87 EF                  ..
         inc     $0378,x                         ; 9674 FE 78 03                 .x.
         bcs     L96D3                           ; 9677 B0 5A                    .Z
         lda     #$83                            ; 9679 A9 83                    ..
@@ -3110,13 +3087,13 @@ L9690:  dey                                     ; 9690 88                       
         ora     $A9                             ; 9691 05 A9                    ..
         stx     $9D,y                           ; 9693 96 9D                    ..
         ldy     #$05                            ; 9695 A0 05                    ..
-        jmp     LEA1E                           ; 9697 4C 1E EA                 L..
+        jmp     entity_stop_y                           ; 9697 4C 1E EA                 L..
 
 ; ----------------------------------------------------------------------------
 L969A:  lda     $30                             ; 969A A5 30                    .0
         bne     L96BC                           ; 969C D0 1E                    ..
         dec     $0378,x                         ; 969E DE 78 03                 .x.
-        jsr     LEF87                           ; 96A1 20 87 EF                  ..
+        jsr     entity_player_collide                           ; 96A1 20 87 EF                  ..
         inc     $0378,x                         ; 96A4 FE 78 03                 .x.
         bcs     L96BC                           ; 96A7 B0 13                    ..
         lda     $0420,x                         ; 96A9 BD 20 04                 . .
@@ -3127,8 +3104,8 @@ L969A:  lda     $30                             ; 969A A5 30                    
         sta     $3A                             ; 96B5 85 3A                    .:
         lda     $03C0,x                         ; 96B7 BD C0 03                 ...
         sta     $3B                             ; 96BA 85 3B                    .;
-L96BC:  jsr     LEA65                           ; 96BC 20 65 EA                  e.
-        jsr     LEA86                           ; 96BF 20 86 EA                  ..
+L96BC:  jsr     entity_facing_dispatch                           ; 96BC 20 65 EA                  e.
+        jsr     entity_vert_dispatch_raw                           ; 96BF 20 86 EA                  ..
         jsr     L8526                           ; 96C2 20 26 85                  &.
         dec     $0468,x                         ; 96C5 DE 68 04                 .h.
         bne     L96D3                           ; 96C8 D0 09                    ..
@@ -3137,7 +3114,7 @@ L96BC:  jsr     LEA65                           ; 96BC 20 65 EA                 
         rts                                     ; 96CF 60                       `
 
 ; ----------------------------------------------------------------------------
-        jsr     LE968                           ; 96D0 20 68 E9                  h.
+        jsr     entity_process_y_vel                           ; 96D0 20 68 E9                  h.
 L96D3:  rts                                     ; 96D3 60                       `
 
 ; ----------------------------------------------------------------------------
@@ -3145,8 +3122,8 @@ L96D4:  rti                                     ; 96D4 40                       
 
 ; ----------------------------------------------------------------------------
         sec                                     ; 96D5 38                       8
-        jsr     LEC16                           ; 96D6 20 16 EC                  ..
-        jsr     LEC30                           ; 96D9 20 30 EC                  0.
+        jsr     entity_set_facing                           ; 96D6 20 16 EC                  ..
+        jsr     entity_facing_to_flags                           ; 96D9 20 30 EC                  0.
         lda     $0480,x                         ; 96DC BD 80 04                 ...
         beq     L96E5                           ; 96DF F0 04                    ..
         dec     $0480,x                         ; 96E1 DE 80 04                 ...
@@ -3156,31 +3133,31 @@ L96D4:  rti                                     ; 96D4 40                       
 L96E5:  lda     $14                             ; 96E5 A5 14                    ..
         and     #$40                            ; 96E7 29 40                    )@
         bne     L96F9                           ; 96E9 D0 0E                    ..
-        jsr     LEC94                           ; 96EB 20 94 EC                  ..
+        jsr     entity_x_dist_px                           ; 96EB 20 94 EC                  ..
         cmp     #$5A                            ; 96EE C9 5A                    .Z
         bcs     L96D3                           ; 96F0 B0 E1                    ..
-        jsr     LEC76                           ; 96F2 20 76 EC                  v.
+        jsr     entity_y_dist_abs                           ; 96F2 20 76 EC                  v.
         cmp     #$32                            ; 96F5 C9 32                    .2
         bcs     L96D3                           ; 96F7 B0 DA                    ..
 L96F9:  jsr     L974E                           ; 96F9 20 4E 97                  N.
-        jsr     LEF87                           ; 96FC 20 87 EF                  ..
+        jsr     entity_player_collide                           ; 96FC 20 87 EF                  ..
         bcs     L9706                           ; 96FF B0 05                    ..
         lda     #$FF                            ; 9701 A9 FF                    ..
         sta     $0468,x                         ; 9703 9D 68 04                 .h.
 L9706:  ldy     #$1E                            ; 9706 A0 1E                    ..
-        jsr     LE7B7                           ; 9708 20 B7 E7                  ..
+        jsr     entity_gravity_collide                           ; 9708 20 B7 E7                  ..
         bcs     L971A                           ; 970B B0 0D                    ..
         ldy     #$24                            ; 970D A0 24                    .$
-        jsr     LEA3F                           ; 970F 20 3F EA                  ?.
+        jsr     entity_horiz_dispatch                           ; 970F 20 3F EA                  ?.
         bcc     L96D3                           ; 9712 90 BF                    ..
         inc     $0498,x                         ; 9714 FE 98 04                 ...
-        jmp     LEC4A                           ; 9717 4C 4A EC                 LJ.
+        jmp     entity_flip_direction                           ; 9717 4C 4A EC                 LJ.
 
 ; ----------------------------------------------------------------------------
 L971A:  lda     #$38                            ; 971A A9 38                    .8
         cmp     $0558,x                         ; 971C DD 58 05                 .X.
         beq     L9729                           ; 971F F0 08                    ..
-        jsr     LEA98                           ; 9721 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; 9721 20 98 EA                  ..
         lda     #$CB                            ; 9724 A9 CB                    ..
         sta     $0408,x                         ; 9726 9D 08 04                 ...
 L9729:  lda     $0540,x                         ; 9729 BD 40 05                 .@.
@@ -3197,11 +3174,11 @@ L9729:  lda     $0540,x                         ; 9729 BD 40 05                 
         lda     #$5A                            ; 9744 A9 5A                    .Z
         sta     $0480,x                         ; 9746 9D 80 04                 ...
         lda     #$49                            ; 9749 A9 49                    .I
-        jmp     LEA98                           ; 974B 4C 98 EA                 L..
+        jmp     entity_set_subtype                           ; 974B 4C 98 EA                 L..
 
 ; ----------------------------------------------------------------------------
 L974E:  lda     #$45                            ; 974E A9 45                    .E
-        jsr     LEC5D                           ; 9750 20 5D EC                  ].
+        jsr     queue_sound                           ; 9750 20 5D EC                  ].
         lda     #$FC                            ; 9753 A9 FC                    ..
         sta     $0588,x                         ; 9755 9D 88 05                 ...
         lda     #$96                            ; 9758 A9 96                    ..
@@ -3211,7 +3188,7 @@ L974E:  lda     #$45                            ; 974E A9 45                    
         lda     #$04                            ; 9762 A9 04                    ..
         sta     $03F0,x                         ; 9764 9D F0 03                 ...
         lda     #$37                            ; 9767 A9 37                    .7
-        jsr     LEA98                           ; 9769 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; 9769 20 98 EA                  ..
         lda     #$F1                            ; 976C A9 F1                    ..
         sta     $0408,x                         ; 976E 9D 08 04                 ...
         lda     #$00                            ; 9771 A9 00                    ..
@@ -3225,10 +3202,10 @@ L977C:  rts                                     ; 977C 60                       
         lda     $0300,y                         ; 9780 B9 00 03                 ...
         cmp     #$25                            ; 9783 C9 25                    .%
         beq     L97BA                           ; 9785 F0 33                    .3
-        jsr     LEC94                           ; 9787 20 94 EC                  ..
+        jsr     entity_x_dist_px                           ; 9787 20 94 EC                  ..
         cmp     #$20                            ; 978A C9 20                    . 
         bcs     L97BA                           ; 978C B0 2C                    .,
-        jsr     LF16F                           ; 978E 20 6F F1                  o.
+        jsr     find_free_slot_y                           ; 978E 20 6F F1                  o.
         bcs     L97BA                           ; 9791 B0 27                    .'
         lda     #$D0                            ; 9793 A9 D0                    ..
 L9795:  sta     $0408,y                         ; 9795 99 08 04                 ...
@@ -3237,7 +3214,7 @@ L9795:  sta     $0408,y                         ; 9795 99 08 04                 
         lda     #$25                            ; 979D A9 25                    .%
         sta     $0300,y                         ; 979F 99 00 03                 ...
         lda     #$4F                            ; 97A2 A9 4F                    .O
-        jsr     LEAA4                           ; 97A4 20 A4 EA                  ..
+        jsr     entity_init_pos                           ; 97A4 20 A4 EA                  ..
         lda     #$00                            ; 97A7 A9 00                    ..
         sta     $03D8,y                         ; 97A9 99 D8 03                 ...
         lda     #$05                            ; 97AC A9 05                    ..
@@ -3253,7 +3230,7 @@ L97BA:  rts                                     ; 97BA 60                       
         bne     L97D3                           ; 97BE D0 13                    ..
         lda     #$00                            ; 97C0 A9 00                    ..
         sta     $0570,x                         ; 97C2 9D 70 05                 .p.
-        jsr     LE94A                           ; 97C5 20 4A E9                  J.
+        jsr     entity_move_up_nofacing                           ; 97C5 20 4A E9                  J.
         dec     $0468,x                         ; 97C8 DE 68 04                 .h.
         bne     L97BA                           ; 97CB D0 ED                    ..
         lda     #$01                            ; 97CD A9 01                    ..
@@ -3267,14 +3244,14 @@ L97D3:  cmp     #$02                            ; 97D3 C9 02                    
         cmp     #$0A                            ; 97DA C9 0A                    ..
         bne     L97BA                           ; 97DC D0 DC                    ..
         lda     #$51                            ; 97DE A9 51                    .Q
-        jsr     LEA98                           ; 97E0 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; 97E0 20 98 EA                  ..
         lda     #$01                            ; 97E3 A9 01                    ..
         sta     $03F0,x                         ; 97E5 9D F0 03                 ...
         lda     #$F2                            ; 97E8 A9 F2                    ..
         sta     $0588,x                         ; 97EA 9D 88 05                 ...
         lda     #$97                            ; 97ED A9 97                    ..
         sta     $05A0,x                         ; 97EF 9D A0 05                 ...
-        jsr     LE92A                           ; 97F2 20 2A E9                  *.
+        jsr     entity_move_down_collide                           ; 97F2 20 2A E9                  *.
         rts                                     ; 97F5 60                       `
 
 ; ----------------------------------------------------------------------------
@@ -3284,7 +3261,7 @@ L97D3:  cmp     #$02                            ; 97D3 C9 02                    
         sta     $05A0,x                         ; 97FD 9D A0 05                 ...
         lda     #$30                            ; 9800 A9 30                    .0
         sta     $0468,x                         ; 9802 9D 68 04                 .h.
-        jsr     LEA65                           ; 9805 20 65 EA                  e.
+        jsr     entity_facing_dispatch                           ; 9805 20 65 EA                  e.
         lda     $0468,x                         ; 9808 BD 68 04                 .h.
         bne     L9812                           ; 980B D0 05                    ..
         lda     #$60                            ; 980D A9 60                    .`
@@ -3292,7 +3269,7 @@ L97D3:  cmp     #$02                            ; 97D3 C9 02                    
 L9812:  dec     $0468,x                         ; 9812 DE 68 04                 .h.
         bne     L9864                           ; 9815 D0 4D                    .M
         lda     #$68                            ; 9817 A9 68                    .h
-        jsr     LEA98                           ; 9819 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; 9819 20 98 EA                  ..
         lda     #$26                            ; 981C A9 26                    .&
         .byte   $9D                             ; 981E 9D                       .
 L981F:  dey                                     ; 981F 88                       .
@@ -3321,14 +3298,14 @@ L981F:  dey                                     ; 981F 88                       
 
 ; ----------------------------------------------------------------------------
 L984D:  lda     #$67                            ; 984D A9 67                    .g
-        jsr     LEA98                           ; 984F 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; 984F 20 98 EA                  ..
         lda     #$05                            ; 9852 A9 05                    ..
         sta     $0588,x                         ; 9854 9D 88 05                 ...
         lda     #$98                            ; 9857 A9 98                    ..
         sta     $05A0,x                         ; 9859 9D A0 05                 ...
         lda     #$C0                            ; 985C A9 C0                    ..
         sta     $0408,x                         ; 985E 9D 08 04                 ...
-        jsr     LEC4A                           ; 9861 20 4A EC                  J.
+        jsr     entity_flip_direction                           ; 9861 20 4A EC                  J.
 L9864:  rts                                     ; 9864 60                       `
 
 ; ----------------------------------------------------------------------------
@@ -3360,7 +3337,7 @@ L986D:  cpy     #$D0                            ; 986D C0 D0                    
         lda     $0300,y                         ; 988F B9 00 03                 ...
         cmp     #$29                            ; 9892 C9 29                    .)
         beq     L98F8                           ; 9894 F0 62                    .b
-L9896:  jsr     LF16F                           ; 9896 20 6F F1                  o.
+L9896:  jsr     find_free_slot_y                           ; 9896 20 6F F1                  o.
         bcs     L98F8                           ; 9899 B0 5D                    .]
         lda     #$C7                            ; 989B A9 C7                    ..
         sta     $0408,y                         ; 989D 99 08 04                 ...
@@ -3377,7 +3354,7 @@ L9896:  jsr     LF16F                           ; 9896 20 6F F1                 
 L98B7:  lda     $0F                             ; 98B7 A5 0F                    ..
         sta     $10                             ; 98B9 85 10                    ..
         lda     #$54                            ; 98BB A9 54                    .T
-        jsr     LEAF5                           ; 98BD 20 F5 EA                  ..
+        jsr     entity_speed_preset                           ; 98BD 20 F5 EA                  ..
         lda     $0528,x                         ; 98C0 BD 28 05                 .(.
         and     #$40                            ; 98C3 29 40                    )@
         ora     $0528,y                         ; 98C5 19 28 05                 .(.
@@ -3409,7 +3386,7 @@ L98F8:  rts                                     ; 98F8 60                       
         lda     $0528,x                         ; 98F9 BD 28 05                 .(.
         and     #$40                            ; 98FC 29 40                    )@
         bne     L9921                           ; 98FE D0 21                    .!
-        jsr     LEA1E                           ; 9900 20 1E EA                  ..
+        jsr     entity_stop_y                           ; 9900 20 1E EA                  ..
         lda     #$0D                            ; 9903 A9 0D                    ..
         sta     $0588,x                         ; 9905 9D 88 05                 ...
         lda     #$99                            ; 9908 A9 99                    ..
@@ -3417,11 +3394,11 @@ L98F8:  rts                                     ; 98F8 60                       
         lda     #$00                            ; 990D A9 00                    ..
         sta     $0570,x                         ; 990F 9D 70 05                 .p.
         ldy     #$13                            ; 9912 A0 13                    ..
-        jsr     LE7B7                           ; 9914 20 B7 E7                  ..
+        jsr     entity_gravity_collide                           ; 9914 20 B7 E7                  ..
         bcs     L9940                           ; 9917 B0 27                    .'
 L9919:  lda     $0390,x                         ; 9919 BD 90 03                 ...
         beq     L98F8                           ; 991C F0 DA                    ..
-        jmp     LF2C4                           ; 991E 4C C4 F2                 L..
+        jmp     entity_wipe_x                           ; 991E 4C C4 F2                 L..
 
 ; ----------------------------------------------------------------------------
 L9921:  jsr     LEA29                           ; 9921 20 29 EA                  ).
@@ -3431,7 +3408,7 @@ L9921:  jsr     LEA29                           ; 9921 20 29 EA                 
         sta     $05A0,x                         ; 992B 9D A0 05                 ...
         lda     #$00                            ; 992E A9 00                    ..
         sta     $0570,x                         ; 9930 9D 70 05                 .p.
-        jsr     LE9E1                           ; 9933 20 E1 E9                  ..
+        jsr     entity_apply_gravity                           ; 9933 20 E1 E9                  ..
         jsr     LE999                           ; 9936 20 99 E9                  ..
         ldy     #$14                            ; 9939 A0 14                    ..
         jsr     LE7A8                           ; 993B 20 A8 E7                  ..
@@ -3480,7 +3457,7 @@ L9994:  cmp     #$03                            ; 9994 C9 03                    
         lda     $0570,x                         ; 9998 BD 70 05                 .p.
         cmp     #$08                            ; 999B C9 08                    ..
         bne     L99FD                           ; 999D D0 5E                    .^
-        jsr     LF16F                           ; 999F 20 6F F1                  o.
+        jsr     find_free_slot_y                           ; 999F 20 6F F1                  o.
         bcs     L99CB                           ; 99A2 B0 27                    .'
         lda     #$87                            ; 99A4 A9 87                    ..
         sta     $0408,y                         ; 99A6 99 08 04                 ...
@@ -3493,7 +3470,7 @@ L9994:  cmp     #$03                            ; 9994 C9 03                    
         adc     #$0E                            ; 99B7 69 0E                    i.
         sta     $10                             ; 99B9 85 10                    ..
         lda     #$57                            ; 99BB A9 57                    .W
-        jsr     LEAF5                           ; 99BD 20 F5 EA                  ..
+        jsr     entity_speed_preset                           ; 99BD 20 F5 EA                  ..
         lda     #$00                            ; 99C0 A9 00                    ..
         sta     $03A8,y                         ; 99C2 99 A8 03                 ...
         lda     #$02                            ; 99C5 A9 02                    ..
@@ -3504,7 +3481,7 @@ L9994:  cmp     #$03                            ; 9994 C9 03                    
 L99CB:  lda     $32                             ; 99CB A5 32                    .2
         cmp     #$07                            ; 99CD C9 07                    ..
         beq     L99FD                           ; 99CF F0 2C                    .,
-        jsr     LEFF8                           ; 99D1 20 F8 EF                  ..
+        jsr     entity_hitbox_check                           ; 99D1 20 F8 EF                  ..
         bcs     L99FD                           ; 99D4 B0 27                    .'
         lda     $0330,x                         ; 99D6 BD 30 03                 .0.
         sec                                     ; 99D9 38                       8
@@ -3530,9 +3507,9 @@ L99FD:  rts                                     ; 99FD 60                       
         bne     L9A23                           ; 9A04 D0 1D                    ..
         lda     #$00                            ; 9A06 A9 00                    ..
         sta     $0570,x                         ; 9A08 9D 70 05                 .p.
-        jsr     LEC16                           ; 9A0B 20 16 EC                  ..
-        jsr     LEC30                           ; 9A0E 20 30 EC                  0.
-        jsr     LEC94                           ; 9A11 20 94 EC                  ..
+        jsr     entity_set_facing                           ; 9A0B 20 16 EC                  ..
+        jsr     entity_facing_to_flags                           ; 9A0E 20 30 EC                  0.
+        jsr     entity_x_dist_px                           ; 9A11 20 94 EC                  ..
         cmp     #$40                            ; 9A14 C9 40                    .@
         bcs     L9A2F                           ; 9A16 B0 17                    ..
         lda     #$01                            ; 9A18 A9 01                    ..
@@ -3558,7 +3535,7 @@ L9A2F:  rts                                     ; 9A2F 60                       
         cmp     #$03                            ; 9A3D C9 03                    ..
         bne     L9A2F                           ; 9A3F D0 EE                    ..
         lda     #$9A                            ; 9A41 A9 9A                    ..
-        jmp     LEA98                           ; 9A43 4C 98 EA                 L..
+        jmp     entity_set_subtype                           ; 9A43 4C 98 EA                 L..
 
 ; ----------------------------------------------------------------------------
 L9A46:  lda     $0468,x                         ; 9A46 BD 68 04                 .h.
@@ -3598,7 +3575,7 @@ L9A87:  lda     #$9E                            ; 9A87 A9 9E                    
         sta     $03A8,x                         ; 9A93 9D A8 03                 ...
         sta     $03C0,x                         ; 9A96 9D C0 03                 ...
         lda     #$98                            ; 9A99 A9 98                    ..
-        jmp     LEA98                           ; 9A9B 4C 98 EA                 L..
+        jmp     entity_set_subtype                           ; 9A9B 4C 98 EA                 L..
 
 ; ----------------------------------------------------------------------------
         jsr     L9BA5                           ; 9A9E 20 A5 9B                  ..
@@ -3629,7 +3606,7 @@ L9AAD:  jsr     L9B17                           ; 9AAD 20 17 9B                 
 L9AD8:  jsr     L9B17                           ; 9AD8 20 17 9B                  ..
         bcc     L9B16                           ; 9ADB 90 39                    .9
         lda     #$98                            ; 9ADD A9 98                    ..
-        jmp     LEA98                           ; 9ADF 4C 98 EA                 L..
+        jmp     entity_set_subtype                           ; 9ADF 4C 98 EA                 L..
 
 ; ----------------------------------------------------------------------------
 L9AE2:  lda     $04B0,x                         ; 9AE2 BD B0 04                 ...
@@ -3645,7 +3622,7 @@ L9AE2:  lda     $04B0,x                         ; 9AE2 BD B0 04                 
         lda     #$00                            ; 9AFB A9 00                    ..
         sta     $04C8,x                         ; 9AFD 9D C8 04                 ...
         lda     #$99                            ; 9B00 A9 99                    ..
-        jmp     LEA98                           ; 9B02 4C 98 EA                 L..
+        jmp     entity_set_subtype                           ; 9B02 4C 98 EA                 L..
 
 ; ----------------------------------------------------------------------------
 L9B05:  lda     $0540,x                         ; 9B05 BD 40 05                 .@.
@@ -3661,14 +3638,14 @@ L9B16:  rts                                     ; 9B16 60                       
 L9B17:  lda     #$15                            ; 9B17 A9 15                    ..
         sta     $A1                             ; 9B19 85 A1                    ..
         ldy     #$23                            ; 9B1B A0 23                    .#
-        jsr     LE7B7                           ; 9B1D 20 B7 E7                  ..
+        jsr     entity_gravity_collide                           ; 9B1D 20 B7 E7                  ..
         php                                     ; 9B20 08                       .
         lda     $03F0,x                         ; 9B21 BD F0 03                 ...
         bmi     L9B2F                           ; 9B24 30 09                    0.
         lda     $10                             ; 9B26 A5 10                    ..
         cmp     #$80                            ; 9B28 C9 80                    ..
         beq     L9B2F                           ; 9B2A F0 03                    ..
-        jsr     LEA1E                           ; 9B2C 20 1E EA                  ..
+        jsr     entity_stop_y                           ; 9B2C 20 1E EA                  ..
 L9B2F:  plp                                     ; 9B2F 28                       (
         lda     #$40                            ; 9B30 A9 40                    .@
         sta     $A1                             ; 9B32 85 A1                    ..
@@ -3683,14 +3660,14 @@ L9B35:  stx     $0F                             ; 9B35 86 0F                    
         asl     a                               ; 9B40 0A                       .
         asl     a                               ; 9B41 0A                       .
         sta     $0D                             ; 9B42 85 0D                    ..
-L9B44:  jsr     LF16F                           ; 9B44 20 6F F1                  o.
+L9B44:  jsr     find_free_slot_y                           ; 9B44 20 6F F1                  o.
         bcs     L9B75                           ; 9B47 B0 2C                    .,
         lda     #$86                            ; 9B49 A9 86                    ..
         sta     $0408,y                         ; 9B4B 99 08 04                 ...
         lda     #$9F                            ; 9B4E A9 9F                    ..
         sta     $0300,y                         ; 9B50 99 00 03                 ...
         lda     #$9C                            ; 9B53 A9 9C                    ..
-        jsr     LEAA4                           ; 9B55 20 A4 EA                  ..
+        jsr     entity_init_pos                           ; 9B55 20 A4 EA                  ..
         tya                                     ; 9B58 98                       .
         tax                                     ; 9B59 AA                       .
         inc     $0D                             ; 9B5A E6 0D                    ..
@@ -3702,7 +3679,7 @@ L9B44:  jsr     LF16F                           ; 9B44 20 6F F1                 
         sta     $04E0,x                         ; 9B65 9D E0 04                 ...
 L9B68:  ldy     $0D                             ; 9B68 A4 0D                    ..
         lda     #$18                            ; 9B6A A9 18                    ..
-        jsr     LF470                           ; 9B6C 20 70 F4                  p.
+        jsr     entity_set_dir_velocity                           ; 9B6C 20 70 F4                  p.
         ldx     $0F                             ; 9B6F A6 0F                    ..
         dec     $0E                             ; 9B71 C6 0E                    ..
         bpl     L9B44                           ; 9B73 10 CF                    ..
@@ -3728,11 +3705,11 @@ L9B8C:  .byte   $02                             ; 9B8C 02                       
         sta     $0588,x                         ; 9B92 9D 88 05                 ...
         lda     #$9A                            ; 9B95 A9 9A                    ..
         sta     $05A0,x                         ; 9B97 9D A0 05                 ...
-        jsr     LEC16                           ; 9B9A 20 16 EC                  ..
+        jsr     entity_set_facing                           ; 9B9A 20 16 EC                  ..
         .byte   $20                             ; 9B9D 20                        
 L9B9E:  bmi     L9B8C                           ; 9B9E 30 EC                    0.
         lda     #$9A                            ; 9BA0 A9 9A                    ..
-        jmp     LEA98                           ; 9BA2 4C 98 EA                 L..
+        jmp     entity_set_subtype                           ; 9BA2 4C 98 EA                 L..
 
 ; ----------------------------------------------------------------------------
 L9BA5:  lda     $0498,x                         ; 9BA5 BD 98 04                 ...
@@ -3747,7 +3724,7 @@ L9BAE:  lda     $0480,x                         ; 9BAE BD 80 04                 
         lda     L9BF1,y                         ; 9BB4 B9 F1 9B                 ...
         sta     $0498,x                         ; 9BB7 9D 98 04                 ...
         inc     $0480,x                         ; 9BBA FE 80 04                 ...
-        jsr     LF16F                           ; 9BBD 20 6F F1                  o.
+        jsr     find_free_slot_y                           ; 9BBD 20 6F F1                  o.
         bcs     L9BF0                           ; 9BC0 B0 2E                    ..
         lda     #$BF                            ; 9BC2 A9 BF                    ..
         sta     $0300,y                         ; 9BC4 99 00 03                 ...
@@ -3760,7 +3737,7 @@ L9BAE:  lda     $0480,x                         ; 9BAE BD 80 04                 
         adc     #$46                            ; 9BD5 69 46                    iF
         sta     $10                             ; 9BD7 85 10                    ..
         lda     #$8C                            ; 9BD9 A9 8C                    ..
-        jsr     LEAF5                           ; 9BDB 20 F5 EA                  ..
+        jsr     entity_speed_preset                           ; 9BDB 20 F5 EA                  ..
         lda     $0528,y                         ; 9BDE B9 28 05                 .(.
         and     #$BF                            ; 9BE1 29 BF                    ).
         sta     $0528,y                         ; 9BE3 99 28 05                 .(.
@@ -3774,14 +3751,14 @@ L9BF0:  rts                                     ; 9BF0 60                       
 L9BF1:  sei                                     ; 9BF1 78                       x
         plp                                     ; 9BF2 28                       (
         ldy     #$06                            ; 9BF3 A0 06                    ..
-        jsr     LE780                           ; 9BF5 20 80 E7                  ..
+        jsr     entity_move_up                           ; 9BF5 20 80 E7                  ..
         bcs     L9C05                           ; 9BF8 B0 0B                    ..
         lda     $10                             ; 9BFA A5 10                    ..
         cmp     #$80                            ; 9BFC C9 80                    ..
         bne     L9C05                           ; 9BFE D0 05                    ..
         lda     $0390,x                         ; 9C00 BD 90 03                 ...
         beq     L9BF0                           ; 9C03 F0 EB                    ..
-L9C05:  jmp     LF2C4                           ; 9C05 4C C4 F2                 L..
+L9C05:  jmp     entity_wipe_x                           ; 9C05 4C C4 F2                 L..
 
 ; ----------------------------------------------------------------------------
         lda     $0540,x                         ; 9C08 BD 40 05                 .@.
@@ -3796,7 +3773,7 @@ L9C05:  jmp     LF2C4                           ; 9C05 4C C4 F2                 
         lda     #$02                            ; 9C1E A9 02                    ..
         sta     $0E                             ; 9C20 85 0E                    ..
         stx     $0F                             ; 9C22 86 0F                    ..
-L9C24:  jsr     LF16F                           ; 9C24 20 6F F1                  o.
+L9C24:  jsr     find_free_slot_y                           ; 9C24 20 6F F1                  o.
         bcs     L9C5F                           ; 9C27 B0 36                    .6
         lda     #$C7                            ; 9C29 A9 C7                    ..
         sta     $0408,y                         ; 9C2B 99 08 04                 ...
@@ -3812,19 +3789,19 @@ L9C24:  jsr     LF16F                           ; 9C24 20 6F F1                 
         lda     #$02                            ; 9C42 A9 02                    ..
         clc                                     ; 9C44 18                       .
         adc     $0E                             ; 9C45 65 0E                    e.
-        jsr     LEAF5                           ; 9C47 20 F5 EA                  ..
+        jsr     entity_speed_preset                           ; 9C47 20 F5 EA                  ..
         sty     $0D                             ; 9C4A 84 0D                    ..
         ldx     $0E                             ; 9C4C A6 0E                    ..
         lda     L9C7D,x                         ; 9C4E BD 7D 9C                 .}.
         tay                                     ; 9C51 A8                       .
         ldx     $0D                             ; 9C52 A6 0D                    ..
         lda     #$10                            ; 9C54 A9 10                    ..
-        jsr     LF470                           ; 9C56 20 70 F4                  p.
+        jsr     entity_set_dir_velocity                           ; 9C56 20 70 F4                  p.
         ldx     $0F                             ; 9C59 A6 0F                    ..
         dec     $0E                             ; 9C5B C6 0E                    ..
         bpl     L9C24                           ; 9C5D 10 C5                    ..
 L9C5F:  ldy     #$15                            ; 9C5F A0 15                    ..
-        jsr     LE7B7                           ; 9C61 20 B7 E7                  ..
+        jsr     entity_gravity_collide                           ; 9C61 20 B7 E7                  ..
         lda     $0420,x                         ; 9C64 BD 20 04                 . .
         asl     a                               ; 9C67 0A                       .
         and     #$03                            ; 9C68 29 03                    ).
@@ -3833,15 +3810,15 @@ L9C5F:  ldy     #$15                            ; 9C5F A0 15                    
         and     #$10                            ; 9C6E 29 10                    ).
         beq     L9C79                           ; 9C70 F0 07                    ..
         ldy     #$16                            ; 9C72 A0 16                    ..
-        jsr     LEA3F                           ; 9C74 20 3F EA                  ?.
+        jsr     entity_horiz_dispatch                           ; 9C74 20 3F EA                  ?.
         bcc     L9C7C                           ; 9C77 90 03                    ..
 L9C79:  jsr     L852F                           ; 9C79 20 2F 85                  /.
 L9C7C:  rts                                     ; 9C7C 60                       `
 
 ; ----------------------------------------------------------------------------
 L9C7D:  asl     $0200                           ; 9C7D 0E 00 02                 ...
-        jsr     LE94A                           ; 9C80 20 4A E9                  J.
-        jsr     LEA65                           ; 9C83 20 65 EA                  e.
+        jsr     entity_move_up_nofacing                           ; 9C80 20 4A E9                  J.
+        jsr     entity_facing_dispatch                           ; 9C83 20 65 EA                  e.
         jsr     L8526                           ; 9C86 20 26 85                  &.
         rts                                     ; 9C89 60                       `
 
@@ -3853,20 +3830,20 @@ L9C7D:  asl     $0200                           ; 9C7D 0E 00 02                 
         bcs     L9C95                           ; 9C91 B0 02                    ..
         lda     #$00                            ; 9C93 A9 00                    ..
 L9C95:  sta     $0378                           ; 9C95 8D 78 03                 .x.
-        jsr     LEC94                           ; 9C98 20 94 EC                  ..
+        jsr     entity_x_dist_px                           ; 9C98 20 94 EC                  ..
         cmp     #$03                            ; 9C9B C9 03                    ..
         bcs     L9CA6                           ; 9C9D B0 07                    ..
-        jsr     LEC76                           ; 9C9F 20 76 EC                  v.
+        jsr     entity_y_dist_abs                           ; 9C9F 20 76 EC                  v.
         cmp     #$03                            ; 9CA2 C9 03                    ..
         bcc     L9CB9                           ; 9CA4 90 13                    ..
-L9CA6:  jsr     LECC2                           ; 9CA6 20 C2 EC                  ..
+L9CA6:  jsr     entity_distance_calc                           ; 9CA6 20 C2 EC                  ..
         tay                                     ; 9CA9 A8                       .
         lda     #$08                            ; 9CAA A9 08                    ..
-        jsr     LF470                           ; 9CAC 20 70 F4                  p.
+        jsr     entity_set_dir_velocity                           ; 9CAC 20 70 F4                  p.
         pla                                     ; 9CAF 68                       h
         sta     $0378                           ; 9CB0 8D 78 03                 .x.
-L9CB3:  jsr     LEA65                           ; 9CB3 20 65 EA                  e.
-        jmp     LEA86                           ; 9CB6 4C 86 EA                 L..
+L9CB3:  jsr     entity_facing_dispatch                           ; 9CB3 20 65 EA                  e.
+        jmp     entity_vert_dispatch_raw                           ; 9CB6 4C 86 EA                 L..
 
 ; ----------------------------------------------------------------------------
 L9CB9:  lda     $0378                           ; 9CB9 AD 78 03                 .x.
@@ -3899,7 +3876,7 @@ L9CB9:  lda     $0378                           ; 9CB9 AD 78 03                 
 L9CFF:  pha                                     ; 9CFF 48                       H
         tay                                     ; 9D00 A8                       .
         lda     #$08                            ; 9D01 A9 08                    ..
-        jsr     LF470                           ; 9D03 20 70 F4                  p.
+        jsr     entity_set_dir_velocity                           ; 9D03 20 70 F4                  p.
         pla                                     ; 9D06 68                       h
         cmp     #$0C                            ; 9D07 C9 0C                    ..
         bne     L9D1C                           ; 9D09 D0 11                    ..
@@ -3910,8 +3887,8 @@ L9CFF:  pha                                     ; 9CFF 48                       
         lda     #$9C                            ; 9D15 A9 9C                    ..
         sta     $05A0,x                         ; 9D17 9D A0 05                 ...
         bne     L9CB3                           ; 9D1A D0 97                    ..
-L9D1C:  jsr     LEA65                           ; 9D1C 20 65 EA                  e.
-        jsr     LEA86                           ; 9D1F 20 86 EA                  ..
+L9D1C:  jsr     entity_facing_dispatch                           ; 9D1C 20 65 EA                  e.
+        jsr     entity_vert_dispatch_raw                           ; 9D1F 20 86 EA                  ..
         dec     $0480,x                         ; 9D22 DE 80 04                 ...
         lda     $0378                           ; 9D25 AD 78 03                 .x.
         sec                                     ; 9D28 38                       8
@@ -3944,7 +3921,7 @@ L9D58:  rts                                     ; 9D58 60                       
         clc                                     ; 9D5E 18                       .
         adc     #$01                            ; 9D5F 69 01                    i.
         sta     $0420,x                         ; 9D61 9D 20 04                 . .
-        jsr     LEC30                           ; 9D64 20 30 EC                  0.
+        jsr     entity_facing_to_flags                           ; 9D64 20 30 EC                  0.
         lda     #$CF                            ; 9D67 A9 CF                    ..
         sta     $0588,x                         ; 9D69 9D 88 05                 ...
         lda     #$9D                            ; 9D6C A9 9D                    ..
@@ -3971,7 +3948,7 @@ L9D9E:  dec     $0468,x                         ; 9D9E DE 68 04                 
         bne     L9DCF                           ; 9DA1 D0 2C                    .,
         lda     #$3C                            ; 9DA3 A9 3C                    .<
         sta     $0468,x                         ; 9DA5 9D 68 04                 .h.
-        jsr     LF16F                           ; 9DA8 20 6F F1                  o.
+        jsr     find_free_slot_y                           ; 9DA8 20 6F F1                  o.
         bcs     L9DDA                           ; 9DAB B0 2D                    .-
         lda     #$87                            ; 9DAD A9 87                    ..
         sta     $0408,y                         ; 9DAF 99 08 04                 ...
@@ -3980,7 +3957,7 @@ L9D9E:  dec     $0468,x                         ; 9D9E DE 68 04                 
         lda     #$57                            ; 9DB7 A9 57                    .W
         sta     $10                             ; 9DB9 85 10                    ..
         lda     #$5B                            ; 9DBB A9 5B                    .[
-        jsr     LEAF5                           ; 9DBD 20 F5 EA                  ..
+        jsr     entity_speed_preset                           ; 9DBD 20 F5 EA                  ..
         lda     #$01                            ; 9DC0 A9 01                    ..
         sta     $0420,y                         ; 9DC2 99 20 04                 . .
         lda     #$00                            ; 9DC5 A9 00                    ..
@@ -3989,7 +3966,7 @@ L9D9E:  dec     $0468,x                         ; 9D9E DE 68 04                 
         sta     $03C0,y                         ; 9DCC 99 C0 03                 ...
 L9DCF:  lda     $0528,x                         ; 9DCF BD 28 05                 .(.
         pha                                     ; 9DD2 48                       H
-        jsr     LEA65                           ; 9DD3 20 65 EA                  e.
+        jsr     entity_facing_dispatch                           ; 9DD3 20 65 EA                  e.
         pla                                     ; 9DD6 68                       h
         sta     $0528,x                         ; 9DD7 9D 28 05                 .(.
 L9DDA:  rts                                     ; 9DDA 60                       `
@@ -4006,8 +3983,8 @@ L9DDA:  rts                                     ; 9DDA 60                       
         sta     $05A0,x                         ; 9DF0 9D A0 05                 ...
         lda     #$00                            ; 9DF3 A9 00                    ..
         sta     $0570,x                         ; 9DF5 9D 70 05                 .p.
-        jsr     LEC16                           ; 9DF8 20 16 EC                  ..
-        jsr     LEC30                           ; 9DFB 20 30 EC                  0.
+        jsr     entity_set_facing                           ; 9DF8 20 16 EC                  ..
+        jsr     entity_facing_to_flags                           ; 9DFB 20 30 EC                  0.
         lda     $0300,x                         ; 9DFE BD 00 03                 ...
         clc                                     ; 9E01 18                       .
         adc     #$01                            ; 9E02 69 01                    i.
@@ -4045,7 +4022,7 @@ L9E4C:  stx     $0F                             ; 9E4C 86 0F                    
         ldy     $0468,x                         ; 9E4E BC 68 04                 .h.
         lda     L9ECC,y                         ; 9E51 B9 CC 9E                 ...
         sta     $0D                             ; 9E54 85 0D                    ..
-        jsr     LF16F                           ; 9E56 20 6F F1                  o.
+        jsr     find_free_slot_y                           ; 9E56 20 6F F1                  o.
         bcs     L9EB2                           ; 9E59 B0 57                    .W
         lda     #$01                            ; 9E5B A9 01                    ..
         sta     $0450,y                         ; 9E5D 99 50 04                 .P.
@@ -4062,7 +4039,7 @@ L9E6C:  lda     $0468,x                         ; 9E6C BD 68 04                 
         lda     $0558,x                         ; 9E78 BD 58 05                 .X.
         clc                                     ; 9E7B 18                       .
         adc     #$01                            ; 9E7C 69 01                    i.
-        jsr     LEAA4                           ; 9E7E 20 A4 EA                  ..
+        jsr     entity_init_pos                           ; 9E7E 20 A4 EA                  ..
         tya                                     ; 9E81 98                       .
         sta     $0498,x                         ; 9E82 9D 98 04                 ...
         lda     $0300,x                         ; 9E85 BD 00 03                 ...
@@ -4106,10 +4083,10 @@ L9ECC:  bpl     L9EE6                           ; 9ECC 10 18                    
 L9ECE:  .byte   $87                             ; 9ECE 87                       .
         cmp     ($A0,x)                         ; 9ECF C1 A0                    ..
         .byte   $07                             ; 9ED1 07                       .
-        jsr     LE7B7                           ; 9ED2 20 B7 E7                  ..
+        jsr     entity_gravity_collide                           ; 9ED2 20 B7 E7                  ..
         bcs     L9EDE                           ; 9ED5 B0 07                    ..
         ldy     #$0E                            ; 9ED7 A0 0E                    ..
-        jsr     LEA3F                           ; 9ED9 20 3F EA                  ?.
+        jsr     entity_horiz_dispatch                           ; 9ED9 20 3F EA                  ?.
         bcc     L9EC5                           ; 9EDC 90 E7                    ..
 L9EDE:  lda     $0558,x                         ; 9EDE BD 58 05                 .X.
         cmp     #$91                            ; 9EE1 C9 91                    ..
@@ -4121,9 +4098,9 @@ L9EE6:  cpy     $F2                             ; 9EE6 C4 F2                    
         lda     #$81                            ; 9EED A9 81                    ..
         sta     $0408,x                         ; 9EEF 9D 08 04                 ...
         lda     #$2B                            ; 9EF2 A9 2B                    .+
-        jsr     LEC5D                           ; 9EF4 20 5D EC                  ].
+        jsr     queue_sound                           ; 9EF4 20 5D EC                  ].
         lda     #$92                            ; 9EF7 A9 92                    ..
-        jmp     LEA98                           ; 9EF9 4C 98 EA                 L..
+        jmp     entity_set_subtype                           ; 9EF9 4C 98 EA                 L..
 
 ; ----------------------------------------------------------------------------
 L9EFC:  jsr     LA56C                           ; 9EFC 20 6C A5                  l.

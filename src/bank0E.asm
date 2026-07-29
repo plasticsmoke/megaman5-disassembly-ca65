@@ -71,40 +71,20 @@ L804E           := $804E
 L8400           := $8400
 L910A           := $910A
 L9190           := $9190
-LC298           := $C298
-LC2D1           := $C2D1
-LC2DB           := $C2DB
-LC343           := $C343
-LC38F           := $C38F
-LC39D           := $C39D
-LC3B8           := $C3B8
-LC3EB           := $C3EB
-LC3F1           := $C3F1
 LDAFC           := $DAFC
-LE06E           := $E06E
 LE4E5           := $E4E5
 LE904           := $E904
-LEA65           := $EA65
-LEA86           := $EA86
-LEA98           := $EA98
-LEAA4           := $EAA4
-LEC5B           := $EC5B
-LEC5D           := $EC5D
-LF363           := $F363
 LF36F           := $F36F
-LF470           := $F470
-LFF22           := $FF22
 LFF24           := $FF24
-LFF43           := $FF43
 ; ----------------------------------------------------------------------------
         lda     #$F0                            ; A000 A9 F0                    ..
-        jsr     LEC5B                           ; A002 20 5B EC                  [.
-        jsr     LC3F1                           ; A005 20 F1 C3                  ..
-        jsr     LC38F                           ; A008 20 8F C3                  ..
-        jsr     LC3B8                           ; A00B 20 B8 C3                  ..
-        jsr     LC39D                           ; A00E 20 9D C3                  ..
-        jsr     LFF22                           ; A011 20 22 FF                  ".
-        jsr     LC2D1                           ; A014 20 D1 C2                  ..
+        jsr     queue_sound_param                           ; A002 20 5B EC                  [.
+        jsr     palette_fade_out                           ; A005 20 F1 C3                  ..
+        jsr     oam_clear                           ; A008 20 8F C3                  ..
+        jsr     scroll_irq_reset                           ; A00B 20 B8 C3                  ..
+        jsr     entity_clear_all                           ; A00E 20 9D C3                  ..
+        jsr     frame_wait                           ; A011 20 22 FF                  ".
+        jsr     disable_rendering                           ; A014 20 D1 C2                  ..
         lda     #$10                            ; A017 A9 10                    ..
         sta     $26                             ; A019 85 26                    .&
         sta     $27                             ; A01B 85 27                    .'
@@ -122,9 +102,9 @@ LFF43           := $FF43
         ldy     #$00                            ; A035 A0 00                    ..
         jsr     LA486                           ; A037 20 86 A4                  ..
         jsr     LA49F                           ; A03A 20 9F A4                  ..
-        jsr     LC2DB                           ; A03D 20 DB C2                  ..
-        jsr     LFF22                           ; A040 20 22 FF                  ".
-        jsr     LC3EB                           ; A043 20 EB C3                  ..
+        jsr     enable_rendering                           ; A03D 20 DB C2                  ..
+        jsr     frame_wait                           ; A040 20 22 FF                  ".
+        jsr     palette_fade_in                           ; A043 20 EB C3                  ..
         lda     #$00                            ; A046 A9 00                    ..
         sta     $78                             ; A048 85 78                    .x
         sta     $79                             ; A04A 85 79                    .y
@@ -147,11 +127,11 @@ LFF43           := $FF43
         jsr     LA3FF                           ; A06F 20 FF A3                  ..
         lda     #$78                            ; A072 A9 78                    .x
         jsr     LFF24                           ; A074 20 24 FF                  $.
-        jsr     LC38F                           ; A077 20 8F C3                  ..
-        jsr     LC3B8                           ; A07A 20 B8 C3                  ..
-        jsr     LC39D                           ; A07D 20 9D C3                  ..
-        jsr     LFF22                           ; A080 20 22 FF                  ".
-        jsr     LC2D1                           ; A083 20 D1 C2                  ..
+        jsr     oam_clear                           ; A077 20 8F C3                  ..
+        jsr     scroll_irq_reset                           ; A07A 20 B8 C3                  ..
+        jsr     entity_clear_all                           ; A07D 20 9D C3                  ..
+        jsr     frame_wait                           ; A080 20 22 FF                  ".
+        jsr     disable_rendering                           ; A083 20 D1 C2                  ..
         lda     #$10                            ; A086 A9 10                    ..
         sta     $26                             ; A088 85 26                    .&
         lda     #$0F                            ; A08A A9 0F                    ..
@@ -167,7 +147,7 @@ LA09D:  lda     LA56A,y                         ; A09D B9 6A A5                 
         sta     $0780,y                         ; A0A0 99 80 07                 ...
         dey                                     ; A0A3 88                       .
         bpl     LA09D                           ; A0A4 10 F7                    ..
-        jsr     LC298                           ; A0A6 20 98 C2                  ..
+        jsr     nametable_flush                           ; A0A6 20 98 C2                  ..
         ldy     #$43                            ; A0A9 A0 43                    .C
 LA0AB:  lda     LA57C,y                         ; A0AB B9 7C A5                 .|.
         sta     $0200,y                         ; A0AE 99 00 02                 ...
@@ -177,11 +157,11 @@ LA0AB:  lda     LA57C,y                         ; A0AB B9 7C A5                 
         sta     $ED                             ; A0B6 85 ED                    ..
         ldy     #$22                            ; A0B8 A0 22                    ."
         jsr     LA486                           ; A0BA 20 86 A4                  ..
-        jsr     LC2DB                           ; A0BD 20 DB C2                  ..
-        jsr     LFF22                           ; A0C0 20 22 FF                  ".
+        jsr     enable_rendering                           ; A0BD 20 DB C2                  ..
+        jsr     frame_wait                           ; A0C0 20 22 FF                  ".
         lda     #$0C                            ; A0C3 A9 0C                    ..
-        jsr     LEC5B                           ; A0C5 20 5B EC                  [.
-        jsr     LC3EB                           ; A0C8 20 EB C3                  ..
+        jsr     queue_sound_param                           ; A0C5 20 5B EC                  [.
+        jsr     palette_fade_in                           ; A0C8 20 EB C3                  ..
         lda     #$96                            ; A0CB A9 96                    ..
         sta     $05F1                           ; A0CD 8D F1 05                 ...
         lda     #$00                            ; A0D0 A9 00                    ..
@@ -198,18 +178,18 @@ LA0DF:  lda     LA573,y                         ; A0DF B9 73 A5                 
         lda     #$00                            ; A0EA A9 00                    ..
         sta     $6C                             ; A0EC 85 6C                    .l
         jsr     LA2A3                           ; A0EE 20 A3 A2                  ..
-        jsr     LC3F1                           ; A0F1 20 F1 C3                  ..
-        jsr     LC38F                           ; A0F4 20 8F C3                  ..
-        jsr     LFF22                           ; A0F7 20 22 FF                  ".
-        jsr     LC2D1                           ; A0FA 20 D1 C2                  ..
+        jsr     palette_fade_out                           ; A0F1 20 F1 C3                  ..
+        jsr     oam_clear                           ; A0F4 20 8F C3                  ..
+        jsr     frame_wait                           ; A0F7 20 22 FF                  ".
+        jsr     disable_rendering                           ; A0FA 20 D1 C2                  ..
         lda     #$20                            ; A0FD A9 20                    . 
         ldx     #$00                            ; A0FF A2 00                    ..
         ldy     #$00                            ; A101 A0 00                    ..
-        jsr     LC343                           ; A103 20 43 C3                  C.
+        jsr     ppu_fill_nametable                           ; A103 20 43 C3                  C.
         lda     #$28                            ; A106 A9 28                    .(
         ldx     #$00                            ; A108 A2 00                    ..
         ldy     #$00                            ; A10A A0 00                    ..
-        jsr     LC343                           ; A10C 20 43 C3                  C.
+        jsr     ppu_fill_nametable                           ; A10C 20 43 C3                  C.
         ldy     #$43                            ; A10F A0 43                    .C
 LA111:  lda     LA5C0,y                         ; A111 B9 C0 A5                 ...
         sta     $0200,y                         ; A114 99 00 02                 ...
@@ -223,9 +203,9 @@ LA123:  lda     LA6C4,y                         ; A123 B9 C4 A6                 
         sta     $0620,y                         ; A126 99 20 06                 . .
         dey                                     ; A129 88                       .
         bpl     LA123                           ; A12A 10 F7                    ..
-        jsr     LC2DB                           ; A12C 20 DB C2                  ..
-        jsr     LFF22                           ; A12F 20 22 FF                  ".
-        jsr     LC3EB                           ; A132 20 EB C3                  ..
+        jsr     enable_rendering                           ; A12C 20 DB C2                  ..
+        jsr     frame_wait                           ; A12F 20 22 FF                  ".
+        jsr     palette_fade_in                           ; A132 20 EB C3                  ..
         jsr     LA1AA                           ; A135 20 AA A1                  ..
         ldy     #$06                            ; A138 A0 06                    ..
         ldx     #$00                            ; A13A A2 00                    ..
@@ -271,7 +251,7 @@ LA190:  jsr     LA3BB                           ; A190 20 BB A3                 
         bne     LA16F                           ; A198 D0 D5                    ..
         ldx     #$00                            ; A19A A2 00                    ..
         lda     #$9C                            ; A19C A9 9C                    ..
-        jsr     LEA98                           ; A19E 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; A19E 20 98 EA                  ..
         lda     $0528                           ; A1A1 AD 28 05                 .(.
         ora     #$20                            ; A1A4 09 20                    . 
         sta     $0528                           ; A1A6 8D 28 05                 .(.
@@ -311,7 +291,7 @@ LA1CD:  lda     LA6D4,y                         ; A1CD B9 D4 A6                 
         bne     LA21C                           ; A1E2 D0 38                    .8
         lda     #$0F                            ; A1E4 A9 0F                    ..
         sta     $F5                             ; A1E6 85 F5                    ..
-        jsr     LFF43                           ; A1E8 20 43 FF                  C.
+        jsr     bank_load_shadow                           ; A1E8 20 43 FF                  C.
         ldy     $6C                             ; A1EB A4 6C                    .l
         lda     $8000,y                         ; A1ED B9 00 80                 ...
         sta     L0000                           ; A1F0 85 00                    ..
@@ -334,7 +314,7 @@ LA20B:  iny                                     ; A20B C8                       
         bpl     LA202                           ; A20F 10 F1                    ..
         lda     #$17                            ; A211 A9 17                    ..
         sta     $F5                             ; A213 85 F5                    ..
-        jsr     LFF43                           ; A215 20 43 FF                  C.
+        jsr     bank_load_shadow                           ; A215 20 43 FF                  C.
         inc     $25                             ; A218 E6 25                    .%
         inc     $6C                             ; A21A E6 6C                    .l
 LA21C:  ldy     $03                             ; A21C A4 03                    ..
@@ -367,7 +347,7 @@ LA253:  rts                                     ; A253 60                       
 ; ----------------------------------------------------------------------------
 LA254:  lda     #$0F                            ; A254 A9 0F                    ..
         sta     $F5                             ; A256 85 F5                    ..
-        jsr     LFF43                           ; A258 20 43 FF                  C.
+        jsr     bank_load_shadow                           ; A258 20 43 FF                  C.
         lda     $8000,y                         ; A25B B9 00 80                 ...
         sta     L0008                           ; A25E 85 08                    ..
         lda     $8028,y                         ; A260 B9 28 80                 .(.
@@ -398,7 +378,7 @@ LA278:  lda     (L0008),y                       ; A278 B1 08                    
         bne     LA278                           ; A297 D0 DF                    ..
         lda     #$17                            ; A299 A9 17                    ..
         sta     $F5                             ; A29B 85 F5                    ..
-        jmp     LFF43                           ; A29D 4C 43 FF                 LC.
+        jmp     bank_load_shadow                           ; A29D 4C 43 FF                 LC.
 
 ; ----------------------------------------------------------------------------
 LA2A0:  iny                                     ; A2A0 C8                       .
@@ -414,7 +394,7 @@ LA2AA:  jsr     LA3BB                           ; A2AA 20 BB A3                 
         stx     $9D                             ; A2B6 86 9D                    ..
         ldy     $6C                             ; A2B8 A4 6C                    .l
         lda     $8DB3,y                         ; A2BA B9 B3 8D                 ...
-        jsr     LEA98                           ; A2BD 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; A2BD 20 98 EA                  ..
         ldy     #$02                            ; A2C0 A0 02                    ..
         lda     #$36                            ; A2C2 A9 36                    .6
 LA2C4:  sta     $0611,y                         ; A2C4 99 11 06                 ...
@@ -465,7 +445,7 @@ LA313:  jsr     LA3BB                           ; A313 20 BB A3                 
         ldx     #$00                            ; A327 A2 00                    ..
         ldy     #$01                            ; A329 A0 01                    ..
         lda     #$21                            ; A32B A9 21                    .!
-        jsr     LEAA4                           ; A32D 20 A4 EA                  ..
+        jsr     entity_init_pos                           ; A32D 20 A4 EA                  ..
         lda     #$6D                            ; A330 A9 6D                    .m
         sta     $0301                           ; A332 8D 01 03                 ...
         lda     #$48                            ; A335 A9 48                    .H
@@ -565,7 +545,7 @@ LA3DC:  lda     $0361                           ; A3DC AD 61 03                 
         bne     LA3F6                           ; A3EF D0 05                    ..
         lda     #$00                            ; A3F1 A9 00                    ..
         sta     $0301                           ; A3F3 8D 01 03                 ...
-LA3F6:  jsr     LF363                           ; A3F6 20 63 F3                  c.
+LA3F6:  jsr     render_tick_frame                           ; A3F6 20 63 F3                  c.
         lda     $0301                           ; A3F9 AD 01 03                 ...
         bne     LA3DC                           ; A3FC D0 DE                    ..
         rts                                     ; A3FE 60                       `
@@ -592,7 +572,7 @@ LA417:  sta     $0600,y                         ; A417 99 00 06                 
         adc     #$10                            ; A422 69 10                    i.
         sta     $10                             ; A424 85 10                    ..
 LA426:  inc     $9D                             ; A426 E6 9D                    ..
-        jsr     LFF22                           ; A428 20 22 FF                  ".
+        jsr     frame_wait                           ; A428 20 22 FF                  ".
         lda     $10                             ; A42B A5 10                    ..
         cmp     #$50                            ; A42D C9 50                    .P
         bne     LA405                           ; A42F D0 D4                    ..
@@ -609,9 +589,9 @@ LA432:  ldx     #$00                            ; A432 A2 00                    
         lda     LA53A,y                         ; A445 B9 3A A5                 .:.
         tay                                     ; A448 A8                       .
         lda     #$38                            ; A449 A9 38                    .8
-        jsr     LF470                           ; A44B 20 70 F4                  p.
-LA44E:  jsr     LEA65                           ; A44E 20 65 EA                  e.
-        jsr     LEA86                           ; A451 20 86 EA                  ..
+        jsr     entity_set_dir_velocity                           ; A44B 20 70 F4                  p.
+LA44E:  jsr     entity_facing_dispatch                           ; A44E 20 65 EA                  e.
+        jsr     entity_vert_dispatch_raw                           ; A451 20 86 EA                  ..
         lda     $0390                           ; A454 AD 90 03                 ...
         bne     LA47B                           ; A457 D0 22                    ."
         dec     $0468                           ; A459 CE 68 04                 .h.
@@ -626,8 +606,8 @@ LA44E:  jsr     LEA65                           ; A44E 20 65 EA                 
         and     #$03                            ; A46C 29 03                    ).
         bne     LA475                           ; A46E D0 05                    ..
         lda     #$2B                            ; A470 A9 2B                    .+
-        jsr     LEC5D                           ; A472 20 5D EC                  ].
-LA475:  jsr     LF363                           ; A475 20 63 F3                  c.
+        jsr     queue_sound                           ; A472 20 5D EC                  ].
+LA475:  jsr     render_tick_frame                           ; A475 20 63 F3                  c.
         jmp     LA432                           ; A478 4C 32 A4                 L2.
 
 ; ----------------------------------------------------------------------------
@@ -635,7 +615,7 @@ LA47B:  rts                                     ; A47B 60                       
 
 ; ----------------------------------------------------------------------------
 LA47C:  sta     $0F                             ; A47C 85 0F                    ..
-LA47E:  jsr     LF363                           ; A47E 20 63 F3                  c.
+LA47E:  jsr     render_tick_frame                           ; A47E 20 63 F3                  c.
         dec     $0F                             ; A481 C6 0F                    ..
         bne     LA47E                           ; A483 D0 F9                    ..
         rts                                     ; A485 60                       `
@@ -660,7 +640,7 @@ LA49F:  ldx     #$04                            ; A49F A2 04                    
 LA4A3:  lda     LA51E,y                         ; A4A3 B9 1E A5                 ...
         sta     $0300,x                         ; A4A6 9D 00 03                 ...
         lda     LA525,y                         ; A4A9 B9 25 A5                 .%.
-        jsr     LEA98                           ; A4AC 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; A4AC 20 98 EA                  ..
         lda     LA52C,y                         ; A4AF B9 2C A5                 .,.
         sta     $0330,x                         ; A4B2 9D 30 03                 .0.
         lda     LA533,y                         ; A4B5 B9 33 A5                 .3.
@@ -2539,7 +2519,7 @@ LADCF:  brk                                     ; ADCF 00                       
         .byte   $64                             ; ADD2 64                       d
         ror     $68                             ; ADD3 66 68                    fh
         ror     a                               ; ADD5 6A                       j
-        jmp     (LE06E)                         ; ADD6 6C 6E E0                 ln.
+        jmp     (entity_deactivate)                         ; ADD6 6C 6E E0                 ln.
 
 ; ----------------------------------------------------------------------------
         .byte   $E2                             ; ADD9 E2                       .

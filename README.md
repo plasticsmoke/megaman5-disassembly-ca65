@@ -44,7 +44,7 @@ MM5 returns to CHR-ROM with MMC3 CHR banking (as in MM3):
 
 | banks | contents |
 |---|---|
-| `$00-$0D` | stage data + stage/entity code (stage bank selected via zp `$26` → `$A000` window) |
+| `$00-$0D` | stage banks at `$A000`: stage data + that stage's enemy AI (bank `$00` also hosts a per-frame engine service, `$01` the pause menu at `$8000`) |
 | `$0E-$11` | code + screen/data banks (menus, cutscene screens — being classified) |
 | `$12/$13` | animation data pair (descriptors at `$8000` + records at `$A000`) |
 | `$14/$15` | animation data pair (probable — same paired-pointer structure) |
@@ -52,7 +52,9 @@ MM5 returns to CHR-ROM with MMC3 CHR banking (as in MM3):
 | `$17` | title / menus / stage select + stage→bank directory |
 | `$18/$19` | sound engine (`$8000` update / `$8003` play) + sound data |
 | `$1A` | data incl. text (being classified) |
-| `$1B-$1D` | game engine code (entity AI, player, weapons — being classified) |
+| `$1B` | player state machine + weapons (`$8000`); spawn engine at `$988A` |
+| `$1C` | behavior engine: per-type AI dispatch (coroutines via behavior PC) |
+| `$1D` | generic enemy AI bank (`$A000`, 123 entity types) |
 | `$1E/$1F` | fixed bank at `$C000-$FFFF` (NMI/IRQ/RESET, scheduler, core engine) |
 | CHR `$00-$1F` | 32 x 8KB CHR-ROM banks (tiles, banked via MMC3 R0-R5) |
 

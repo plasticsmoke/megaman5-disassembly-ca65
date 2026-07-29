@@ -53,24 +53,11 @@ LD7DB           := $D7DB
 LD806           := $D806
 LD8A2           := $D8A2
 LDA4E           := $DA4E
-LE780           := $E780
-LE968           := $E968
-LEA65           := $EA65
-LEA86           := $EA86
-LEA98           := $EA98
-LEAA4           := $EAA4
-LEAE9           := $EAE9
-LEC5D           := $EC5D
-LEF87           := $EF87
 LF05A           := $F05A
-LF16F           := $F16F
-LF2C4           := $F2C4
-LF2FE           := $F2FE
 LFD10           := $FD10
 LFF10           := $FF10
-LFFB7           := $FFB7
 ; ----------------------------------------------------------------------------
-        jsr     LEF87                           ; A000 20 87 EF                  ..
+        jsr     entity_player_collide                           ; A000 20 87 EF                  ..
         bcs     LA06B                           ; A003 B0 66                    .f
         lda     $AF                             ; A005 A5 AF                    ..
         sta     L0000                           ; A007 85 00                    ..
@@ -93,7 +80,7 @@ LFFB7           := $FFB7
         jmp     LA05E                           ; A032 4C 5E A0                 L^.
 
 ; ----------------------------------------------------------------------------
-        jsr     LEF87                           ; A035 20 87 EF                  ..
+        jsr     entity_player_collide                           ; A035 20 87 EF                  ..
         bcs     LA06B                           ; A038 B0 31                    .1
         lda     $AF                             ; A03A A5 AF                    ..
         sta     L0000                           ; A03C 85 00                    ..
@@ -115,7 +102,7 @@ LA05E:  lda     $01                             ; A05E A5 01                    
         beq     LA06B                           ; A062 F0 07                    ..
         sta     $AF                             ; A064 85 AF                    ..
 LA066:  lda     #$3F                            ; A066 A9 3F                    .?
-LA068:  jsr     LEC5D                           ; A068 20 5D EC                  ].
+LA068:  jsr     queue_sound                           ; A068 20 5D EC                  ].
 LA06B:  rts                                     ; A06B 60                       `
 
 ; ----------------------------------------------------------------------------
@@ -156,7 +143,7 @@ LA06B:  rts                                     ; A06B 60                       
         sta     $03D8,x                         ; A0B3 9D D8 03                 ...
         lda     #$00                            ; A0B6 A9 00                    ..
         sta     $03F0,x                         ; A0B8 9D F0 03                 ...
-LA0BB:  jsr     LEA86                           ; A0BB 20 86 EA                  ..
+LA0BB:  jsr     entity_vert_dispatch_raw                           ; A0BB 20 86 EA                  ..
         lda     #$00                            ; A0BE A9 00                    ..
         sta     $0390,x                         ; A0C0 9D 90 03                 ...
         dec     $0468,x                         ; A0C3 DE 68 04                 .h.
@@ -181,12 +168,12 @@ LA0E2:  rts                                     ; A0E2 60                       
         lda     #$00                            ; A0E9 A9 00                    ..
         sta     $75                             ; A0EB 85 75                    .u
         sta     $76                             ; A0ED 85 76                    .v
-        jsr     LEF87                           ; A0EF 20 87 EF                  ..
+        jsr     entity_player_collide                           ; A0EF 20 87 EF                  ..
         bcs     LA140                           ; A0F2 B0 4C                    .L
         lda     #$00                            ; A0F4 A9 00                    ..
         sta     $FB                             ; A0F6 85 FB                    ..
         sta     $0360,x                         ; A0F8 9D 60 03                 .`.
-        jsr     LFFB7                           ; A0FB 20 B7 FF                  ..
+        jsr     set_mirroring                           ; A0FB 20 B7 FF                  ..
         lda     #$80                            ; A0FE A9 80                    ..
         sta     $1E                             ; A100 85 1E                    ..
         lda     #$1D                            ; A102 A9 1D                    ..
@@ -250,7 +237,7 @@ LA154:  sta     $FA                             ; A154 85 FA                    
         sta     $0348                           ; A17A 8D 48 03                 .H.
         sta     $0348,x                         ; A17D 9D 48 03                 .H.
         lda     #$01                            ; A180 A9 01                    ..
-        jsr     LFFB7                           ; A182 20 B7 FF                  ..
+        jsr     set_mirroring                           ; A182 20 B7 FF                  ..
         lda     #$8F                            ; A185 A9 8F                    ..
         sta     $0588,x                         ; A187 9D 88 05                 ...
         lda     #$A1                            ; A18A A9 A1                    ..
@@ -271,11 +258,11 @@ LA18F:  rts                                     ; A18F 60                       
         ldy     #$00                            ; A1A8 A0 00                    ..
         jsr     LD7DB                           ; A1AA 20 DB D7                  ..
         lda     #$69                            ; A1AD A9 69                    .i
-        jsr     LEA98                           ; A1AF 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; A1AF 20 98 EA                  ..
 LA1B2:  lda     $0528,x                         ; A1B2 BD 28 05                 .(.
         and     #$04                            ; A1B5 29 04                    ).
         bne     LA1D1                           ; A1B7 D0 18                    ..
-        jsr     LE968                           ; A1B9 20 68 E9                  h.
+        jsr     entity_process_y_vel                           ; A1B9 20 68 E9                  h.
         lda     $0390,x                         ; A1BC BD 90 03                 ...
         beq     LA1D1                           ; A1BF F0 10                    ..
         lda     #$00                            ; A1C1 A9 00                    ..
@@ -317,7 +304,7 @@ LA1EB:  and     #$BD                            ; A1EB 29 BD                    
         lda     $0680,y                         ; A20A B9 80 06                 ...
         and     L0000                           ; A20D 25 00                    %.
         sta     $0680,y                         ; A20F 99 80 06                 ...
-        jsr     LF2C4                           ; A212 20 C4 F2                  ..
+        jsr     entity_wipe_x                           ; A212 20 C4 F2                  ..
 LA215:  rts                                     ; A215 60                       `
 
 ; ----------------------------------------------------------------------------
@@ -325,7 +312,7 @@ LA215:  rts                                     ; A215 60                       
         cmp     #$04                            ; A219 C9 04                    ..
         bne     LA275                           ; A21B D0 58                    .X
         lda     #$64                            ; A21D A9 64                    .d
-        jsr     LEA98                           ; A21F 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; A21F 20 98 EA                  ..
         lda     $0378,x                         ; A222 BD 78 03                 .x.
         sec                                     ; A225 38                       8
         sbc     #$14                            ; A226 E9 14                    ..
@@ -340,12 +327,12 @@ LA215:  rts                                     ; A215 60                       
         lda     #$A2                            ; A23D A9 A2                    ..
         sta     $05A0,x                         ; A23F 9D A0 05                 ...
         ldy     #$18                            ; A242 A0 18                    ..
-        jsr     LE780                           ; A244 20 80 E7                  ..
+        jsr     entity_move_up                           ; A244 20 80 E7                  ..
         bcs     LA276                           ; A247 B0 2D                    .-
         lda     #$64                            ; A249 A9 64                    .d
         sta     L0010                           ; A24B 85 10                    ..
         dec     $0378,x                         ; A24D DE 78 03                 .x.
-        jsr     LEF87                           ; A250 20 87 EF                  ..
+        jsr     entity_player_collide                           ; A250 20 87 EF                  ..
         inc     $0378,x                         ; A253 FE 78 03                 .x.
         bcs     LA26B                           ; A256 B0 13                    ..
         lda     $0378,x                         ; A258 BD 78 03                 .x.
@@ -360,13 +347,13 @@ LA215:  rts                                     ; A215 60                       
 LA26B:  lda     L0010                           ; A26B A5 10                    ..
         cmp     $0558,x                         ; A26D DD 58 05                 .X.
         beq     LA275                           ; A270 F0 03                    ..
-        jsr     LEA98                           ; A272 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; A272 20 98 EA                  ..
 LA275:  rts                                     ; A275 60                       `
 
 ; ----------------------------------------------------------------------------
 LA276:  lda     #$84                            ; A276 A9 84                    ..
-        jsr     LEA98                           ; A278 20 98 EA                  ..
-        jsr     LF2C4                           ; A27B 20 C4 F2                  ..
+        jsr     entity_set_subtype                           ; A278 20 98 EA                  ..
+        jsr     entity_wipe_x                           ; A27B 20 C4 F2                  ..
         lda     #$01                            ; A27E A9 01                    ..
         sta     $0300,x                         ; A280 9D 00 03                 ...
         rts                                     ; A283 60                       `
@@ -375,7 +362,7 @@ LA276:  lda     #$84                            ; A276 A9 84                    
         lda     $0540,x                         ; A284 BD 40 05                 .@.
         bne     LA275                           ; A287 D0 EC                    ..
         lda     #$66                            ; A289 A9 66                    .f
-        jsr     LEA98                           ; A28B 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; A28B 20 98 EA                  ..
         lda     $0378,x                         ; A28E BD 78 03                 .x.
         sec                                     ; A291 38                       8
         sbc     #$04                            ; A292 E9 04                    ..
@@ -392,13 +379,13 @@ LA2A2:  plp                                     ; A2A2 28                       
         ldx     #$9D                            ; A2AA A2 9D                    ..
         ldy     #$05                            ; A2AC A0 05                    ..
         ldy     #$14                            ; A2AE A0 14                    ..
-        jsr     LE780                           ; A2B0 20 80 E7                  ..
+        jsr     entity_move_up                           ; A2B0 20 80 E7                  ..
         lda     L0010                           ; A2B3 A5 10                    ..
         and     #$10                            ; A2B5 29 10                    ).
         bne     LA2DC                           ; A2B7 D0 23                    .#
         lda     $0468,x                         ; A2B9 BD 68 04                 .h.
         bne     LA2D7                           ; A2BC D0 19                    ..
-        jsr     LEF87                           ; A2BE 20 87 EF                  ..
+        jsr     entity_player_collide                           ; A2BE 20 87 EF                  ..
         bcs     LA2E9                           ; A2C1 B0 26                    .&
         lda     $0378,x                         ; A2C3 BD 78 03                 .x.
         sec                                     ; A2C6 38                       8
@@ -411,9 +398,9 @@ LA2A2:  plp                                     ; A2A2 28                       
         sta     $0468,x                         ; A2D4 9D 68 04                 .h.
 LA2D7:  dec     $0468,x                         ; A2D7 DE 68 04                 .h.
         bne     LA2E9                           ; A2DA D0 0D                    ..
-LA2DC:  jsr     LF2C4                           ; A2DC 20 C4 F2                  ..
+LA2DC:  jsr     entity_wipe_x                           ; A2DC 20 C4 F2                  ..
         lda     #$5D                            ; A2DF A9 5D                    .]
-        jsr     LEA98                           ; A2E1 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; A2E1 20 98 EA                  ..
         lda     #$01                            ; A2E4 A9 01                    ..
         sta     $0300,x                         ; A2E6 9D 00 03                 ...
 LA2E9:  rts                                     ; A2E9 60                       `
@@ -430,14 +417,14 @@ LA2E9:  rts                                     ; A2E9 60                       
         sta     $05A0,x                         ; A2FE 9D A0 05                 ...
         lda     $0468,x                         ; A301 BD 68 04                 .h.
         bne     LA35C                           ; A304 D0 56                    .V
-        jsr     LF16F                           ; A306 20 6F F1                  o.
+        jsr     find_free_slot_y                           ; A306 20 6F F1                  o.
         bcs     LA357                           ; A309 B0 4C                    .L
         sty     $0F                             ; A30B 84 0F                    ..
         ldy     $0480,x                         ; A30D BC 80 04                 ...
         sty     $0E                             ; A310 84 0E                    ..
         lda     LA360,y                         ; A312 B9 60 A3                 .`.
         ldy     $0F                             ; A315 A4 0F                    ..
-        jsr     LEAA4                           ; A317 20 A4 EA                  ..
+        jsr     entity_init_pos                           ; A317 20 A4 EA                  ..
         ldx     $0E                             ; A31A A6 0E                    ..
         lda     #$0D                            ; A31C A9 0D                    ..
         sta     $0300,y                         ; A31E 99 00 03                 ...
@@ -530,7 +517,7 @@ LA3AA:  lda     $99                             ; A3AA A5 99                    
         sta     $03F0,x                         ; A3CF 9D F0 03                 ...
 LA3D2:  lda     $0498,x                         ; A3D2 BD 98 04                 ...
         sta     $0378,x                         ; A3D5 9D 78 03                 .x.
-        jsr     LEA86                           ; A3D8 20 86 EA                  ..
+        jsr     entity_vert_dispatch_raw                           ; A3D8 20 86 EA                  ..
         lda     $0378,x                         ; A3DB BD 78 03                 .x.
         sta     $0498,x                         ; A3DE 9D 98 04                 ...
         lda     #$D8                            ; A3E1 A9 D8                    ..
@@ -635,11 +622,11 @@ LA4A2:  sta     $0480,x                         ; A4A2 9D 80 04                 
         lda     $30                             ; A4AC A5 30                    .0
         bne     LA51A                           ; A4AE D0 6A                    .j
         lda     #$F1                            ; A4B0 A9 F1                    ..
-        jsr     LEC5D                           ; A4B2 20 5D EC                  ].
+        jsr     queue_sound                           ; A4B2 20 5D EC                  ].
         lda     #$0D                            ; A4B5 A9 0D                    ..
         sta     $30                             ; A4B7 85 30                    .0
         ldy     #$04                            ; A4B9 A0 04                    ..
-LA4BB:  jsr     LF2FE                           ; A4BB 20 FE F2                  ..
+LA4BB:  jsr     entity_wipe_y                           ; A4BB 20 FE F2                  ..
         dey                                     ; A4BE 88                       .
         bne     LA4BB                           ; A4BF D0 FA                    ..
         lda     #$00                            ; A4C1 A9 00                    ..
@@ -664,11 +651,11 @@ LA4D1:  lda     LA51B,y                         ; A4D1 B9 1B A5                 
         sta     $0588,x                         ; A4EB 9D 88 05                 ...
         lda     #$A4                            ; A4EE A9 A4                    ..
         sta     $05A0,x                         ; A4F0 9D A0 05                 ...
-        jsr     LEF87                           ; A4F3 20 87 EF                  ..
+        jsr     entity_player_collide                           ; A4F3 20 87 EF                  ..
         bcs     LA51A                           ; A4F6 B0 22                    ."
         ldy     #$00                            ; A4F8 A0 00                    ..
         lda     #$1D                            ; A4FA A9 1D                    ..
-        jsr     LEAE9                           ; A4FC 20 E9 EA                  ..
+        jsr     entity_init_subtype_y                           ; A4FC 20 E9 EA                  ..
         lda     $0330,x                         ; A4FF BD 30 03                 .0.
         sta     $0330                           ; A502 8D 30 03                 .0.
         lda     $0348,x                         ; A505 BD 48 03                 .H.
@@ -677,7 +664,7 @@ LA4D1:  lda     LA51B,y                         ; A4D1 B9 1B A5                 
         sta     $0378                           ; A50E 8D 78 03                 .x.
         lda     $0390,x                         ; A511 BD 90 03                 ...
         sta     $0390                           ; A514 8D 90 03                 ...
-        jsr     LF2C4                           ; A517 20 C4 F2                  ..
+        jsr     entity_wipe_x                           ; A517 20 C4 F2                  ..
 LA51A:  rts                                     ; A51A 60                       `
 
 ; ----------------------------------------------------------------------------
@@ -750,8 +737,8 @@ LA543:  sta     $06C0,y                         ; A543 99 C0 06                 
         iny                                     ; A5AF C8                       .
         iny                                     ; A5B0 C8                       .
         sty     L0043                           ; A5B1 84 43                    .C
-        jsr     LEA65                           ; A5B3 20 65 EA                  e.
-        jsr     LEA86                           ; A5B6 20 86 EA                  ..
+        jsr     entity_facing_dispatch                           ; A5B3 20 65 EA                  e.
+        jsr     entity_vert_dispatch_raw                           ; A5B6 20 86 EA                  ..
         dec     $0498,x                         ; A5B9 DE 98 04                 ...
         bne     LA5E6                           ; A5BC D0 28                    .(
 LA5BE:  ldy     $0480,x                         ; A5BE BC 80 04                 ...
@@ -763,7 +750,7 @@ LA5BE:  ldy     $0480,x                         ; A5BE BC 80 04                 
         sta     $0420,x                         ; A5D0 9D 20 04                 . .
         bne     LA5E6                           ; A5D3 D0 11                    ..
         lda     #$00                            ; A5D5 A9 00                    ..
-        jsr     LEA98                           ; A5D7 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; A5D7 20 98 EA                  ..
         lda     #$FD                            ; A5DA A9 FD                    ..
         sta     $0588,x                         ; A5DC 9D 88 05                 ...
         lda     #$A5                            ; A5DF A9 A5                    ..
@@ -812,10 +799,10 @@ LA636:  jsr     LA66B                           ; A636 20 6B A6                 
         lda     $0468,x                         ; A646 BD 68 04                 .h.
         bne     LA693                           ; A649 D0 48                    .H
         jsr     LA6A3                           ; A64B 20 A3 A6                  ..
-        jsr     LEA65                           ; A64E 20 65 EA                  e.
-        jsr     LEA86                           ; A651 20 86 EA                  ..
+        jsr     entity_facing_dispatch                           ; A64E 20 65 EA                  e.
+        jsr     entity_vert_dispatch_raw                           ; A651 20 86 EA                  ..
         lda     #$B8                            ; A654 A9 B8                    ..
-        jsr     LEA98                           ; A656 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; A656 20 98 EA                  ..
         lda     #$10                            ; A659 A9 10                    ..
         sta     $0468,x                         ; A65B 9D 68 04                 .h.
         ldy     #$00                            ; A65E A0 00                    ..
@@ -832,7 +819,7 @@ LA66B:  ldy     $0480,x                         ; A66B BC 80 04                 
         sta     $0420,x                         ; A67D 9D 20 04                 . .
 LA680:  bne     LA693                           ; A680 D0 11                    ..
         lda     #$00                            ; A682 A9 00                    ..
-        jsr     LEA98                           ; A684 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; A684 20 98 EA                  ..
         lda     #$BB                            ; A687 A9 BB                    ..
         sta     $0588,x                         ; A689 9D 88 05                 ...
         lda     #$A6                            ; A68C A9 A6                    ..
@@ -842,7 +829,7 @@ LA693:  lda     $0540,x                         ; A693 BD 40 05                 
         cmp     #$02                            ; A696 C9 02                    ..
         bne     LA69F                           ; A698 D0 05                    ..
         lda     #$00                            ; A69A A9 00                    ..
-        jsr     LEA98                           ; A69C 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; A69C 20 98 EA                  ..
 LA69F:  dec     $0468,x                         ; A69F DE 68 04                 .h.
         rts                                     ; A6A2 60                       `
 

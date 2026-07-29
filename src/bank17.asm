@@ -115,39 +115,14 @@ L5945           := $5945
 L5947           := $5947
 L594D           := $594D
 LA000           := $A000
-LC298           := $C298
-LC2D1           := $C2D1
-LC2DB           := $C2DB
-LC2E5           := $C2E5
-LC343           := $C343
-LC38F           := $C38F
-LC39D           := $C39D
-LC3B8           := $C3B8
-LC3EB           := $C3EB
-LC3F1           := $C3F1
 LCA9F           := $CA9F
 LD216           := $D216
 LDAFC           := $DAFC
 LDB23           := $DB23
-LE90C           := $E90C
-LE92A           := $E92A
-LE94A           := $E94A
-LEA65           := $EA65
-LEA86           := $EA86
-LEA98           := $EA98
-LEAA4           := $EAA4
-LEC5B           := $EC5B
-LEC5D           := $EC5D
-LF363           := $F363
 LF391           := $F391
-LF3F2           := $F3F2
 LF465           := $F465
-LF470           := $F470
 LFF20           := $FF20
-LFF22           := $FF22
 LFF24           := $FF24
-LFF43           := $FF43
-LFFB7           := $FFB7
 ; ----------------------------------------------------------------------------
 L8000:  lda     #$00                            ; 8000 A9 00                    ..
         sta     $95                             ; 8002 85 95                    ..
@@ -160,7 +135,7 @@ L8000:  lda     #$00                            ; 8000 A9 00                    
         bne     L8029                           ; 8010 D0 17                    ..
         lda     #$0E                            ; 8012 A9 0E                    ..
 L8014:  sta     $F6                             ; 8014 85 F6                    ..
-        jsr     LFF43                           ; 8016 20 43 FF                  C.
+        jsr     bank_load_shadow                           ; 8016 20 43 FF                  C.
         jmp     LA000                           ; 8019 4C 00 A0                 L..
 
 ; ----------------------------------------------------------------------------
@@ -174,17 +149,17 @@ L801F:  lda     #$00                            ; 801F A9 00                    
 
 ; ----------------------------------------------------------------------------
 L8029:  lda     #$F0                            ; 8029 A9 F0                    ..
-        jsr     LEC5B                           ; 802B 20 5B EC                  [.
+        jsr     queue_sound_param                           ; 802B 20 5B EC                  [.
         jsr     L91C9                           ; 802E 20 C9 91                  ..
-        jsr     LC3F1                           ; 8031 20 F1 C3                  ..
-        jsr     LC39D                           ; 8034 20 9D C3                  ..
-        jsr     LC38F                           ; 8037 20 8F C3                  ..
-        jsr     LC3B8                           ; 803A 20 B8 C3                  ..
-        jsr     LFF22                           ; 803D 20 22 FF                  ".
-        jsr     LC2D1                           ; 8040 20 D1 C2                  ..
-        jsr     LF3F2                           ; 8043 20 F2 F3                  ..
+        jsr     palette_fade_out                           ; 8031 20 F1 C3                  ..
+        jsr     entity_clear_all                           ; 8034 20 9D C3                  ..
+        jsr     oam_clear                           ; 8037 20 8F C3                  ..
+        jsr     scroll_irq_reset                           ; 803A 20 B8 C3                  ..
+        jsr     frame_wait                           ; 803D 20 22 FF                  ".
+        jsr     disable_rendering                           ; 8040 20 D1 C2                  ..
+        jsr     stage_state_init                           ; 8043 20 F2 F3                  ..
         lda     #$01                            ; 8046 A9 01                    ..
-        jsr     LFFB7                           ; 8048 20 B7 FF                  ..
+        jsr     set_mirroring                           ; 8048 20 B7 FF                  ..
         lda     #$10                            ; 804B A9 10                    ..
         sta     L0027                           ; 804D 85 27                    .'
         sta     $26                             ; 804F 85 26                    .&
@@ -203,8 +178,8 @@ L8029:  lda     #$F0                            ; 8029 A9 F0                    
         jsr     L89FC                           ; 806B 20 FC 89                  ..
         lda     #$02                            ; 806E A9 02                    ..
         sta     $FD                             ; 8070 85 FD                    ..
-        jsr     LC2DB                           ; 8072 20 DB C2                  ..
-        jsr     LC3EB                           ; 8075 20 EB C3                  ..
+        jsr     enable_rendering                           ; 8072 20 DB C2                  ..
+        jsr     palette_fade_in                           ; 8075 20 EB C3                  ..
         lda     #$96                            ; 8078 A9 96                    ..
         jsr     LFF24                           ; 807A 20 24 FF                  $.
 L807D:  jsr     LA000                           ; 807D 20 00 A0                  ..
@@ -214,16 +189,16 @@ L807D:  jsr     LA000                           ; 807D 20 00 A0                 
         lda     #$10                            ; 8087 A9 10                    ..
         jsr     L8A29                           ; 8089 20 29 8A                  ).
         lda     #$49                            ; 808C A9 49                    .I
-        jsr     LEC5B                           ; 808E 20 5B EC                  [.
+        jsr     queue_sound_param                           ; 808E 20 5B EC                  [.
         lda     #$00                            ; 8091 A9 00                    ..
         sta     $FD                             ; 8093 85 FD                    ..
         lda     #$A0                            ; 8095 A9 A0                    ..
         sta     $10                             ; 8097 85 10                    ..
         lda     #$05                            ; 8099 A9 05                    ..
         sta     $11                             ; 809B 85 11                    ..
-        jsr     LC3EB                           ; 809D 20 EB C3                  ..
-L80A0:  jsr     LFF22                           ; 80A0 20 22 FF                  ".
-        jsr     LC2E5                           ; 80A3 20 E5 C2                  ..
+        jsr     palette_fade_in                           ; 809D 20 EB C3                  ..
+L80A0:  jsr     frame_wait                           ; 80A0 20 22 FF                  ".
+        jsr     read_controllers                           ; 80A3 20 E5 C2                  ..
         lda     $14                             ; 80A6 A5 14                    ..
         and     #$90                            ; 80A8 29 90                    ).
         bne     L80D2                           ; 80AA D0 26                    .&
@@ -231,7 +206,7 @@ L80A0:  jsr     LFF22                           ; 80A0 20 22 FF                 
         and     #$2C                            ; 80AE 29 2C                    ),
         beq     L80BF                           ; 80B0 F0 0D                    ..
         lda     #$27                            ; 80B2 A9 27                    .'
-        jsr     LEC5D                           ; 80B4 20 5D EC                  ].
+        jsr     queue_sound                           ; 80B4 20 5D EC                  ].
         lda     L0200                           ; 80B7 AD 00 02                 ...
         eor     #$10                            ; 80BA 49 10                    I.
         sta     L0200                           ; 80BC 8D 00 02                 ...
@@ -246,20 +221,20 @@ L80BF:  lda     $10                             ; 80BF A5 10                    
         bne     L80A0                           ; 80CE D0 D0                    ..
         beq     L807D                           ; 80D0 F0 AB                    ..
 L80D2:  lda     #$28                            ; 80D2 A9 28                    .(
-        jsr     LEC5D                           ; 80D4 20 5D EC                  ].
+        jsr     queue_sound                           ; 80D4 20 5D EC                  ].
         lda     L0200                           ; 80D7 AD 00 02                 ...
         cmp     #$A7                            ; 80DA C9 A7                    ..
         beq     L80E1                           ; 80DC F0 03                    ..
         jmp     L83BA                           ; 80DE 4C BA 83                 L..
 
 ; ----------------------------------------------------------------------------
-L80E1:  jsr     LC3F1                           ; 80E1 20 F1 C3                  ..
-        jsr     LC39D                           ; 80E4 20 9D C3                  ..
-        jsr     LC38F                           ; 80E7 20 8F C3                  ..
-        jsr     LC3B8                           ; 80EA 20 B8 C3                  ..
-        jsr     LF3F2                           ; 80ED 20 F2 F3                  ..
-        jsr     LFF22                           ; 80F0 20 22 FF                  ".
-        jsr     LC2D1                           ; 80F3 20 D1 C2                  ..
+L80E1:  jsr     palette_fade_out                           ; 80E1 20 F1 C3                  ..
+        jsr     entity_clear_all                           ; 80E4 20 9D C3                  ..
+        jsr     oam_clear                           ; 80E7 20 8F C3                  ..
+        jsr     scroll_irq_reset                           ; 80EA 20 B8 C3                  ..
+        jsr     stage_state_init                           ; 80ED 20 F2 F3                  ..
+        jsr     frame_wait                           ; 80F0 20 22 FF                  ".
+        jsr     disable_rendering                           ; 80F3 20 D1 C2                  ..
         lda     #$10                            ; 80F6 A9 10                    ..
         sta     $26                             ; 80F8 85 26                    .&
         lda     #$0F                            ; 80FA A9 0F                    ..
@@ -280,11 +255,11 @@ L80E1:  jsr     LC3F1                           ; 80E1 20 F1 C3                 
         lda     #$E4                            ; 811B A9 E4                    ..
         jsr     L8A29                           ; 811D 20 29 8A                  ).
         jsr     L8A94                           ; 8120 20 94 8A                  ..
-        jsr     LC2DB                           ; 8123 20 DB C2                  ..
-        jsr     LFF22                           ; 8126 20 22 FF                  ".
-        jsr     LC3EB                           ; 8129 20 EB C3                  ..
+        jsr     enable_rendering                           ; 8123 20 DB C2                  ..
+        jsr     frame_wait                           ; 8126 20 22 FF                  ".
+        jsr     palette_fade_in                           ; 8129 20 EB C3                  ..
         lda     #$0D                            ; 812C A9 0D                    ..
-        jsr     LEC5B                           ; 812E 20 5B EC                  [.
+        jsr     queue_sound_param                           ; 812E 20 5B EC                  [.
         jsr     L8AF1                           ; 8131 20 F1 8A                  ..
         lda     #$01                            ; 8134 A9 01                    ..
         sta     $10                             ; 8136 85 10                    ..
@@ -331,7 +306,7 @@ L8168:  lda     $14                             ; 8168 A5 14                    
         adc     L8D92,y                         ; 8180 79 92 8D                 y..
         sta     $10                             ; 8183 85 10                    ..
 L8185:  lda     #$27                            ; 8185 A9 27                    .'
-        jsr     LEC5D                           ; 8187 20 5D EC                  ].
+        jsr     queue_sound                           ; 8187 20 5D EC                  ].
 L818A:  ldy     $10                             ; 818A A4 10                    ..
         lda     L8D8A,y                         ; 818C B9 8A 8D                 ...
         sta     L0000                           ; 818F 85 00                    ..
@@ -361,8 +336,8 @@ L81B9:  inx                                     ; 81B9 E8                       
         cpy     #$08                            ; 81BE C0 08                    ..
         bne     L819C                           ; 81C0 D0 DA                    ..
 L81C2:  inc     $9D                             ; 81C2 E6 9D                    ..
-        jsr     LFF22                           ; 81C4 20 22 FF                  ".
-        jsr     LC2E5                           ; 81C7 20 E5 C2                  ..
+        jsr     frame_wait                           ; 81C4 20 22 FF                  ".
+        jsr     read_controllers                           ; 81C7 20 E5 C2                  ..
         jmp     L8140                           ; 81CA 4C 40 81                 L@.
 
 ; ----------------------------------------------------------------------------
@@ -381,12 +356,12 @@ L81CD:  lda     $10                             ; 81CD A5 10                    
         cmp     #$FF                            ; 81E4 C9 FF                    ..
         bne     L81C2                           ; 81E6 D0 DA                    ..
         lda     #$28                            ; 81E8 A9 28                    .(
-        jsr     LEC5D                           ; 81EA 20 5D EC                  ].
+        jsr     queue_sound                           ; 81EA 20 5D EC                  ].
         jmp     L9272                           ; 81ED 4C 72 92                 Lr.
 
 ; ----------------------------------------------------------------------------
 L81F0:  lda     #$28                            ; 81F0 A9 28                    .(
-        jsr     LEC5D                           ; 81F2 20 5D EC                  ].
+        jsr     queue_sound                           ; 81F2 20 5D EC                  ].
         ldx     #$08                            ; 81F5 A2 08                    ..
 L81F7:  lda     $0610                           ; 81F7 AD 10 06                 ...
         eor     #$3F                            ; 81FA 49 3F                    I?
@@ -407,7 +382,7 @@ L8216:  lda     L8C42,y                         ; 8216 B9 42 8C                 
         sta     $0630,y                         ; 8219 99 30 06                 .0.
         dey                                     ; 821C 88                       .
         bpl     L8216                           ; 821D 10 F7                    ..
-        jsr     LC38F                           ; 821F 20 8F C3                  ..
+        jsr     oam_clear                           ; 821F 20 8F C3                  ..
         jsr     L8B2E                           ; 8222 20 2E 8B                  ..
         ldx     #$05                            ; 8225 A2 05                    ..
 L8227:  lda     L8C8A,x                         ; 8227 BD 8A 8C                 ...
@@ -433,7 +408,7 @@ L824D:  sta     $0600,y                         ; 824D 99 00 06                 
         dey                                     ; 8253 88                       .
         bpl     L824D                           ; 8254 10 F7                    ..
         sty     $18                             ; 8256 84 18                    ..
-        jsr     LFF22                           ; 8258 20 22 FF                  ".
+        jsr     frame_wait                           ; 8258 20 22 FF                  ".
         ldy     $6C                             ; 825B A4 6C                    .l
         lda     $F2B2,y                         ; 825D B9 B2 F2                 ...
         and     $6E                             ; 8260 25 6E                    %n
@@ -441,16 +416,16 @@ L824D:  sta     $0600,y                         ; 824D 99 00 06                 
         rts                                     ; 8264 60                       `
 
 ; ----------------------------------------------------------------------------
-L8265:  jsr     LC2D1                           ; 8265 20 D1 C2                  ..
+L8265:  jsr     disable_rendering                           ; 8265 20 D1 C2                  ..
         lda     #$00                            ; 8268 A9 00                    ..
         sta     $10                             ; 826A 85 10                    ..
         lda     #$03                            ; 826C A9 03                    ..
         sta     $23                             ; 826E 85 23                    .#
         jsr     LDAFC                           ; 8270 20 FC DA                  ..
-        jsr     LFF22                           ; 8273 20 22 FF                  ".
-        jsr     LC2DB                           ; 8276 20 DB C2                  ..
+        jsr     frame_wait                           ; 8273 20 22 FF                  ".
+        jsr     enable_rendering                           ; 8276 20 DB C2                  ..
         lda     #$0E                            ; 8279 A9 0E                    ..
-        jsr     LEC5B                           ; 827B 20 5B EC                  [.
+        jsr     queue_sound_param                           ; 827B 20 5B EC                  [.
         ldy     #$1F                            ; 827E A0 1F                    ..
 L8280:  lda     L8C32,y                         ; 8280 B9 32 8C                 .2.
         sta     $0620,y                         ; 8283 99 20 06                 . .
@@ -464,7 +439,7 @@ L828B:  lda     #$6D                            ; 828B A9 6D                    
         sta     $0390,x                         ; 8295 9D 90 03                 ...
         sta     $0528,x                         ; 8298 9D 28 05                 .(.
         lda     L8E50,x                         ; 829B BD 50 8E                 .P.
-        jsr     LEA98                           ; 829E 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; 829E 20 98 EA                  ..
         lda     #$68                            ; 82A1 A9 68                    .h
         sta     $0378,x                         ; 82A3 9D 78 03                 .x.
         lda     #$80                            ; 82A6 A9 80                    ..
@@ -486,7 +461,7 @@ L828B:  lda     #$6D                            ; 828B A9 6D                    
         lda     #$00                            ; 82C7 A9 00                    ..
         sta     $05F9                           ; 82C9 8D F9 05                 ...
         sta     $05F5                           ; 82CC 8D F5 05                 ...
-        jsr     LC3EB                           ; 82CF 20 EB C3                  ..
+        jsr     palette_fade_in                           ; 82CF 20 EB C3                  ..
 L82D2:  inc     $95                             ; 82D2 E6 95                    ..
         dec     $FA                             ; 82D4 C6 FA                    ..
         dec     $FA                             ; 82D6 C6 FA                    ..
@@ -495,7 +470,7 @@ L82D2:  inc     $95                             ; 82D2 E6 95                    
         dec     $9B                             ; 82DC C6 9B                    ..
         dec     $9B                             ; 82DE C6 9B                    ..
         dec     $95                             ; 82E0 C6 95                    ..
-        jsr     LFF22                           ; 82E2 20 22 FF                  ".
+        jsr     frame_wait                           ; 82E2 20 22 FF                  ".
         lda     $FA                             ; 82E5 A5 FA                    ..
         bne     L82D2                           ; 82E7 D0 E9                    ..
         jsr     L8A3A                           ; 82E9 20 3A 8A                  :.
@@ -507,7 +482,7 @@ L82EC:  jsr     L8A4A                           ; 82EC 20 4A 8A                 
         stx     $9D                             ; 82F8 86 9D                    ..
         ldy     $6C                             ; 82FA A4 6C                    .l
         lda     L8DB3,y                         ; 82FC B9 B3 8D                 ...
-        jsr     LEA98                           ; 82FF 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; 82FF 20 98 EA                  ..
         lda     #$00                            ; 8302 A9 00                    ..
         sta     $0301                           ; 8304 8D 01 03                 ...
         ldy     #$0E                            ; 8307 A0 0E                    ..
@@ -557,7 +532,7 @@ L8351:  jsr     L8A4A                           ; 8351 20 4A 8A                 
         ldx     #$00                            ; 8365 A2 00                    ..
         ldy     #$01                            ; 8367 A0 01                    ..
         lda     #$21                            ; 8369 A9 21                    .!
-        jsr     LEAA4                           ; 836B 20 A4 EA                  ..
+        jsr     entity_init_pos                           ; 836B 20 A4 EA                  ..
         lda     #$6D                            ; 836E A9 6D                    .m
         sta     $0301                           ; 8370 8D 01 03                 ...
         lda     #$48                            ; 8373 A9 48                    .H
@@ -602,8 +577,8 @@ L83BF:  lda     L9024,y                         ; 83BF B9 24 90                 
         dey                                     ; 83C5 88                       .
         bpl     L83BF                           ; 83C6 10 F7                    ..
         lda     #$13                            ; 83C8 A9 13                    ..
-        jsr     LEC5B                           ; 83CA 20 5B EC                  [.
-        jsr     LC3EB                           ; 83CD 20 EB C3                  ..
+        jsr     queue_sound_param                           ; 83CA 20 5B EC                  [.
+        jsr     palette_fade_in                           ; 83CD 20 EB C3                  ..
 L83D0:  lda     #$00                            ; 83D0 A9 00                    ..
         sta     $10                             ; 83D2 85 10                    ..
         beq     L840F                           ; 83D4 F0 39                    .9
@@ -624,7 +599,7 @@ L83E5:  lda     $14                             ; 83E5 A5 14                    
         and     #$02                            ; 83EF 29 02                    ).
         sta     $10                             ; 83F1 85 10                    ..
         lda     #$27                            ; 83F3 A9 27                    .'
-        jsr     LEC5D                           ; 83F5 20 5D EC                  ].
+        jsr     queue_sound                           ; 83F5 20 5D EC                  ].
 L83F8:  lda     $10                             ; 83F8 A5 10                    ..
         cmp     #$02                            ; 83FA C9 02                    ..
         bcs     L840F                           ; 83FC B0 11                    ..
@@ -635,7 +610,7 @@ L83F8:  lda     $10                             ; 83F8 A5 10                    
         eor     #$01                            ; 8406 49 01                    I.
         sta     $10                             ; 8408 85 10                    ..
         lda     #$27                            ; 840A A9 27                    .'
-        jsr     LEC5D                           ; 840C 20 5D EC                  ].
+        jsr     queue_sound                           ; 840C 20 5D EC                  ].
 L840F:  ldy     $10                             ; 840F A4 10                    ..
         lda     L9034,y                         ; 8411 B9 34 90                 .4.
         sta     L0000                           ; 8414 85 00                    ..
@@ -722,7 +697,7 @@ L84AD:  lda     $14                             ; 84AD A5 14                    
         and     #$02                            ; 84B3 29 02                    ).
         tay                                     ; 84B5 A8                       .
         lda     #$27                            ; 84B6 A9 27                    .'
-        jsr     LEC5D                           ; 84B8 20 5D EC                  ].
+        jsr     queue_sound                           ; 84B8 20 5D EC                  ].
         lda     $13                             ; 84BB A5 13                    ..
         clc                                     ; 84BD 18                       .
         adc     L9059,y                         ; 84BE 79 59 90                 yY.
@@ -737,7 +712,7 @@ L84CD:  lda     $14                             ; 84CD A5 14                    
         beq     L84EB                           ; 84D1 F0 18                    ..
         tay                                     ; 84D3 A8                       .
         lda     #$27                            ; 84D4 A9 27                    .'
-        jsr     LEC5D                           ; 84D6 20 5D EC                  ].
+        jsr     queue_sound                           ; 84D6 20 5D EC                  ].
         lda     $12                             ; 84D9 A5 12                    ..
         clc                                     ; 84DB 18                       .
         adc     L9059,y                         ; 84DC 79 59 90                 yY.
@@ -785,8 +760,8 @@ L851E:  lda     $9D                             ; 851E A5 9D                    
         sta     $0204                           ; 852C 8D 04 02                 ...
         sta     L0208                           ; 852F 8D 08 02                 ...
         sta     L020C                           ; 8532 8D 0C 02                 ...
-L8535:  jsr     LFF22                           ; 8535 20 22 FF                  ".
-        jmp     LC2E5                           ; 8538 4C E5 C2                 L..
+L8535:  jsr     frame_wait                           ; 8535 20 22 FF                  ".
+        jmp     read_controllers                           ; 8538 4C E5 C2                 L..
 
 ; ----------------------------------------------------------------------------
 L853B:  jsr     L866A                           ; 853B 20 6A 86                  j.
@@ -794,7 +769,7 @@ L853B:  jsr     L866A                           ; 853B 20 6A 86                 
         ldx     #$03                            ; 8541 A2 03                    ..
         jsr     L884A                           ; 8543 20 4A 88                  J.
         lda     #$13                            ; 8546 A9 13                    ..
-        jsr     LEC5B                           ; 8548 20 5B EC                  [.
+        jsr     queue_sound_param                           ; 8548 20 5B EC                  [.
         lda     #$AF                            ; 854B A9 AF                    ..
         sta     L0200                           ; 854D 8D 00 02                 ...
         lda     #$8F                            ; 8550 A9 8F                    ..
@@ -803,9 +778,9 @@ L853B:  jsr     L866A                           ; 853B 20 6A 86                 
         sta     $0202                           ; 8557 8D 02 02                 ...
         lda     #$48                            ; 855A A9 48                    .H
         sta     $0203                           ; 855C 8D 03 02                 ...
-        jsr     LC3EB                           ; 855F 20 EB C3                  ..
-L8562:  jsr     LC2E5                           ; 8562 20 E5 C2                  ..
-        jsr     LFF22                           ; 8565 20 22 FF                  ".
+        jsr     palette_fade_in                           ; 855F 20 EB C3                  ..
+L8562:  jsr     read_controllers                           ; 8562 20 E5 C2                  ..
+        jsr     frame_wait                           ; 8565 20 22 FF                  ".
         lda     $14                             ; 8568 A5 14                    ..
         and     #$90                            ; 856A 29 90                    ).
         bne     L8583                           ; 856C D0 15                    ..
@@ -813,7 +788,7 @@ L8562:  jsr     LC2E5                           ; 8562 20 E5 C2                 
         and     #$0C                            ; 8570 29 0C                    ).
         beq     L8562                           ; 8572 F0 EE                    ..
         lda     #$27                            ; 8574 A9 27                    .'
-        jsr     LEC5D                           ; 8576 20 5D EC                  ].
+        jsr     queue_sound                           ; 8576 20 5D EC                  ].
         lda     L0200                           ; 8579 AD 00 02                 ...
         eor     #$10                            ; 857C 49 10                    I.
         sta     L0200                           ; 857E 8D 00 02                 ...
@@ -878,8 +853,8 @@ L85E2:  lda     #$00                            ; 85E2 A9 00                    
         stx     $BF                             ; 85F5 86 BF                    ..
         jsr     L884A                           ; 85F7 20 4A 88                  J.
         lda     #$12                            ; 85FA A9 12                    ..
-        jsr     LEC5B                           ; 85FC 20 5B EC                  [.
-        jsr     LC3EB                           ; 85FF 20 EB C3                  ..
+        jsr     queue_sound_param                           ; 85FC 20 5B EC                  [.
+        jsr     palette_fade_in                           ; 85FF 20 EB C3                  ..
         lda     #$00                            ; 8602 A9 00                    ..
         sta     $14                             ; 8604 85 14                    ..
         sta     $10                             ; 8606 85 10                    ..
@@ -887,8 +862,8 @@ L85E2:  lda     #$00                            ; 85E2 A9 00                    
 L860A:  lda     $14                             ; 860A A5 14                    ..
         and     #$C0                            ; 860C 29 C0                    ).
         bne     L861A                           ; 860E D0 0A                    ..
-        jsr     LC2E5                           ; 8610 20 E5 C2                  ..
-        jsr     LFF22                           ; 8613 20 22 FF                  ".
+        jsr     read_controllers                           ; 8610 20 E5 C2                  ..
+        jsr     frame_wait                           ; 8613 20 22 FF                  ".
         dec     $10                             ; 8616 C6 10                    ..
         bne     L860A                           ; 8618 D0 F0                    ..
 L861A:  lda     #$AF                            ; 861A A9 AF                    ..
@@ -900,7 +875,7 @@ L861A:  lda     #$AF                            ; 861A A9 AF                    
         lda     #$48                            ; 8629 A9 48                    .H
         sta     $0203                           ; 862B 8D 03 02                 ...
         lda     #$13                            ; 862E A9 13                    ..
-        jsr     LEC5B                           ; 8630 20 5B EC                  [.
+        jsr     queue_sound_param                           ; 8630 20 5B EC                  [.
         lda     $6C                             ; 8633 A5 6C                    .l
         cmp     #$08                            ; 8635 C9 08                    ..
         bcs     L8641                           ; 8637 B0 08                    ..
@@ -913,8 +888,8 @@ L8641:  ldx     #$04                            ; 8641 A2 04                    
         jsr     L884A                           ; 8643 20 4A 88                  J.
         lda     #$B7                            ; 8646 A9 B7                    ..
         sta     L0200                           ; 8648 8D 00 02                 ...
-L864B:  jsr     LC2E5                           ; 864B 20 E5 C2                  ..
-        jsr     LFF22                           ; 864E 20 22 FF                  ".
+L864B:  jsr     read_controllers                           ; 864B 20 E5 C2                  ..
+        jsr     frame_wait                           ; 864E 20 22 FF                  ".
         lda     $14                             ; 8651 A5 14                    ..
         and     #$90                            ; 8653 29 90                    ).
         beq     L864B                           ; 8655 F0 F4                    ..
@@ -931,15 +906,15 @@ L8666:  dey                                     ; 8666 88                       
         rts                                     ; 8669 60                       `
 
 ; ----------------------------------------------------------------------------
-L866A:  jsr     LC3F1                           ; 866A 20 F1 C3                  ..
-        jsr     LC3B8                           ; 866D 20 B8 C3                  ..
-        jsr     LC39D                           ; 8670 20 9D C3                  ..
-        jsr     LC38F                           ; 8673 20 8F C3                  ..
-        jsr     LFF22                           ; 8676 20 22 FF                  ".
-        jsr     LC2D1                           ; 8679 20 D1 C2                  ..
-        jsr     LF3F2                           ; 867C 20 F2 F3                  ..
+L866A:  jsr     palette_fade_out                           ; 866A 20 F1 C3                  ..
+        jsr     scroll_irq_reset                           ; 866D 20 B8 C3                  ..
+        jsr     entity_clear_all                           ; 8670 20 9D C3                  ..
+        jsr     oam_clear                           ; 8673 20 8F C3                  ..
+        jsr     frame_wait                           ; 8676 20 22 FF                  ".
+        jsr     disable_rendering                           ; 8679 20 D1 C2                  ..
+        jsr     stage_state_init                           ; 867C 20 F2 F3                  ..
         lda     #$01                            ; 867F A9 01                    ..
-        jsr     LFFB7                           ; 8681 20 B7 FF                  ..
+        jsr     set_mirroring                           ; 8681 20 B7 FF                  ..
         lda     #$10                            ; 8684 A9 10                    ..
         sta     $26                             ; 8686 85 26                    .&
         lda     #$0F                            ; 8688 A9 0F                    ..
@@ -955,7 +930,7 @@ L866A:  jsr     LC3F1                           ; 866A 20 F1 C3                 
         jsr     LDAFC                           ; 86A0 20 FC DA                  ..
         ldy     #$72                            ; 86A3 A0 72                    .r
         jsr     L89FC                           ; 86A5 20 FC 89                  ..
-        jmp     LC2DB                           ; 86A8 4C DB C2                 L..
+        jmp     enable_rendering                           ; 86A8 4C DB C2                 L..
 
 ; ----------------------------------------------------------------------------
 L86AB:  ldy     #$10                            ; 86AB A0 10                    ..
@@ -1032,7 +1007,7 @@ L872F:  ldy     L0000                           ; 872F A4 00                    
         dec     L0000                           ; 873B C6 00                    ..
         bpl     L86E8                           ; 873D 10 A9                    ..
         lda     #$28                            ; 873F A9 28                    .(
-        jsr     LEC5D                           ; 8741 20 5D EC                  ].
+        jsr     queue_sound                           ; 8741 20 5D EC                  ].
         ldy     #$06                            ; 8744 A0 06                    ..
 L8746:  asl     L0004                           ; 8746 06 04                    ..
         asl     $07                             ; 8748 06 07                    ..
@@ -1073,7 +1048,7 @@ L878B:  jmp     L80E1                           ; 878B 4C E1 80                 
 
 ; ----------------------------------------------------------------------------
 L878E:  lda     #$2E                            ; 878E A9 2E                    ..
-        jsr     LEC5D                           ; 8790 20 5D EC                  ].
+        jsr     queue_sound                           ; 8790 20 5D EC                  ].
         ldx     #$01                            ; 8793 A2 01                    ..
         jsr     L884A                           ; 8795 20 4A 88                  J.
 L8798:  lda     #$73                            ; 8798 A9 73                    .s
@@ -1203,15 +1178,15 @@ L887B:  ldy     $6C                             ; 887B A4 6C                    
 ; ----------------------------------------------------------------------------
 L8887:  lda     $6E                             ; 8887 A5 6E                    .n
         sta     $67                             ; 8889 85 67                    .g
-        jsr     LC3F1                           ; 888B 20 F1 C3                  ..
-        jsr     LC39D                           ; 888E 20 9D C3                  ..
-        jsr     LC38F                           ; 8891 20 8F C3                  ..
-        jsr     LC3B8                           ; 8894 20 B8 C3                  ..
-        jsr     LFF22                           ; 8897 20 22 FF                  ".
-        jsr     LC2D1                           ; 889A 20 D1 C2                  ..
-        jsr     LF3F2                           ; 889D 20 F2 F3                  ..
+        jsr     palette_fade_out                           ; 888B 20 F1 C3                  ..
+        jsr     entity_clear_all                           ; 888E 20 9D C3                  ..
+        jsr     oam_clear                           ; 8891 20 8F C3                  ..
+        jsr     scroll_irq_reset                           ; 8894 20 B8 C3                  ..
+        jsr     frame_wait                           ; 8897 20 22 FF                  ".
+        jsr     disable_rendering                           ; 889A 20 D1 C2                  ..
+        jsr     stage_state_init                           ; 889D 20 F2 F3                  ..
         lda     #$01                            ; 88A0 A9 01                    ..
-        jsr     LFFB7                           ; 88A2 20 B7 FF                  ..
+        jsr     set_mirroring                           ; 88A2 20 B7 FF                  ..
         lda     #$10                            ; 88A5 A9 10                    ..
         sta     $26                             ; 88A7 85 26                    .&
         lda     #$0F                            ; 88A9 A9 0F                    ..
@@ -1235,7 +1210,7 @@ L8887:  lda     $6E                             ; 8887 A5 6E                    
         stx     $0390                           ; 88D2 8E 90 03                 ...
         stx     $0528                           ; 88D5 8E 28 05                 .(.
         lda     #$1B                            ; 88D8 A9 1B                    ..
-        jsr     LEA98                           ; 88DA 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; 88DA 20 98 EA                  ..
         lda     #$6C                            ; 88DD A9 6C                    .l
         sta     $0378                           ; 88DF 8D 78 03                 .x.
         lda     #$80                            ; 88E2 A9 80                    ..
@@ -1246,11 +1221,11 @@ L8887:  lda     $6E                             ; 8887 A5 6E                    
         sta     $9B                             ; 88ED 85 9B                    ..
         lda     #$06                            ; 88EF A9 06                    ..
         sta     $99                             ; 88F1 85 99                    ..
-        jsr     LC2DB                           ; 88F3 20 DB C2                  ..
-        jsr     LFF22                           ; 88F6 20 22 FF                  ".
+        jsr     enable_rendering                           ; 88F3 20 DB C2                  ..
+        jsr     frame_wait                           ; 88F6 20 22 FF                  ".
         lda     #$14                            ; 88F9 A9 14                    ..
-        jsr     LEC5B                           ; 88FB 20 5B EC                  [.
-        jsr     LC3EB                           ; 88FE 20 EB C3                  ..
+        jsr     queue_sound_param                           ; 88FB 20 5B EC                  [.
+        jsr     palette_fade_in                           ; 88FE 20 EB C3                  ..
 L8901:  inc     $95                             ; 8901 E6 95                    ..
         dec     $FA                             ; 8903 C6 FA                    ..
         dec     $FA                             ; 8905 C6 FA                    ..
@@ -1259,7 +1234,7 @@ L8901:  inc     $95                             ; 8901 E6 95                    
         dec     $9B                             ; 890B C6 9B                    ..
         dec     $9B                             ; 890D C6 9B                    ..
         dec     $95                             ; 890F C6 95                    ..
-        jsr     LFF22                           ; 8911 20 22 FF                  ".
+        jsr     frame_wait                           ; 8911 20 22 FF                  ".
         lda     $FA                             ; 8914 A5 FA                    ..
         bne     L8901                           ; 8916 D0 E9                    ..
         sta     $9D                             ; 8918 85 9D                    ..
@@ -1488,7 +1463,7 @@ L8ADC:  sta     L0200,x                         ; 8ADC 9D 00 02                 
         inx                                     ; 8AE2 E8                       .
         dec     $02                             ; 8AE3 C6 02                    ..
         bne     L8ADC                           ; 8AE5 D0 F5                    ..
-        jsr     LC298                           ; 8AE7 20 98 C2                  ..
+        jsr     nametable_flush                           ; 8AE7 20 98 C2                  ..
 L8AEA:  dec     $01                             ; 8AEA C6 01                    ..
         dec     $01                             ; 8AEC C6 01                    ..
         bpl     L8AA7                           ; 8AEE 10 B7                    ..
@@ -2672,23 +2647,23 @@ L91A5:  asl     L0F07                           ; 91A5 0E 07 0F                 
         brk                                     ; 91C6 00                       .
         brk                                     ; 91C7 00                       .
         brk                                     ; 91C8 00                       .
-L91C9:  jsr     LC3F1                           ; 91C9 20 F1 C3                  ..
-        jsr     LC39D                           ; 91CC 20 9D C3                  ..
-        jsr     LC38F                           ; 91CF 20 8F C3                  ..
-        jsr     LC3B8                           ; 91D2 20 B8 C3                  ..
-        jsr     LFF22                           ; 91D5 20 22 FF                  ".
-        jsr     LC2D1                           ; 91D8 20 D1 C2                  ..
-        jsr     LF3F2                           ; 91DB 20 F2 F3                  ..
+L91C9:  jsr     palette_fade_out                           ; 91C9 20 F1 C3                  ..
+        jsr     entity_clear_all                           ; 91CC 20 9D C3                  ..
+        jsr     oam_clear                           ; 91CF 20 8F C3                  ..
+        jsr     scroll_irq_reset                           ; 91D2 20 B8 C3                  ..
+        jsr     frame_wait                           ; 91D5 20 22 FF                  ".
+        jsr     disable_rendering                           ; 91D8 20 D1 C2                  ..
+        jsr     stage_state_init                           ; 91DB 20 F2 F3                  ..
         lda     #$20                            ; 91DE A9 20                    . 
         ldx     #$00                            ; 91E0 A2 00                    ..
         ldy     #$00                            ; 91E2 A0 00                    ..
-        jsr     LC343                           ; 91E4 20 43 C3                  C.
+        jsr     ppu_fill_nametable                           ; 91E4 20 43 C3                  C.
         ldy     #$4F                            ; 91E7 A0 4F                    .O
 L91E9:  lda     L9213,y                         ; 91E9 B9 13 92                 ...
         sta     $0780,y                         ; 91EC 99 80 07                 ...
         dey                                     ; 91EF 88                       .
         bpl     L91E9                           ; 91F0 10 F7                    ..
-        jsr     LC298                           ; 91F2 20 98 C2                  ..
+        jsr     nametable_flush                           ; 91F2 20 98 C2                  ..
         ldy     #$0F                            ; 91F5 A0 0F                    ..
 L91F7:  lda     L9262,y                         ; 91F7 B9 62 92                 .b.
         sta     $0620,y                         ; 91FA 99 20 06                 . .
@@ -2698,8 +2673,8 @@ L91F7:  lda     L9262,y                         ; 91F7 B9 62 92                 
         sta     $EA                             ; 9202 85 EA                    ..
         lda     #$C0                            ; 9204 A9 C0                    ..
         sta     $EB                             ; 9206 85 EB                    ..
-        jsr     LC2DB                           ; 9208 20 DB C2                  ..
-        jsr     LC3EB                           ; 920B 20 EB C3                  ..
+        jsr     enable_rendering                           ; 9208 20 DB C2                  ..
+        jsr     palette_fade_in                           ; 920B 20 EB C3                  ..
         lda     #$78                            ; 920E A9 78                    .x
         jmp     LFF24                           ; 9210 4C 24 FF                 L$.
 
@@ -2752,12 +2727,12 @@ L9262:  .byte   $0F                             ; 9262 0F                       
         jsr     L0F0F                           ; 926B 20 0F 0F                  ..
         .byte   $0F                             ; 926E 0F                       .
         jsr     L0F0F                           ; 926F 20 0F 0F                  ..
-L9272:  jsr     LC3F1                           ; 9272 20 F1 C3                  ..
-        jsr     LC38F                           ; 9275 20 8F C3                  ..
-        jsr     LC3B8                           ; 9278 20 B8 C3                  ..
-        jsr     LF3F2                           ; 927B 20 F2 F3                  ..
-        jsr     LFF22                           ; 927E 20 22 FF                  ".
-        jsr     LC2D1                           ; 9281 20 D1 C2                  ..
+L9272:  jsr     palette_fade_out                           ; 9272 20 F1 C3                  ..
+        jsr     oam_clear                           ; 9275 20 8F C3                  ..
+        jsr     scroll_irq_reset                           ; 9278 20 B8 C3                  ..
+        jsr     stage_state_init                           ; 927B 20 F2 F3                  ..
+        jsr     frame_wait                           ; 927E 20 22 FF                  ".
+        jsr     disable_rendering                           ; 9281 20 D1 C2                  ..
         ldy     #$00                            ; 9284 A0 00                    ..
         jsr     L968A                           ; 9286 20 8A 96                  ..
         lda     #$00                            ; 9289 A9 00                    ..
@@ -2765,11 +2740,11 @@ L9272:  jsr     LC3F1                           ; 9272 20 F1 C3                 
         lda     #$01                            ; 928D A9 01                    ..
         sta     $23                             ; 928F 85 23                    .#
         jsr     LDAFC                           ; 9291 20 FC DA                  ..
-        jsr     LC2DB                           ; 9294 20 DB C2                  ..
-        jsr     LFF22                           ; 9297 20 22 FF                  ".
+        jsr     enable_rendering                           ; 9294 20 DB C2                  ..
+        jsr     frame_wait                           ; 9297 20 22 FF                  ".
         lda     #$0F                            ; 929A A9 0F                    ..
-        jsr     LEC5B                           ; 929C 20 5B EC                  [.
-        jsr     LC3EB                           ; 929F 20 EB C3                  ..
+        jsr     queue_sound_param                           ; 929C 20 5B EC                  [.
+        jsr     palette_fade_in                           ; 929F 20 EB C3                  ..
         jsr     L965D                           ; 92A2 20 5D 96                  ].
         lda     #$08                            ; 92A5 A9 08                    ..
         sta     $26                             ; 92A7 85 26                    .&
@@ -2790,12 +2765,12 @@ L9272:  jsr     LC3F1                           ; 9272 20 F1 C3                 
         jmp     L9614                           ; 92CA 4C 14 96                 L..
 
 ; ----------------------------------------------------------------------------
-L92CD:  jsr     LC3F1                           ; 92CD 20 F1 C3                  ..
-        jsr     LC38F                           ; 92D0 20 8F C3                  ..
-        jsr     LC3B8                           ; 92D3 20 B8 C3                  ..
-        jsr     LF3F2                           ; 92D6 20 F2 F3                  ..
-        jsr     LFF22                           ; 92D9 20 22 FF                  ".
-        jsr     LC2D1                           ; 92DC 20 D1 C2                  ..
+L92CD:  jsr     palette_fade_out                           ; 92CD 20 F1 C3                  ..
+        jsr     oam_clear                           ; 92D0 20 8F C3                  ..
+        jsr     scroll_irq_reset                           ; 92D3 20 B8 C3                  ..
+        jsr     stage_state_init                           ; 92D6 20 F2 F3                  ..
+        jsr     frame_wait                           ; 92D9 20 22 FF                  ".
+        jsr     disable_rendering                           ; 92DC 20 D1 C2                  ..
         ldy     #$12                            ; 92DF A0 12                    ..
         jsr     L968A                           ; 92E1 20 8A 96                  ..
         lda     #$00                            ; 92E4 A9 00                    ..
@@ -2805,11 +2780,11 @@ L92CD:  jsr     LC3F1                           ; 92CD 20 F1 C3                 
         ldy     #$20                            ; 92ED A0 20                    . 
         lda     #$18                            ; 92EF A9 18                    ..
         jsr     L96CA                           ; 92F1 20 CA 96                  ..
-        jsr     LC2DB                           ; 92F4 20 DB C2                  ..
-        jsr     LFF22                           ; 92F7 20 22 FF                  ".
-        jsr     LC3EB                           ; 92FA 20 EB C3                  ..
+        jsr     enable_rendering                           ; 92F4 20 DB C2                  ..
+        jsr     frame_wait                           ; 92F7 20 22 FF                  ".
+        jsr     palette_fade_in                           ; 92FA 20 EB C3                  ..
 L92FD:  lda     #$10                            ; 92FD A9 10                    ..
-        jsr     LEC5B                           ; 92FF 20 5B EC                  [.
+        jsr     queue_sound_param                           ; 92FF 20 5B EC                  [.
         jsr     L965D                           ; 9302 20 5D 96                  ].
         lda     #$0C                            ; 9305 A9 0C                    ..
         sta     $26                             ; 9307 85 26                    .&
@@ -2840,8 +2815,8 @@ L9331:  jsr     L96BB                           ; 9331 20 BB 96                 
         sta     $0378                           ; 9338 8D 78 03                 .x.
         lda     #$38                            ; 933B A9 38                    .8
         sta     $0330                           ; 933D 8D 30 03                 .0.
-        jsr     LC39D                           ; 9340 20 9D C3                  ..
-        jsr     LF363                           ; 9343 20 63 F3                  c.
+        jsr     entity_clear_all                           ; 9340 20 9D C3                  ..
+        jsr     render_tick_frame                           ; 9343 20 63 F3                  c.
         lda     #$00                            ; 9346 A9 00                    ..
         sta     $05F2                           ; 9348 8D F2 05                 ...
         sta     $2D                             ; 934B 85 2D                    .-
@@ -2849,9 +2824,9 @@ L9331:  jsr     L96BB                           ; 9331 20 BB 96                 
         sta     $2F                             ; 934F 85 2F                    ./
         lda     #$0F                            ; 9351 A9 0F                    ..
         sta     $A9                             ; 9353 85 A9                    ..
-        jsr     LC3F1                           ; 9355 20 F1 C3                  ..
+        jsr     palette_fade_out                           ; 9355 20 F1 C3                  ..
         lda     #$01                            ; 9358 A9 01                    ..
-        jsr     LFFB7                           ; 935A 20 B7 FF                  ..
+        jsr     set_mirroring                           ; 935A 20 B7 FF                  ..
         lda     #$06                            ; 935D A9 06                    ..
         sta     $23                             ; 935F 85 23                    .#
         lda     #$28                            ; 9361 A9 28                    .(
@@ -2873,7 +2848,7 @@ L9331:  jsr     L96BB                           ; 9331 20 BB 96                 
         ldx     #$00                            ; 9385 A2 00                    ..
         ldy     #$02                            ; 9387 A0 02                    ..
 L9389:  lda     L98D5,y                         ; 9389 B9 D5 98                 ...
-        jsr     LEAA4                           ; 938C 20 A4 EA                  ..
+        jsr     entity_init_pos                           ; 938C 20 A4 EA                  ..
         lda     #$00                            ; 938F A9 00                    ..
         sta     $0528,y                         ; 9391 99 28 05                 .(.
         lda     #$6D                            ; 9394 A9 6D                    .m
@@ -2909,7 +2884,7 @@ L9389:  lda     L98D5,y                         ; 9389 B9 D5 98                 
         sta     $0601                           ; 93DF 8D 01 06                 ...
         lda     #$FF                            ; 93E2 A9 FF                    ..
         sta     $18                             ; 93E4 85 18                    ..
-        jsr     LFF22                           ; 93E6 20 22 FF                  ".
+        jsr     frame_wait                           ; 93E6 20 22 FF                  ".
         ldy     #$12                            ; 93E9 A0 12                    ..
         jsr     L968A                           ; 93EB 20 8A 96                  ..
         lda     #$00                            ; 93EE A9 00                    ..
@@ -2921,8 +2896,8 @@ L9389:  lda     L98D5,y                         ; 9389 B9 D5 98                 
         sta     $23                             ; 93FB 85 23                    .#
         jsr     LDB23                           ; 93FD 20 23 DB                  #.
 L9400:  ldx     #$01                            ; 9400 A2 01                    ..
-        jsr     LE94A                           ; 9402 20 4A E9                  J.
-        jsr     LE90C                           ; 9405 20 0C E9                  ..
+        jsr     entity_move_up_nofacing                           ; 9402 20 4A E9                  J.
+        jsr     entity_move_left_collide                           ; 9405 20 0C E9                  ..
         lda     $0379                           ; 9408 AD 79 03                 .y.
         sec                                     ; 940B 38                       8
         sbc     #$10                            ; 940C E9 10                    ..
@@ -2940,7 +2915,7 @@ L9400:  ldx     #$01                            ; 9400 A2 01                    
         ldy     #$03                            ; 942B A0 03                    ..
         ldx     #$01                            ; 942D A2 01                    ..
         lda     #$5D                            ; 942F A9 5D                    .]
-        jsr     LEAA4                           ; 9431 20 A4 EA                  ..
+        jsr     entity_init_pos                           ; 9431 20 A4 EA                  ..
         lda     #$6D                            ; 9434 A9 6D                    .m
         sta     L0300,y                         ; 9436 99 00 03                 ...
         lda     #$00                            ; 9439 A9 00                    ..
@@ -2953,7 +2928,7 @@ L9400:  ldx     #$01                            ; 9400 A2 01                    
         sta     $03F1                           ; 944C 8D F1 03                 ...
         sta     $03F2                           ; 944F 8D F2 03                 ...
 L9452:  ldx     #$03                            ; 9452 A2 03                    ..
-        jsr     LE92A                           ; 9454 20 2A E9                  *.
+        jsr     entity_move_down_collide                           ; 9454 20 2A E9                  *.
         lda     #$54                            ; 9457 A9 54                    .T
         cmp     $0378,y                         ; 9459 D9 78 03                 .x.
         bcs     L9461                           ; 945C B0 03                    ..
@@ -2965,7 +2940,7 @@ L9461:  jsr     L95B6                           ; 9461 20 B6 95                 
         lda     #$3C                            ; 946B A9 3C                    .<
         jsr     L95CE                           ; 946D 20 CE 95                  ..
 L9470:  ldx     #$03                            ; 9470 A2 03                    ..
-L9472:  jsr     LE94A                           ; 9472 20 4A E9                  J.
+L9472:  jsr     entity_move_up_nofacing                           ; 9472 20 4A E9                  J.
         dex                                     ; 9475 CA                       .
         bne     L9472                           ; 9476 D0 FA                    ..
         jsr     L95B6                           ; 9478 20 B6 95                  ..
@@ -2994,7 +2969,7 @@ L9472:  jsr     LE94A                           ; 9472 20 4A E9                 
         sta     $0D                             ; 94B1 85 0D                    ..
         jsr     L95D8                           ; 94B3 20 D8 95                  ..
 L94B6:  ldx     #$03                            ; 94B6 A2 03                    ..
-L94B8:  jsr     LE94A                           ; 94B8 20 4A E9                  J.
+L94B8:  jsr     entity_move_up_nofacing                           ; 94B8 20 4A E9                  J.
         dex                                     ; 94BB CA                       .
         bne     L94B8                           ; 94BC D0 FA                    ..
         jsr     L95B6                           ; 94BE 20 B6 95                  ..
@@ -3006,7 +2981,7 @@ L94B8:  jsr     LE94A                           ; 94B8 20 4A E9                 
         lda     #$01                            ; 94CD A9 01                    ..
         sta     $03F3                           ; 94CF 8D F3 03                 ...
 L94D2:  ldx     #$03                            ; 94D2 A2 03                    ..
-        jsr     LE94A                           ; 94D4 20 4A E9                  J.
+        jsr     entity_move_up_nofacing                           ; 94D4 20 4A E9                  J.
         jsr     L95B6                           ; 94D7 20 B6 95                  ..
         lda     $037B                           ; 94DA AD 7B 03                 .{.
         cmp     #$53                            ; 94DD C9 53                    .S
@@ -3019,7 +2994,7 @@ L94E5:  jsr     L95BD                           ; 94E5 20 BD 95                 
         lda     #$00                            ; 94EC A9 00                    ..
         sta     $0541                           ; 94EE 8D 41 05                 .A.
 L94F1:  ldx     #$03                            ; 94F1 A2 03                    ..
-        jsr     LE92A                           ; 94F3 20 2A E9                  *.
+        jsr     entity_move_down_collide                           ; 94F3 20 2A E9                  *.
         jsr     L95B6                           ; 94F6 20 B6 95                  ..
         lda     $037B                           ; 94F9 AD 7B 03                 .{.
         cmp     #$63                            ; 94FC C9 63                    .c
@@ -3041,7 +3016,7 @@ L9508:  ldx     #$03                            ; 9508 A2 03                    
         lda     L9936,y                         ; 9524 B9 36 99                 .6.
         tay                                     ; 9527 A8                       .
         pla                                     ; 9528 68                       h
-        jsr     LF470                           ; 9529 20 70 F4                  p.
+        jsr     entity_set_dir_velocity                           ; 9529 20 70 F4                  p.
         inc     $0483                           ; 952C EE 83 04                 ...
         inc     $0483                           ; 952F EE 83 04                 ...
         inc     $0483                           ; 9532 EE 83 04                 ...
@@ -3053,13 +3028,13 @@ L9508:  ldx     #$03                            ; 9508 A2 03                    
         sta     $0301                           ; 9541 8D 01 03                 ...
         sta     $0302                           ; 9544 8D 02 03                 ...
         lda     #$60                            ; 9547 A9 60                    .`
-        jsr     LEA98                           ; 9549 20 98 EA                  ..
+        jsr     entity_set_subtype                           ; 9549 20 98 EA                  ..
         lda     $037B                           ; 954C AD 7B 03                 .{.
         clc                                     ; 954F 18                       .
         adc     #$0C                            ; 9550 69 0C                    i.
         sta     $037B                           ; 9552 8D 7B 03                 .{.
-L9555:  jsr     LEA65                           ; 9555 20 65 EA                  e.
-        jsr     LEA86                           ; 9558 20 86 EA                  ..
+L9555:  jsr     entity_facing_dispatch                           ; 9555 20 65 EA                  e.
+        jsr     entity_vert_dispatch_raw                           ; 9558 20 86 EA                  ..
         jsr     L959D                           ; 955B 20 9D 95                  ..
         dec     $046B                           ; 955E CE 6B 04                 .k.
         lda     $FD                             ; 9561 A5 FD                    ..
@@ -3108,13 +3083,13 @@ L959D:  lda     $0333                           ; 959D AD 33 03                 
 L95B6:  lda     #$00                            ; 95B6 A9 00                    ..
         sta     $9D                             ; 95B8 85 9D                    ..
         sta     $0572                           ; 95BA 8D 72 05                 .r.
-L95BD:  jsr     LF363                           ; 95BD 20 63 F3                  c.
+L95BD:  jsr     render_tick_frame                           ; 95BD 20 63 F3                  c.
         inc     $48                             ; 95C0 E6 48                    .H
         lda     $48                             ; 95C2 A5 48                    .H
         and     #$0F                            ; 95C4 29 0F                    ).
         bne     L95CD                           ; 95C6 D0 05                    ..
         lda     #$19                            ; 95C8 A9 19                    ..
-        jsr     LEC5D                           ; 95CA 20 5D EC                  ].
+        jsr     queue_sound                           ; 95CA 20 5D EC                  ].
 L95CD:  rts                                     ; 95CD 60                       `
 
 ; ----------------------------------------------------------------------------
@@ -3192,7 +3167,7 @@ L9639:  lda     L9B51,x                         ; 9639 BD 51 9B                 
         dec     $0B                             ; 964B C6 0B                    ..
         bpl     L9639                           ; 964D 10 EA                    ..
         inc     $9D                             ; 964F E6 9D                    ..
-        jsr     LFF22                           ; 9651 20 22 FF                  ".
+        jsr     frame_wait                           ; 9651 20 22 FF                  ".
         dec     $0C                             ; 9654 C6 0C                    ..
         bne     L961A                           ; 9656 D0 C2                    ..
         ldx     $0D                             ; 9658 A6 0D                    ..
@@ -3207,7 +3182,7 @@ L965D:  lda     #$00                            ; 965D A9 00                    
         lda     #$02                            ; 9667 A9 02                    ..
         sta     $02                             ; 9669 85 02                    ..
         lda     #$17                            ; 966B A9 17                    ..
-        jsr     LEC5D                           ; 966D 20 5D EC                  ].
+        jsr     queue_sound                           ; 966D 20 5D EC                  ].
         lda     #$08                            ; 9670 A9 08                    ..
         sta     $03                             ; 9672 85 03                    ..
 L9674:  lda     $0610                           ; 9674 AD 10 06                 ...
@@ -3329,7 +3304,7 @@ L9754:  sty     $0B                             ; 9754 84 0B                    
 L9758:  lda     #$00                            ; 9758 A9 00                    ..
         sta     $9D                             ; 975A 85 9D                    ..
         sta     $0572                           ; 975C 8D 72 05                 .r.
-        jsr     LF363                           ; 975F 20 63 F3                  c.
+        jsr     render_tick_frame                           ; 975F 20 63 F3                  c.
         dec     $0A                             ; 9762 C6 0A                    ..
         bne     L9758                           ; 9764 D0 F2                    ..
         ldy     $0B                             ; 9766 A4 0B                    ..
@@ -3348,7 +3323,7 @@ L9771:  lda     L98DA,y                         ; 9771 B9 DA 98                 
         dey                                     ; 9777 88                       .
         bpl     L9771                           ; 9778 10 F7                    ..
         sty     $19                             ; 977A 84 19                    ..
-        jsr     LFF22                           ; 977C 20 22 FF                  ".
+        jsr     frame_wait                           ; 977C 20 22 FF                  ".
         lda     #$29                            ; 977F A9 29                    .)
         sta     $0780                           ; 9781 8D 80 07                 ...
         lda     #$A4                            ; 9784 A9 A4                    ..
@@ -3362,7 +3337,7 @@ L9771:  lda     L98DA,y                         ; 9771 B9 DA 98                 
         lda     #$24                            ; 9798 A9 24                    .$
         sta     $07BD                           ; 979A 8D BD 07                 ...
         dec     $19                             ; 979D C6 19                    ..
-        jsr     LFF22                           ; 979F 20 22 FF                  ".
+        jsr     frame_wait                           ; 979F 20 22 FF                  ".
         rts                                     ; 97A2 60                       `
 
 ; ----------------------------------------------------------------------------
@@ -3417,7 +3392,7 @@ L97EA:  ldy     $11                             ; 97EA A4 11                    
 L9801:  lda     #$04                            ; 9801 A9 04                    ..
         sta     $05                             ; 9803 85 05                    ..
         lda     #$18                            ; 9805 A9 18                    ..
-        jsr     LEC5D                           ; 9807 20 5D EC                  ].
+        jsr     queue_sound                           ; 9807 20 5D EC                  ].
 L980A:  lda     ($02),y                         ; 980A B1 02                    ..
         sta     L0200,x                         ; 980C 9D 00 02                 ...
         iny                                     ; 980F C8                       .
