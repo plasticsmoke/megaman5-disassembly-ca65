@@ -63,13 +63,32 @@ as annotation proceeds.)*
 
 ## Engine architecture
 
-*To be documented as tracing proceeds. Vectors: NMI = `$C000`,
-Reset = `$FE00`, IRQ = `$C169` — nearly identical entry points to
-MM4's fixed bank, so the MM4-lineage engine is expected: cooperative
-task scheduler, NMI-driven PPU upload pipeline, MMC3 scanline-IRQ
-splits, struct-of-arrays entity system, behavior-interpreter AI, and
-a banked music/SFX driver — with CHR-ROM banking replacing MM4's
-CHR-RAM streaming. All to be verified against MM5 code.*
+MM4's engine adapted for CHR-ROM (vectors: NMI `$C000`, Reset `$FE00`,
+IRQ `$C169`). Established so far — see [ENGINE.md](ENGINE.md):
+
+**Scheduler.** A 4-slot cooperative multitasker (`$FEAB`); tasks yield
+via `frame_wait` (`$FF22`). Task 0 = player (pause menu, gameplay
+frame), task 1 = permanent service (LFSR RNG + HUD/palette upkeep),
+task 2 = game orchestrator (menus → stage load → spawn task 0).
+
+**NMI/IRQ.** NMI (`$C000`) does OAM DMA, nametable/palette buffer
+flushes, writes the six CHR bank registers from zp shadows (`$EA-$EF`)
+— CHR animation is bank cycling — and arms the MMC3 scanline IRQ.
+IRQ (`$C169`) dispatches through per-game-mode vectors (`$C280/$C288`,
+8 modes) for status bars and multi-way splits.
+
+**Entities.** 24 slots (0 = player), struct-of-arrays at `$0300+`,
+stride `$18` (MM4's exact layout). Behavior engine at `$1C:8000`:
+per-type coroutine AI (resumable behavior PC), dispatched into bank
+`$1D` or the entity's own stage bank at `$A000`. Rendering (`$DF5E`)
+alternates iteration order per frame and lets sprite records claim
+CHR banks in the four 1KB MMC3 sprite slots — first claimant wins.
+
+**Stages.** Screen → layout (`$A900`/`$B600`, 8×8 blocks) → 32px
+block defs (`$B200`) → metatiles (`$AD00-$B0FF`, attribute+collision
+at `$B100`). Sections with 4px/frame camera-slide transitions; the
+gameplay frame runs `$1B:8000` (player/weapons), `$1C:8000`
+(behaviors), scroll update, then the spawn engine (`$1B:988A`).
 
 ## Project structure
 
