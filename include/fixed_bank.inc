@@ -18,8 +18,45 @@ oam_clear           := $C38F  ; clear OAM buffer ($F8 = offscreen)
 ; --- Input ---
 read_controllers    := $C2E5  ; read both pads, compute press/held (joy2 cleared)
 
+; --- Scroll / IRQ state ---
+scroll_irq_reset    := $C3B8  ; clear game-mode req, IRQ splits, pending scroll
+
+; --- Palette ---
+palette_fade_in     := $C3EB  ; fade palette in from dark
+palette_fade_out    := $C3F1  ; fade palette out to black
+
 ; --- Entity Management ---
 entity_clear_all    := $C39D  ; clear entity slots $01-$17 (player untouched)
+entity_deactivate   := $E06E  ; deactivate entity slot X
+entity_set_subtype  := $EA98  ; set sub-type,X + reset anim counters
+entity_init_pos     := $EAA4  ; copy position X->Y, init Y entity fields
+entity_init_subtype_y := $EAE9 ; set sub-type for slot Y directly
+entity_set_facing   := $EC16  ; face entity toward player (dir bits 0-1)
+entity_flip_direction := $EC4A ; reverse horiz: XOR dir bits 0-1 + flags bit 6
+
+; --- Entity Physics / Movement ---
+entity_move_right_collide := $E8E6 ; rightward move + tile collision
+entity_move_left_collide  := $E90C ; leftward move + tile collision
+entity_move_down_collide  := $E92A ; downward move + tile collision (no facing)
+entity_move_up_nofacing   := $E94A ; upward move + tile collision (no facing)
+entity_process_y_vel      := $E968 ; apply Y velocity by sign, then gravity
+entity_stop_y             := $EA1E ; set Y velocity to $FF00 (stopped)
+entity_vert_dispatch      := $EA52 ; dispatch up/down movement by dir bits 2-3
+entity_facing_dispatch    := $EA65 ; set hflip from dir bits + move left/right
+entity_vert_dispatch_raw  := $EA86 ; up/down dispatch, raw collide (no platform)
+
+; --- Entity Distance / Aiming ---
+entity_y_dist_abs         := $EC76 ; absolute Y pixel distance to player
+entity_x_dist_px          := $EC94 ; absolute X pixel distance to player (16-bit)
+entity_distance_from_y    := $ECC4 ; full distance calculation (from slot Y)
+
+; --- Sound ---
+queue_sound_param   := $EC5B  ; set param + queue sound command
+queue_sound         := $EC5D  ; queue sound A into the NMI-pumped ring buffer
+
+; --- Math ---
+div8                := $F207  ; 8-bit divide
+div16               := $F22D  ; 16-bit divide
 
 ; --- Tasks / System (see fixed_bank.asm tail) ---
 scheduler_run       := $FEAB  ; run ready tasks until all yield
