@@ -102,7 +102,7 @@ stage_bank_alt  := $27          ; alternate stage bank for cross-bank reads
 mirror_shadow   := $2C          ; last value written to MMC3 mirroring reg
 sound_save_x    := $A7          ; X/Y saved across the sound queue pump
 sound_save_y    := $A8
-sound_q_guard   := $E4          ; $88 written after the 8 queue slots at reset
+rng_state       := $E4          ; 4-byte LFSR RNG ($E4-$E7), seed $88, stepped by task 1
 prg_cur_8000    := $F3          ; bank last actually written to MMC3 R6
 prg_cur_a000    := $F4          ; bank last actually written to MMC3 R7
 
@@ -142,3 +142,8 @@ oam_offset      := $9F          ; OAM build cursor (4 = skip sprite 0)
 player_state    := $30          ; player state machine index (7 = death)
 gravity_flip    := $AF          ; nonzero: gravity inverted (Gravity Man stage)
 status_flags    := $17          ; joy2_held slot reused: bit 6 = water (suspected)
+
+; Game flow
+pause_freeze    := $A0          ; nonzero: player task idles (debug pad-2 SELECT)
+pause_lock      := $54          ; blocks START pause menu when set
+redraw_busy     := $1B          ; stage_load full-redraw in progress

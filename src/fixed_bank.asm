@@ -2582,7 +2582,14 @@ LD301:  brk                                     ; D301 00                       
         clc                                     ; D30E 18                       .
         brk                                     ; D30F 00                       .
         .byte   $07                             ; D310 07                       .
-LD311:  lda     #$00                            ; D311 A9 00                    ..
+; =============================================================================
+; STAGE LOAD — $D311
+; Fade out, clear entities/OAM/scroll state, rendering off, init via
+; $F3F2, then progressive full-screen redraw (draw_scroll_column per
+; column in increment-32 mode). $27 seeded from stage_alt_bank_tbl.
+; $1B guards the background task off the buffers during the redraw.
+; =============================================================================
+stage_load:  lda     #$00                            ; D311 A9 00                    ..
         sta     $95                             ; D313 85 95                    ..
         jsr     palette_fade_out                           ; D315 20 F1 C3                  ..
         inc     $1B                             ; D318 E6 1B                    ..
@@ -2596,7 +2603,7 @@ LD311:  lda     #$00                            ; D311 A9 00                    
         sta     $24                             ; D32E 85 24                    .$
         sta     $0348                           ; D330 8D 48 03                 .H.
         ldy     $26                             ; D333 A4 26                    .&
-        lda     LD4C2,y                         ; D335 B9 C2 D4                 ...
+        lda     stage_alt_bank_tbl,y                         ; D335 B9 C2 D4                 ...
         sta     $27                             ; D338 85 27                    .'
 LD33A:  jsr     draw_scroll_column                           ; D33A 20 E2 D4                  ..
         lda     $FF                             ; D33D A5 FF                    ..
@@ -2730,7 +2737,7 @@ LD450:  jsr     LD474                           ; D450 20 74 D4                 
         pha                                     ; D462 48                       H
         lda     $F6                             ; D463 A5 F6                    ..
         pha                                     ; D465 48                       H
-        jsr     LD311                           ; D466 20 11 D3                  ..
+        jsr     stage_load                           ; D466 20 11 D3                  ..
         inc     $95                             ; D469 E6 95                    ..
         pla                                     ; D46B 68                       h
         sta     $F6                             ; D46C 85 F6                    ..
@@ -2785,7 +2792,7 @@ LD4B6:  .byte   $0F                             ; D4B6 0F                       
         .byte   $0F                             ; D4BF 0F                       .
         .byte   $20                             ; D4C0 20                        
         rol     a                               ; D4C1 2A                       *
-LD4C2:  brk                                     ; D4C2 00                       .
+stage_alt_bank_tbl:  brk                                     ; D4C2 00                       .
         ora     ($02,x)                         ; D4C3 01 02                    ..
         .byte   $03                             ; D4C5 03                       .
         .byte   $04                             ; D4C6 04                       .
@@ -3667,9 +3674,16 @@ LDB2D:  lda     $10                             ; DB2D A5 10                    
         jmp     bank_load_shadow                ; DB43 4C 43 FF                 LC.
 
 ; ----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; BACKGROUND SERVICE TASK — $DB46 (task 1, stack $AF)
+; Permanent task: steps the 4-byte LFSR RNG (rng_state $E4-$E7) and
+; runs bg_frame_service (HUD/palette upkeep; skipped while nametable
+; buffers are busy) every frame.
+; -----------------------------------------------------------------------------
+bg_task_entry:
         ldx     #$AF                            ; DB46 A2 AF                    ..
         txs                                     ; DB48 9A                       .
-LDB49:  ldx     #$00                            ; DB49 A2 00                    ..
+bg_task_loop:  ldx     #$00                            ; DB49 A2 00                    ..
         ldy     #$04                            ; DB4B A0 04                    ..
         lda     $E4,x                           ; DB4D B5 E4                    ..
         and     #$02                            ; DB4F 29 02                    ).
@@ -3684,12 +3698,12 @@ LDB5D:  ror     $E4,x                           ; DB5D 76 E4                    
         inx                                     ; DB5F E8                       .
         dey                                     ; DB60 88                       .
         bne     LDB5D                           ; DB61 D0 FA                    ..
-        jsr     LDB6C                           ; DB63 20 6C DB                  l.
+        jsr     bg_frame_service                           ; DB63 20 6C DB                  l.
         jsr     frame_wait                      ; DB66 20 22 FF                  ".
-        jmp     LDB49                           ; DB69 4C 49 DB                 LI.
+        jmp     bg_task_loop                           ; DB69 4C 49 DB                 LI.
 
 ; ----------------------------------------------------------------------------
-LDB6C:  lda     $19                             ; DB6C A5 19                    ..
+bg_frame_service:  lda     $19                             ; DB6C A5 19                    ..
         ora     $1A                             ; DB6E 05 1A                    ..
         ora     $1B                             ; DB70 05 1B                    ..
         bne     LDBD0                           ; DB72 D0 5C                    .\
@@ -4139,7 +4153,7 @@ LDE3D:  plp                                     ; DE3D 28                       
         ora     $8D                             ; DE3E 05 8D                    ..
         bmi     LDE45                           ; DE40 30 03                    0.
         sta     $0378                           ; DE42 8D 78 03                 .x.
-LDE45:  jsr     LD311                           ; DE45 20 11 D3                  ..
+LDE45:  jsr     stage_load                           ; DE45 20 11 D3                  ..
         lda     $BD                             ; DE48 A5 BD                    ..
         ora     #$80                            ; DE4A 09 80                    ..
         sta     $BD                             ; DE4C 85 BD                    ..
@@ -9296,7 +9310,7 @@ LFE6B:  stx     MMC3_BANK_SELECT
         ldy     #$00
         jsr     ppu_fill_nametable
         lda     #$DD                    ; spawn main game task:
-        sta     task_ptr_hi_arg         ; task 2, entry $E8DD
+        sta     task_ptr_hi_arg         ; task 2, entry $DDE8
         lda     #$E8
         sta     task_ptr_lo
         lda     #$02
