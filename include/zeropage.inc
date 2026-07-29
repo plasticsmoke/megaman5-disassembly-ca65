@@ -147,3 +147,6 @@ status_flags    := $17          ; joy2_held slot reused: bit 6 = water (suspecte
 pause_freeze    := $A0          ; nonzero: player task idles (debug pad-2 SELECT)
 pause_lock      := $54          ; blocks START pause menu when set
 redraw_busy     := $1B          ; stage_load full-redraw in progress
+
+; Physics
+gravity         := $A1          ; gravity per frame ($40 default; cf. MM4 $99)

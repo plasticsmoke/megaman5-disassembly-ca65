@@ -5241,7 +5241,7 @@ LE6B2:  .byte   $FA                             ; E6B2 FA                       
         rts                                     ; E6C6 60                       `
 
 ; ----------------------------------------------------------------------------
-LE6C7:  lda     $0528,x                         ; E6C7 BD 28 05                 .(.
+entity_move_right:  lda     $0528,x                         ; E6C7 BD 28 05                 .(.
         ora     #$20                            ; E6CA 09 20                    . 
         sta     $0528,x                         ; E6CC 9D 28 05                 .(.
         cpx     #$00                            ; E6CF E0 00                    ..
@@ -5278,7 +5278,7 @@ LE6F9:  jsr     tile_collide_vert                           ; E6F9 20 AA C5     
 LE707:  rts                                     ; E707 60                       `
 
 ; ----------------------------------------------------------------------------
-LE708:  lda     $0528,x                         ; E708 BD 28 05                 .(.
+entity_move_left:  lda     $0528,x                         ; E708 BD 28 05                 .(.
         and     #$DF                            ; E70B 29 DF                    ).
         sta     $0528,x                         ; E70D 9D 28 05                 .(.
         cpx     #$00                            ; E710 E0 00                    ..
@@ -5333,7 +5333,7 @@ LE755:  jsr     entity_move_down_collide                           ; E755 20 2A 
 LE769:  bcc     LE771                           ; E769 90 06                    ..
         beq     LE771                           ; E76B F0 04                    ..
         iny                                     ; E76D C8                       .
-        jmp     LE7A8                           ; E76E 4C A8 E7                 L..
+        jmp     collide_horiz_solid                           ; E76E 4C A8 E7                 L..
 
 ; ----------------------------------------------------------------------------
 LE771:  jsr     tile_collide_horiz                           ; E771 20 A1 C4                  ..
@@ -5346,7 +5346,7 @@ LE771:  jsr     tile_collide_horiz                           ; E771 20 A1 C4    
 LE77F:  rts                                     ; E77F 60                       `
 
 ; ----------------------------------------------------------------------------
-LE780:  cpx     #$00                            ; E780 E0 00                    ..
+entity_move_up:  cpx     #$00                            ; E780 E0 00                    ..
         bne     LE78E                           ; E782 D0 0A                    ..
         lda     $0378                           ; E784 AD 78 03                 .x.
         sta     $02                             ; E787 85 02                    ..
@@ -5354,21 +5354,21 @@ LE780:  cpx     #$00                            ; E780 E0 00                    
         sta     $03                             ; E78C 85 03                    ..
 LE78E:  jsr     entity_move_up_nofacing                           ; E78E 20 4A E9                  J.
         cpx     #$00                            ; E791 E0 00                    ..
-        bne     LE7A8                           ; E793 D0 13                    ..
+        bne     collide_horiz_solid                           ; E793 D0 13                    ..
         jsr     LED8F                           ; E795 20 8F ED                  ..
-        bcc     LE7A8                           ; E798 90 0E                    ..
+        bcc     collide_horiz_solid                           ; E798 90 0E                    ..
         jsr     LEF60                           ; E79A 20 60 EF                  `.
         jsr     LE7A2                           ; E79D 20 A2 E7                  ..
         sec                                     ; E7A0 38                       8
         rts                                     ; E7A1 60                       `
 
 ; ----------------------------------------------------------------------------
-LE7A2:  bcs     LE7A8                           ; E7A2 B0 04                    ..
+LE7A2:  bcs     collide_horiz_solid                           ; E7A2 B0 04                    ..
         dey                                     ; E7A4 88                       .
         jmp     LE771                           ; E7A5 4C 71 E7                 Lq.
 
 ; ----------------------------------------------------------------------------
-LE7A8:  jsr     tile_collide_horiz                           ; E7A8 20 A1 C4                  ..
+collide_horiz_solid:  jsr     tile_collide_horiz                           ; E7A8 20 A1 C4                  ..
         clc                                     ; E7AB 18                       .
         lda     $10                             ; E7AC A5 10                    ..
         and     #$10                            ; E7AE 29 10                    ).
@@ -5378,6 +5378,8 @@ LE7A8:  jsr     tile_collide_horiz                           ; E7A8 20 A1 C4    
 LE7B6:  rts                                     ; E7B6 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- $E7B7: gravity + fall + landing (player: gravity_flip-aware) -----------
+entity_gravity_collide:
         cpx     #$00                            ; E7B7 E0 00                    ..
         bne     LE7CF                           ; E7B9 D0 14                    ..
         stx     $04C8                           ; E7BB 8E C8 04                 ...
@@ -5422,7 +5424,7 @@ LE808:  lda     #$00                            ; E808 A9 00                    
 LE814:  bcc     LE81C                           ; E814 90 06                    ..
         beq     LE81C                           ; E816 F0 04                    ..
         iny                                     ; E818 C8                       .
-        jmp     LE7A8                           ; E819 4C A8 E7                 L..
+        jmp     collide_horiz_solid                           ; E819 4C A8 E7                 L..
 
 ; ----------------------------------------------------------------------------
 LE81C:  jsr     LE9B7                           ; E81C 20 B7 E9                  ..
@@ -5445,7 +5447,7 @@ LE83C:  lda     #$00                            ; E83C A9 00                    
 
 ; ----------------------------------------------------------------------------
 LE840:  iny                                     ; E840 C8                       .
-        jsr     LE999                           ; E841 20 99 E9                  ..
+        jsr     entity_apply_yvel_up                           ; E841 20 99 E9                  ..
         cpx     #$00                            ; E844 E0 00                    ..
         bne     LE85C                           ; E846 D0 14                    ..
         jsr     LED8F                           ; E848 20 8F ED                  ..
@@ -5485,22 +5487,22 @@ LE872:  lda     $03F0,x                         ; E872 BD F0 03                 
 LE888:  bcc     LE890                           ; E888 90 06                    ..
         beq     LE890                           ; E88A F0 04                    ..
         iny                                     ; E88C C8                       .
-        jmp     LE7A8                           ; E88D 4C A8 E7                 L..
+        jmp     collide_horiz_solid                           ; E88D 4C A8 E7                 L..
 
 ; ----------------------------------------------------------------------------
-LE890:  jsr     LE9E1                           ; E890 20 E1 E9                  ..
+LE890:  jsr     entity_apply_gravity                           ; E890 20 E1 E9                  ..
         jsr     tile_collide_horiz                           ; E893 20 A1 C4                  ..
         lda     $10                             ; E896 A5 10                    ..
         and     #$10                            ; E898 29 10                    ).
         beq     LE8A2                           ; E89A F0 06                    ..
         jsr     LEEF7                           ; E89C 20 F7 EE                  ..
-LE89F:  jsr     LEA29                           ; E89F 20 29 EA                  ).
+LE89F:  jsr     entity_yvel_down1                           ; E89F 20 29 EA                  ).
 LE8A2:  clc                                     ; E8A2 18                       .
         rts                                     ; E8A3 60                       `
 
 ; ----------------------------------------------------------------------------
 LE8A4:  iny                                     ; E8A4 C8                       .
-        jsr     LE999                           ; E8A5 20 99 E9                  ..
+        jsr     entity_apply_yvel_up                           ; E8A5 20 99 E9                  ..
         jsr     LED8F                           ; E8A8 20 8F ED                  ..
         bcc     LE8BC                           ; E8AB 90 0F                    ..
         jsr     LEF60                           ; E8AD 20 60 EF                  `.
@@ -5513,7 +5515,7 @@ LE8B6:  bcs     LE8BC                           ; E8B6 B0 04                    
         jmp     LE771                           ; E8B9 4C 71 E7                 Lq.
 
 ; ----------------------------------------------------------------------------
-LE8BC:  jsr     LE9E1                           ; E8BC 20 E1 E9                  ..
+LE8BC:  jsr     entity_apply_gravity                           ; E8BC 20 E1 E9                  ..
         jsr     tile_collide_horiz                           ; E8BF 20 A1 C4                  ..
         lda     $42                             ; E8C2 A5 42                    .B
         cmp     #$40                            ; E8C4 C9 40                    .@
@@ -5526,7 +5528,7 @@ LE8D0:  lda     $10                             ; E8D0 A5 10                    
         and     #$10                            ; E8D2 29 10                    ).
         beq     LE8A2                           ; E8D4 F0 CC                    ..
 LE8D6:  jsr     LEEDD                           ; E8D6 20 DD EE                  ..
-LE8D9:  jsr     LEA29                           ; E8D9 20 29 EA                  ).
+LE8D9:  jsr     entity_yvel_down1                           ; E8D9 20 29 EA                  ).
         sec                                     ; E8DC 38                       8
         rts                                     ; E8DD 60                       `
 
@@ -5601,7 +5603,7 @@ entity_process_y_vel:
         jmp     LE9B7                           ; E970 4C B7 E9                 L..
 
 ; ----------------------------------------------------------------------------
-LE973:  jsr     LE999                           ; E973 20 99 E9                  ..
+LE973:  jsr     entity_apply_yvel_up                           ; E973 20 99 E9                  ..
         jmp     LE9B7                           ; E976 4C B7 E9                 L..
 
 ; ----------------------------------------------------------------------------
@@ -5620,7 +5622,7 @@ LE979:  lda     $0360,x                         ; E979 BD 60 03                 
 LE998:  rts                                     ; E998 60                       `
 
 ; ----------------------------------------------------------------------------
-LE999:  lda     $0360,x                         ; E999 BD 60 03                 .`.
+entity_apply_yvel_up:  lda     $0360,x                         ; E999 BD 60 03                 .`.
         sec                                     ; E99C 38                       8
         sbc     $03D8,x                         ; E99D FD D8 03                 ...
         sta     $0360,x                         ; E9A0 9D 60 03                 .`.
@@ -5655,7 +5657,7 @@ LE9BF:  lda     $03D8,x                         ; E9BF BD D8 03                 
 LE9E0:  rts                                     ; E9E0 60                       `
 
 ; ----------------------------------------------------------------------------
-LE9E1:  lda     $03D8,x                         ; E9E1 BD D8 03                 ...
+entity_apply_gravity:  lda     $03D8,x                         ; E9E1 BD D8 03                 ...
         clc                                     ; E9E4 18                       .
         adc     $A1                             ; E9E5 65 A1                    e.
         sta     $03D8,x                         ; E9E7 9D D8 03                 ...
@@ -5693,13 +5695,15 @@ entity_stop_y:  lda     #$00                            ; EA1E A9 00            
         rts                                     ; EA28 60                       `
 
 ; ----------------------------------------------------------------------------
-LEA29:  lda     #$00                            ; EA29 A9 00                    ..
+entity_yvel_down1:  lda     #$00                            ; EA29 A9 00                    ..
         sta     $03D8,x                         ; EA2B 9D D8 03                 ...
         lda     #$01                            ; EA2E A9 01                    ..
         sta     $03F0,x                         ; EA30 9D F0 03                 ...
         rts                                     ; EA33 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- $EA34: slot Y yvel = -0.25 (weak upward nudge) --------------------------
+entity_yvel_neg_y:
         lda     #$C0                            ; EA34 A9 C0                    ..
         sta     $03D8,y                         ; EA36 99 D8 03                 ...
         lda     #$FF                            ; EA39 A9 FF                    ..
@@ -5707,17 +5711,19 @@ LEA29:  lda     #$00                            ; EA29 A9 00                    
         rts                                     ; EA3E 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- $EA3F: dispatch left/right movement by dir bits 0-1 ---------------------
+entity_horiz_dispatch:
         lda     $0420,x                         ; EA3F BD 20 04                 . .
         clc                                     ; EA42 18                       .
         and     #$03                            ; EA43 29 03                    ).
         beq     LEA97                           ; EA45 F0 50                    .P
         and     #$01                            ; EA47 29 01                    ).
         beq     LEA4E                           ; EA49 F0 03                    ..
-        jmp     LE6C7                           ; EA4B 4C C7 E6                 L..
+        jmp     entity_move_right                           ; EA4B 4C C7 E6                 L..
 
 ; ----------------------------------------------------------------------------
 LEA4E:  iny                                     ; EA4E C8                       .
-        jmp     LE708                           ; EA4F 4C 08 E7                 L..
+        jmp     entity_move_left                           ; EA4F 4C 08 E7                 L..
 
 ; ----------------------------------------------------------------------------
 entity_vert_dispatch:
@@ -5731,7 +5737,7 @@ entity_vert_dispatch:
 
 ; ----------------------------------------------------------------------------
 LEA61:  iny                                     ; EA61 C8                       .
-        jmp     LE780                           ; EA62 4C 80 E7                 L..
+        jmp     entity_move_up                           ; EA62 4C 80 E7                 L..
 
 ; ----------------------------------------------------------------------------
 entity_facing_dispatch:
@@ -5808,16 +5814,18 @@ entity_init_subtype_y:
         rts                                     ; EAF4 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- $EAF5: load velocity preset $10 from speed_px/sub tables ----------------
+entity_speed_preset:
         pha                                     ; EAF5 48                       H
         stx     L0000                           ; EAF6 86 00                    ..
         ldx     $10                             ; EAF8 A6 10                    ..
         lda     #$00                            ; EAFA A9 00                    ..
         sta     $02                             ; EAFC 85 02                    ..
-        lda     LEB62,x                         ; EAFE BD 62 EB                 .b.
+        lda     speed_px_tbl,x                         ; EAFE BD 62 EB                 .b.
         sta     $01                             ; EB01 85 01                    ..
         bpl     LEB07                           ; EB03 10 02                    ..
         dec     $02                             ; EB05 C6 02                    ..
-LEB07:  lda     LEBBC,x                         ; EB07 BD BC EB                 ...
+LEB07:  lda     speed_sub_tbl,x                         ; EB07 BD BC EB                 ...
         sta     $03                             ; EB0A 85 03                    ..
         ldx     L0000                           ; EB0C A6 00                    ..
         lda     $0330,x                         ; EB0E BD 30 03                 .0.
@@ -5859,7 +5867,7 @@ LEB51:  adc     #$0F                            ; EB51 69 0F                    
 LEB5F:  jmp     LEABD                           ; EB5F 4C BD EA                 L..
 
 ; ----------------------------------------------------------------------------
-LEB62:  sbc     ($10),y                         ; EB62 F1 10                    ..
+speed_px_tbl:  sbc     ($10),y                         ; EB62 F1 10                    ..
         .byte   $F4                             ; EB64 F4                       .
         .byte   $0C                             ; EB65 0C                       .
         bpl     LEB72                           ; EB66 10 0A                    ..
@@ -5930,7 +5938,7 @@ LEBAE:  brk                                     ; EBAE 00                       
         .byte   $04                             ; EBB8 04                       .
         bpl     LEBAB                           ; EBB9 10 F0                    ..
         .byte   $10                             ; EBBB 10                       .
-LEBBC:  .byte   $FF                             ; EBBC FF                       .
+speed_sub_tbl:  .byte   $FF                             ; EBBC FF                       .
         .byte   $FF                             ; EBBD FF                       .
         php                                     ; EBBE 08                       .
         php                                     ; EBBF 08                       .
@@ -6017,6 +6025,8 @@ entity_set_facing:
 LEC2F:  rts                                     ; EC2F 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- $EC30: dir bits -> flags bit 5 (hflip; MM5 moved it from MM4's bit 6) ---
+entity_facing_to_flags:
         lda     $0420,x                         ; EC30 BD 20 04                 . .
         and     #$03                            ; EC33 29 03                    ).
         beq     LEC49                           ; EC35 F0 12                    ..
@@ -6108,6 +6118,8 @@ LECAA:  rts                                     ; ECAA 60                       
 LECC1:  rts                                     ; ECC1 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- $ECC2: full distance calculation from the player slot -------------------
+entity_distance_calc:
         ldy     #$00                            ; ECC2 A0 00                    ..
 entity_distance_from_y:  lda     $0378,y                         ; ECC4 B9 78 03                 .x.
         sta     L0000                           ; ECC7 85 00                    ..
@@ -6498,6 +6510,8 @@ LEF7D:  sta     $02                             ; EF7D 85 02                    
         rts                                     ; EF86 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- $EF87: entity X vs player hitbox check (shapes via extent tables) -------
+entity_player_collide:
         sec                                     ; EF87 38                       8
         lda     $0528                           ; EF88 AD 28 05                 .(.
         bpl     LEFF7                           ; EF8B 10 6A                    .j
@@ -6555,6 +6569,8 @@ LEFF5:  cmp     L0000                           ; EFF5 C5 00                    
 LEFF7:  rts                                     ; EFF7 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- $EFF8: entity X vs slot hitbox check (weapon collision) -----------------
+entity_hitbox_check:
         sec                                     ; EFF8 38                       8
         lda     #$01                            ; EFF9 A9 01                    ..
         sta     $10                             ; EFFB 85 10                    ..
@@ -6799,6 +6815,8 @@ LF16D:  clc                                     ; F16D 18                       
         rts                                     ; F16E 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- $F16F: find free entity slot $08-$17, return in Y (C set = none) --------
+find_free_slot_y:
         ldy     #$08                            ; F16F A0 08                    ..
 LF171:  lda     $0300,y                         ; F171 B9 00 03                 ...
         beq     LF17D                           ; F174 F0 07                    ..

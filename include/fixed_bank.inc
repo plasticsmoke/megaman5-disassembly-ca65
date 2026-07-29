@@ -45,6 +45,20 @@ entity_vert_dispatch      := $EA52 ; dispatch up/down movement by dir bits 2-3
 entity_facing_dispatch    := $EA65 ; set hflip from dir bits + move left/right
 entity_vert_dispatch_raw  := $EA86 ; up/down dispatch, raw collide (no platform)
 
+; --- Entity Physics (additional) ---
+entity_move_right   := $E6C7  ; move right + collision (player-aware)
+entity_move_left    := $E708  ; move left + collision (player-aware)
+entity_move_up      := $E780  ; move up + collision (player-aware)
+entity_gravity_collide := $E7B7 ; gravity + fall + landing (gravity_flip-aware)
+entity_apply_gravity := $E9E1 ; yvel += gravity, clamp at +7
+entity_horiz_dispatch := $EA3F ; left/right by dir bits 0-1
+entity_speed_preset := $EAF5  ; velocity preset from speed tables
+entity_facing_to_flags := $EC30 ; dir -> flags bit 5 (hflip)
+entity_player_collide := $EF87 ; entity vs player hitbox
+entity_hitbox_check := $EFF8  ; entity vs slot hitbox (weapons)
+find_free_slot_y    := $F16F  ; free slot $08-$17 -> Y (C = fail)
+entity_distance_calc := $ECC2 ; distance from player slot
+
 ; --- Entity Distance / Aiming ---
 entity_y_dist_abs         := $EC76 ; absolute Y pixel distance to player
 entity_x_dist_px          := $EC94 ; absolute X pixel distance to player (16-bit)
