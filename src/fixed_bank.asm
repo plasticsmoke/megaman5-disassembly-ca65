@@ -844,8 +844,8 @@ LC522:  clc                                     ; C522 18                       
         ora     $22                             ; C53D 05 22                    ."
         sta     $22                             ; C53F 85 22                    ."
 LC541:  ldy     $13                             ; C541 A4 13                    ..
-        jsr     LD7A3                           ; C543 20 A3 D7                  ..
-LC546:  jsr     LD758                           ; C546 20 58 D7                  X.
+        jsr     screen_layout_ptr                           ; C543 20 A3 D7                  ..
+LC546:  jsr     block_ptr_setup                           ; C546 20 58 D7                  X.
 LC549:  ldy     $03                             ; C549 A4 03                    ..
         lda     (L0000),y                       ; C54B B1 00                    ..
         tay                                     ; C54D A8                       .
@@ -990,8 +990,8 @@ LC636:  lda     $11                             ; C636 A5 11                    
         ora     $03                             ; C645 05 03                    ..
         sta     $03                             ; C647 85 03                    ..
 LC649:  ldy     $13                             ; C649 A4 13                    ..
-        jsr     LD7A3                           ; C64B 20 A3 D7                  ..
-LC64E:  jsr     LD758                           ; C64E 20 58 D7                  X.
+        jsr     screen_layout_ptr                           ; C64B 20 A3 D7                  ..
+LC64E:  jsr     block_ptr_setup                           ; C64E 20 58 D7                  X.
 LC651:  ldy     $03                             ; C651 A4 03                    ..
         lda     (L0000),y                       ; C653 B1 00                    ..
         tay                                     ; C655 A8                       .
@@ -1534,7 +1534,7 @@ LCB5F:  lda     $55                             ; CB5F A5 55                    
         jsr     LD0FC                           ; CB93 20 FC D0                  ..
 LCB96:  jsr     scroll_irq_reset                           ; CB96 20 B8 C3                  ..
         jsr     entity_clear_all                           ; CB99 20 9D C3                  ..
-        jsr     LF32D                           ; CB9C 20 2D F3                  -.
+        jsr     call_bank00_frame                           ; CB9C 20 2D F3                  -.
         jsr     LD07F                           ; CB9F 20 7F D0                  ..
         lda     $28                             ; CBA2 A5 28                    .(
         pha                                     ; CBA4 48                       H
@@ -1645,7 +1645,7 @@ LCC49:  lda     $29                             ; CC49 A5 29                    
         sta     $2B                             ; CC71 85 2B                    .+
         jsr     scroll_irq_reset                           ; CC73 20 B8 C3                  ..
         jsr     entity_clear_all                           ; CC76 20 9D C3                  ..
-        jsr     LF32D                           ; CC79 20 2D F3                  -.
+        jsr     call_bank00_frame                           ; CC79 20 2D F3                  -.
         lda     $28                             ; CC7C A5 28                    .(
         pha                                     ; CC7E 48                       H
         lda     #$02                            ; CC7F A9 02                    ..
@@ -1925,7 +1925,7 @@ LCE7C:  lda     $01                             ; CE7C A5 01                    
         lda     LD0C8,x                         ; CE8B BD C8 D0                 ...
         sta     $25                             ; CE8E 85 25                    .%
         jsr     scroll_irq_reset                           ; CE90 20 B8 C3                  ..
-        jsr     LF32D                           ; CE93 20 2D F3                  -.
+        jsr     call_bank00_frame                           ; CE93 20 2D F3                  -.
         lda     $37                             ; CE96 A5 37                    .7
         beq     LCEA0                           ; CE98 F0 06                    ..
         lda     $28                             ; CE9A A5 28                    .(
@@ -2335,7 +2335,7 @@ LD16B:  ldy     $26                             ; D16B A4 26                    
         cmp     #$0E                            ; D17D C9 0E                    ..
         bne     LD18A                           ; D17F D0 09                    ..
         ldy     $F9                             ; D181 A4 F9                    ..
-        lda     LD793,y                         ; D183 B9 93 D7                 ...
+        lda     stage0E_screen_banks,y                         ; D183 B9 93 D7                 ...
         sta     L0000                           ; D186 85 00                    ..
         sta     $27                             ; D188 85 27                    .'
 LD18A:  lda     L0000                           ; D18A A5 00                    ..
@@ -2669,7 +2669,7 @@ LD3E3:  jsr     set_mirroring                   ; D3E3 20 B7 FF                 
         lda     $A968,y                         ; D3E8 B9 68 A9                 .h.
         bpl     LD3F0                           ; D3EB 10 03                    ..
         jsr     LD16B                           ; D3ED 20 6B D1                  k.
-LD3F0:  jsr     LF32D                           ; D3F0 20 2D F3                  -.
+LD3F0:  jsr     call_bank00_frame                           ; D3F0 20 2D F3                  -.
         ldy     $26                             ; D3F3 A4 26                    .&
         lda     LD4D2,y                         ; D3F5 B9 D2 D4                 ...
         jsr     queue_sound_param                           ; D3F8 20 5B EC                  [.
@@ -2801,7 +2801,7 @@ LD4D2:  brk                                     ; D4D2 00                       
         ora     #$09                            ; D4DE 09 09                    ..
         ora     #$09                            ; D4E0 09 09                    ..
 LD4E2:  ldy     $24                             ; D4E2 A4 24                    .$
-        jsr     LD7A3                           ; D4E4 20 A3 D7                  ..
+        jsr     screen_layout_ptr                           ; D4E4 20 A3 D7                  ..
         lda     #$20                            ; D4E7 A9 20                    . 
         sta     $0780                           ; D4E9 8D 80 07                 ...
         lda     $25                             ; D4EC A5 25                    .%
@@ -2817,7 +2817,7 @@ LD4E2:  ldy     $24                             ; D4E2 A4 24                    
         lda     $25                             ; D500 A5 25                    .%
         and     #$03                            ; D502 29 03                    ).
         sta     $05                             ; D504 85 05                    ..
-LD506:  jsr     LD6C0                           ; D506 20 C0 D6                  ..
+LD506:  jsr     metatile_strip_decode                           ; D506 20 C0 D6                  ..
         ldx     $03                             ; D509 A6 03                    ..
         ldy     $05                             ; D50B A4 05                    ..
         lda     $05E0,y                         ; D50D B9 E0 05                 ...
@@ -2882,7 +2882,7 @@ LD57F:  .byte   $CC                             ; D57F CC                       
 LD581:  .byte   $33                             ; D581 33                       3
         .byte   $CC                             ; D582 CC                       .
 LD583:  ldy     $24                             ; D583 A4 24                    .$
-        jsr     LD7A3                           ; D585 20 A3 D7                  ..
+        jsr     screen_layout_ptr                           ; D585 20 A3 D7                  ..
         lda     $25                             ; D588 A5 25                    .%
         and     #$1C                            ; D58A 29 1C                    ).
         asl     a                               ; D58C 0A                       .
@@ -2925,7 +2925,7 @@ LD583:  ldy     $24                             ; D583 A4 24                    
         .byte   $A5                             ; D5DE A5                       .
 LD5DF:  .byte   $07                             ; D5DF 07                       .
         sta     $07F5                           ; D5E0 8D F5 07                 ...
-LD5E3:  jsr     LD6C0                           ; D5E3 20 C0 D6                  ..
+LD5E3:  jsr     metatile_strip_decode                           ; D5E3 20 C0 D6                  ..
         lda     #$04                            ; D5E6 A9 04                    ..
         sta     $07                             ; D5E8 85 07                    ..
         lda     L0004                           ; D5EA A5 04                    ..
@@ -2974,8 +2974,8 @@ LD5FF:  sta     $07D3,x                         ; D5FF 9D D3 07                 
         sta     $22                             ; D644 85 22                    ."
         ldy     $24                             ; D646 A4 24                    .$
         iny                                     ; D648 C8                       .
-        jsr     LD7A3                           ; D649 20 A3 D7                  ..
-        jsr     LD6C0                           ; D64C 20 C0 D6                  ..
+        jsr     screen_layout_ptr                           ; D649 20 A3 D7                  ..
+        jsr     metatile_strip_decode                           ; D64C 20 C0 D6                  ..
         ldy     L0004                           ; D64F A4 04                    ..
         lda     $05E0,y                         ; D651 B9 E0 05                 ...
         sta     $0783                           ; D654 8D 83 07                 ...
@@ -3042,15 +3042,15 @@ LD6B8:  jsr     L2120                           ; D6B8 20 20 21                 
         .byte   $22                             ; D6BD 22                       "
         .byte   $23                             ; D6BE 23                       #
         .byte   $23                             ; D6BF 23                       #
-LD6C0:  jsr     LD758                           ; D6C0 20 58 D7                  X.
+metatile_strip_decode:  jsr     block_ptr_setup                           ; D6C0 20 58 D7                  X.
         ldy     #$03                            ; D6C3 A0 03                    ..
         sty     $02                             ; D6C5 84 02                    ..
         lda     #$00                            ; D6C7 A9 00                    ..
         sta     $10                             ; D6C9 85 10                    ..
 LD6CB:  ldy     $02                             ; D6CB A4 02                    ..
-        ldx     LD78B,y                         ; D6CD BE 8B D7                 ...
+        ldx     strip_offsets,y                         ; D6CD BE 8B D7                 ...
         lda     (L0000),y                       ; D6D0 B1 00                    ..
-        jsr     LD703                           ; D6D2 20 03 D7                  ..
+        jsr     metatile_override                           ; D6D2 20 03 D7                  ..
         tay                                     ; D6D5 A8                       .
         lda     $AD00,y                         ; D6D6 B9 00 AD                 ...
         sta     $05E0,x                         ; D6D9 9D E0 05                 ...
@@ -3073,8 +3073,12 @@ LD6CB:  ldy     $02                             ; D6CB A4 02                    
 ; ----------------------------------------------------------------------------
 LD702:  rts                                     ; D702 60                       `
 
-; ----------------------------------------------------------------------------
-LD703:  pha                                     ; D703 48                       H
+; -----------------------------------------------------------------------------
+; METATILE OVERRIDE — $D703
+; Replaces a decoded metatile id via the $06C0 dynamic-override records,
+; then the $0680 destroyed-block bitmap (-> metatile 0). $59 skips both.
+; -----------------------------------------------------------------------------
+metatile_override:  pha                                     ; D703 48                       H
         tay                                     ; D704 A8                       .
         lda     $59                             ; D705 A5 59                    .Y
         bne     LD756                           ; D707 D0 4D                    .M
@@ -3125,12 +3129,17 @@ LD72D:  lda     $1E                             ; D72D A5 1E                    
 LD756:  pla                                     ; D756 68                       h
         rts                                     ; D757 60                       `
 
-; ----------------------------------------------------------------------------
-LD758:  lda     $26                             ; D758 A5 26                    .&
+; -----------------------------------------------------------------------------
+; BLOCK POINTER SETUP — $D758
+; temp_00/01 -> block def ($B200 + block_id*4), block id from the
+; layout at ($20),y=$22. Maps the stage bank first; stage $0E screens
+; borrow other stages' banks via stage0E_screen_banks (boss teleporter).
+; -----------------------------------------------------------------------------
+block_ptr_setup:  lda     $26                             ; D758 A5 26                    .&
         cmp     #$0E                            ; D75A C9 0E                    ..
         bne     LD768                           ; D75C D0 0A                    ..
         ldy     $47                             ; D75E A4 47                    .G
-        lda     LD793,y                         ; D760 B9 93 D7                 ...
+        lda     stage0E_screen_banks,y                         ; D760 B9 93 D7                 ...
         sta     $27                             ; D763 85 27                    .'
         jmp     LD76A                           ; D765 4C 6A D7                 Lj.
 
@@ -3156,15 +3165,15 @@ LD773:  lda     #$00                            ; D773 A9 00                    
         rts                                     ; D78A 60                       `
 
 ; ----------------------------------------------------------------------------
-LD78B:  brk                                     ; D78B 00                       .
+strip_offsets:  brk                                     ; D78B 00                       .
         .byte   $02                             ; D78C 02                       .
         php                                     ; D78D 08                       .
         asl     a                               ; D78E 0A                       .
-LD78F:  .byte   $FC                             ; D78F FC                       .
+attr_quad_masks:  .byte   $FC                             ; D78F FC                       .
         .byte   $F3                             ; D790 F3                       .
         .byte   $CF                             ; D791 CF                       .
         .byte   $3F                             ; D792 3F                       ?
-LD793:  asl     $0E0E                           ; D793 0E 0E 0E                 ...
+stage0E_screen_banks:  asl     $0E0E                           ; D793 0E 0E 0E                 ...
         asl     $0E0E                           ; D796 0E 0E 0E                 ...
         asl     a:$0E                           ; D799 0E 0E 00                 ...
         ora     ($02,x)                         ; D79C 01 02                    ..
@@ -3172,7 +3181,7 @@ LD793:  asl     $0E0E                           ; D793 0E 0E 0E                 
         .byte   $04                             ; D79F 04                       .
         ora     $06                             ; D7A0 05 06                    ..
         .byte   $07                             ; D7A2 07                       .
-LD7A3:  lda     $26                             ; D7A3 A5 26                    .&
+screen_layout_ptr:  lda     $26                             ; D7A3 A5 26                    .&
         cmp     $F6                             ; D7A5 C5 F6                    ..
         beq     LD7AE                           ; D7A7 F0 05                    ..
         sta     $F6                             ; D7A9 85 F6                    ..
@@ -3276,7 +3285,7 @@ LD86C:  asl     L0000                           ; D86C 06 00                    
         dey                                     ; D870 88                       .
         bne     LD86C                           ; D871 D0 F9                    ..
 LD873:  ldy     $10                             ; D873 A4 10                    ..
-        lda     LD78F,y                         ; D875 B9 8F D7                 ...
+        lda     attr_quad_masks,y                         ; D875 B9 8F D7                 ...
         ldy     $22                             ; D878 A4 22                    ."
         and     $0640,y                         ; D87A 39 40 06                 9@.
         ora     L0000                           ; D87D 05 00                    ..
@@ -3456,8 +3465,8 @@ LD95D:  lda     $22                             ; D95D A5 22                    
         lda     #$00                            ; D9C0 A9 00                    ..
         sta     $079E                           ; D9C2 8D 9E 07                 ...
         ldy     $23                             ; D9C5 A4 23                    .#
-        jsr     LD7A3                           ; D9C7 20 A3 D7                  ..
-        jsr     LD6C0                           ; D9CA 20 C0 D6                  ..
+        jsr     screen_layout_ptr                           ; D9C7 20 A3 D7                  ..
+        jsr     metatile_strip_decode                           ; D9CA 20 C0 D6                  ..
         ldx     #$03                            ; D9CD A2 03                    ..
 LD9CF:  lda     $05E0,x                         ; D9CF BD E0 05                 ...
         sta     $0783,x                         ; D9D2 9D 83 07                 ...
@@ -3523,7 +3532,7 @@ LDA47:  lda     $1E                             ; DA47 A5 1E                    
         and     #$7F                            ; DA4F 29 7F                    ).
         sta     $1E                             ; DA51 85 1E                    ..
         ldy     $23                             ; DA53 A4 23                    .#
-        jsr     LD7A3                           ; DA55 20 A3 D7                  ..
+        jsr     screen_layout_ptr                           ; DA55 20 A3 D7                  ..
         lda     $1E                             ; DA58 A5 1E                    ..
         sta     $22                             ; DA5A 85 22                    ."
         pha                                     ; DA5C 48                       H
@@ -3563,7 +3572,7 @@ LDA47:  lda     $1E                             ; DA47 A5 1E                    
         sta     $0795                           ; DAA8 8D 95 07                 ...
         sta     $07A8                           ; DAAB 8D A8 07                 ...
         sta     $07BB                           ; DAAE 8D BB 07                 ...
-LDAB1:  jsr     LD6C0                           ; DAB1 20 C0 D6                  ..
+LDAB1:  jsr     metatile_strip_decode                           ; DAB1 20 C0 D6                  ..
         lda     $22                             ; DAB4 A5 22                    ."
         and     #$03                            ; DAB6 29 03                    ).
         tax                                     ; DAB8 AA                       .
@@ -7230,8 +7239,12 @@ LF2FE:  lda     #$FF                            ; F2FE A9 FF                    
         sta     $0510,y                         ; F329 99 10 05                 ...
 LF32C:  rts                                     ; F32C 60                       `
 
-; ----------------------------------------------------------------------------
-LF32D:  lda     $F5                             ; F32D A5 F5                    ..
+ ; -----------------------------------------------------------------------------
+; CALL BANK $00 SERVICE — $F32D
+; Saves the current pair, maps bank $00 at $8000 + stage bank at $A000,
+; calls bank $00's $8000 entry, restores. Per-frame engine service.
+; -----------------------------------------------------------------------------
+call_bank00_frame:  lda     $F5                             ; F32D A5 F5                    ..
         pha                                     ; F32F 48                       H
         lda     $F6                             ; F330 A5 F6                    ..
         pha                                     ; F332 48                       H
