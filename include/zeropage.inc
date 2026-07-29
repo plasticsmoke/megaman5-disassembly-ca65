@@ -120,3 +120,20 @@ vscroll_flag    := $46          ; nonzero: vertical-scroll room coordinates
 coll_results    := $48          ; per-probe collision types ($48+)
 saved_bank_a000 := $F1          ; $A000 bank saved across collision/stage reads
 scroll_y_hi     := $FB          ; camera Y screen (pending, pairs with scroll_y)
+
+; Camera / scroll / section engine ($C9DD-$D6BF)
+col_cursor_hi   := $24          ; column-draw cursor: screen
+col_cursor_lo   := $25          ; column-draw cursor: column (0-31, 8px units)
+scroll_dir      := $28          ; scroll direction latch (1=right, 2=left)
+cur_section     := $29          ; section index (& $1F) + flag bit $20
+section_target  := $2A          ; section end screen
+section_screen  := $2B          ; camera screen within section
+scroll_x_drawn  := $44          ; scroll X at last column draw
+scroll_x_hi     := $F9          ; camera X screen (pairs with scroll_x $FC)
+
+; Entity rendering ($DF5E+)
+render_first    := $56          ; slot rendered first on odd frames
+boss_chr_flag   := $74          ; nonzero: boss CHR setup path in render loop
+flicker_parity  := $9D          ; frame parity: entity iteration direction
+render_slot     := $9E          ; current slot in render loop
+oam_offset      := $9F          ; OAM build cursor (4 = skip sprite 0)

@@ -1361,7 +1361,7 @@ LCA38:  lda     $29                             ; CA38 A5 29                    
         ora     $11                             ; CA53 05 11                    ..
         bcc     LCA5C                           ; CA55 90 05                    ..
         bne     LCAA4                           ; CA57 D0 4B                    .K
-LCA59:  jmp     LCD10                           ; CA59 4C 10 CD                 L..
+LCA59:  jmp     scroll_vert_update                           ; CA59 4C 10 CD                 L..
 
 ; ----------------------------------------------------------------------------
 LCA5C:  lda     $10                             ; CA5C A5 10                    ..
@@ -1397,7 +1397,7 @@ LCA6E:  sta     $11                             ; CA6E 85 11                    
         cmp     $0330                           ; CA95 CD 30 03                 .0.
         bcc     LCAA0                           ; CA98 90 06                    ..
         sta     $0330                           ; CA9A 8D 30 03                 .0.
-        jmp     LCC49                           ; CA9D 4C 49 CC                 LI.
+        jmp     section_retreat                           ; CA9D 4C 49 CC                 LI.
 
 ; ----------------------------------------------------------------------------
 LCAA0:  lda     #$02                            ; CAA0 A9 02                    ..
@@ -1432,12 +1432,12 @@ LCAB4:  lda     $FC                             ; CAB4 A5 FC                    
         sta     $0330                           ; CAD8 8D 30 03                 .0.
         lda     #$00                            ; CADB A9 00                    ..
         sta     $FC                             ; CADD 85 FC                    ..
-        jmp     LCB5F                           ; CADF 4C 5F CB                 L_.
+        jmp     section_advance                           ; CADF 4C 5F CB                 L_.
 
 ; ----------------------------------------------------------------------------
 LCAE2:  lda     #$01                            ; CAE2 A9 01                    ..
         bne     LCAE9                           ; CAE4 D0 03                    ..
-LCAE6:  jmp     LCD10                           ; CAE6 4C 10 CD                 L..
+LCAE6:  jmp     scroll_vert_update                           ; CAE6 4C 10 CD                 L..
 
 ; ----------------------------------------------------------------------------
 LCAE9:  sta     $10                             ; CAE9 85 10                    ..
@@ -1477,14 +1477,14 @@ LCB0C:  and     #$07                            ; CB0C 29 07                    
         bne     LCB31                           ; CB21 D0 0E                    ..
         lda     $25                             ; CB23 A5 25                    .%
         clc                                     ; CB25 18                       .
-        adc     LD0C6,y                         ; CB26 79 C6 D0                 y..
+        adc     scroll_step_tbl,y                         ; CB26 79 C6 D0                 y..
         cmp     #$20                            ; CB29 C9 20                    . 
         and     #$1F                            ; CB2B 29 1F                    ).
         sta     $25                             ; CB2D 85 25                    .%
         bcc     LCB39                           ; CB2F 90 08                    ..
 LCB31:  lda     $24                             ; CB31 A5 24                    .$
         clc                                     ; CB33 18                       .
-        adc     LD0C6,y                         ; CB34 79 C6 D0                 y..
+        adc     scroll_step_tbl,y                         ; CB34 79 C6 D0                 y..
         sta     $24                             ; CB37 85 24                    .$
 LCB39:  lda     $25                             ; CB39 A5 25                    .%
         bne     LCB4D                           ; CB3B D0 10                    ..
@@ -1499,14 +1499,19 @@ LCB39:  lda     $25                             ; CB39 A5 25                    
 LCB4D:  lda     $F6                             ; CB4D A5 F6                    ..
         pha                                     ; CB4F 48                       H
         jsr     LD8EB                           ; CB50 20 EB D8                  ..
-        jsr     LD4E2                           ; CB53 20 E2 D4                  ..
+        jsr     draw_scroll_column                           ; CB53 20 E2 D4                  ..
         pla                                     ; CB56 68                       h
         sta     $F6                             ; CB57 85 F6                    ..
         jsr     bank_load_shadow                ; CB59 20 43 FF                  C.
-LCB5C:  jmp     LCD10                           ; CB5C 4C 10 CD                 L..
+LCB5C:  jmp     scroll_vert_update                           ; CB5C 4C 10 CD                 L..
 
-; ----------------------------------------------------------------------------
-LCB5F:  lda     $55                             ; CB5F A5 55                    .U
+; -----------------------------------------------------------------------------
+; SECTION ADVANCE — $CB5F
+; At section end (camera screen $2B == target $2A): checks the next
+; section-list entry ($A950/$A951, attrs $A968) and starts the 4px/frame
+; camera slide into it (boss doors via LD0FC when attr bit 7 set).
+; -----------------------------------------------------------------------------
+section_advance:  lda     $55                             ; CB5F A5 55                    .U
         bne     LCB5C                           ; CB61 D0 F9                    ..
         lda     $29                             ; CB63 A5 29                    .)
         and     #$1F                            ; CB65 29 1F                    ).
@@ -1582,7 +1587,7 @@ LCBB4:  lda     $FC                             ; CBB4 A5 FC                    
         sta     $25                             ; CBF5 85 25                    .%
         bne     LCBFB                           ; CBF7 D0 02                    ..
         inc     $24                             ; CBF9 E6 24                    .$
-LCBFB:  jsr     LD4E2                           ; CBFB 20 E2 D4                  ..
+LCBFB:  jsr     draw_scroll_column                           ; CBFB 20 E2 D4                  ..
 LCBFE:  lda     $FC                             ; CBFE A5 FC                    ..
         sta     $44                             ; CC00 85 44                    .D
         lda     #$04                            ; CC02 A9 04                    ..
@@ -1592,7 +1597,7 @@ LCBFE:  lda     $FC                             ; CBFE A5 FC                    
         pha                                     ; CC0B 48                       H
         lda     #$12                            ; CC0C A9 12                    ..
         jsr     bank_load_pair                  ; CC0E 20 3D FF                  =.
-        jsr     LDF5E                           ; CC11 20 5E DF                  ^.
+        jsr     entity_render_all                           ; CC11 20 5E DF                  ^.
         lda     $0558                           ; CC14 AD 58 05                 .X.
         cmp     #$1D                            ; CC17 C9 1D                    ..
         bne     LCC20                           ; CC19 D0 05                    ..
@@ -1620,10 +1625,13 @@ LCC41:  lda     #$00                            ; CC41 A9 00                    
         rts                                     ; CC45 60                       `
 
 ; ----------------------------------------------------------------------------
-LCC46:  jmp     LCD10                           ; CC46 4C 10 CD                 L..
+LCC46:  jmp     scroll_vert_update                           ; CC46 4C 10 CD                 L..
 
-; ----------------------------------------------------------------------------
-LCC49:  lda     $29                             ; CC49 A5 29                    .)
+; -----------------------------------------------------------------------------
+; SECTION RETREAT — $CC49
+; Backward (leftward) section transition, mirror of section_advance.
+; -----------------------------------------------------------------------------
+section_retreat:  lda     $29                             ; CC49 A5 29                    .)
         and     #$1F                            ; CC4B 29 1F                    ).
         beq     LCC46                           ; CC4D F0 F7                    ..
         tay                                     ; CC4F A8                       .
@@ -1696,7 +1704,7 @@ LCCC0:  sta     $11                             ; CCC0 85 11                    
         lda     #$1F                            ; CCD6 A9 1F                    ..
         sta     $25                             ; CCD8 85 25                    .%
         dec     $24                             ; CCDA C6 24                    .$
-LCCDC:  jsr     LD4E2                           ; CCDC 20 E2 D4                  ..
+LCCDC:  jsr     draw_scroll_column                           ; CCDC 20 E2 D4                  ..
 LCCDF:  lda     $FC                             ; CCDF A5 FC                    ..
         sta     $44                             ; CCE1 85 44                    .D
         lda     #$04                            ; CCE3 A9 04                    ..
@@ -1706,7 +1714,7 @@ LCCDF:  lda     $FC                             ; CCDF A5 FC                    
         pha                                     ; CCEC 48                       H
         lda     #$12                            ; CCED A9 12                    ..
         jsr     bank_load_pair                  ; CCEF 20 3D FF                  =.
-        jsr     LDF5E                           ; CCF2 20 5E DF                  ^.
+        jsr     entity_render_all                           ; CCF2 20 5E DF                  ^.
         pla                                     ; CCF5 68                       h
         sta     $F6                             ; CCF6 85 F6                    ..
         jsr     bank_load_shadow                ; CCF8 20 43 FF                  C.
@@ -1722,7 +1730,7 @@ LCCDF:  lda     $FC                             ; CCDF A5 FC                    
 LCD0F:  rts                                     ; CD0F 60                       `
 
 ; ----------------------------------------------------------------------------
-LCD10:  lda     $FC                             ; CD10 A5 FC                    ..
+scroll_vert_update:  lda     $FC                             ; CD10 A5 FC                    ..
         bne     LCD0F                           ; CD12 D0 FB                    ..
         lda     #$10                            ; CD14 A9 10                    ..
         cmp     $0330                           ; CD16 CD 30 03                 .0.
@@ -1987,7 +1995,7 @@ LCF01:  jsr     LCF94                           ; CF01 20 94 CF                 
         pha                                     ; CF10 48                       H
         lda     #$12                            ; CF11 A9 12                    ..
         jsr     bank_load_pair                  ; CF13 20 3D FF                  =.
-        jsr     LDF5E                           ; CF16 20 5E DF                  ^.
+        jsr     entity_render_all                           ; CF16 20 5E DF                  ^.
         pla                                     ; CF19 68                       h
         sta     $F6                             ; CF1A 85 F6                    ..
         jsr     bank_load_shadow                ; CF1C 20 43 FF                  C.
@@ -2101,7 +2109,7 @@ LCFD9:  lda     $F6                             ; CFD9 A5 F6                    
 LCFE5:  ldx     $11                             ; CFE5 A6 11                    ..
         lda     $25                             ; CFE7 A5 25                    .%
         clc                                     ; CFE9 18                       .
-        adc     LD0C6,x                         ; CFEA 7D C6 D0                 }..
+        adc     scroll_step_tbl,x                         ; CFEA 7D C6 D0                 }..
         sta     $25                             ; CFED 85 25                    .%
         rts                                     ; CFEF 60                       `
 
@@ -2219,7 +2227,7 @@ LD0BA:  sta     $060C,y                         ; D0BA 99 0C 06                 
         rts                                     ; D0C5 60                       `
 
 ; ----------------------------------------------------------------------------
-LD0C6:  .byte   $FF                             ; D0C6 FF                       .
+scroll_step_tbl:  .byte   $FF                             ; D0C6 FF                       .
         .byte   $01                             ; D0C7 01                       .
 LD0C8:  .byte   $1D                             ; D0C8 1D                       .
         brk                                     ; D0C9 00                       .
@@ -2590,7 +2598,7 @@ LD311:  lda     #$00                            ; D311 A9 00                    
         ldy     $26                             ; D333 A4 26                    .&
         lda     LD4C2,y                         ; D335 B9 C2 D4                 ...
         sta     $27                             ; D338 85 27                    .'
-LD33A:  jsr     LD4E2                           ; D33A 20 E2 D4                  ..
+LD33A:  jsr     draw_scroll_column                           ; D33A 20 E2 D4                  ..
         lda     $FF                             ; D33D A5 FF                    ..
         ora     #$04                            ; D33F 09 04                    ..
         sta     L2000                           ; D341 8D 00 20                 .. 
@@ -2800,7 +2808,7 @@ LD4D2:  brk                                     ; D4D2 00                       
         php                                     ; D4DD 08                       .
         ora     #$09                            ; D4DE 09 09                    ..
         ora     #$09                            ; D4E0 09 09                    ..
-LD4E2:  ldy     $24                             ; D4E2 A4 24                    .$
+draw_scroll_column:  ldy     $24                             ; D4E2 A4 24                    .$
         jsr     screen_layout_ptr                           ; D4E4 20 A3 D7                  ..
         lda     #$20                            ; D4E7 A9 20                    . 
         sta     $0780                           ; D4E9 8D 80 07                 ...
@@ -4237,7 +4245,7 @@ LDF15:  lda     LDF4F,y                         ; DF15 B9 4F DF                 
 LDF1A:  lda     #$04                            ; DF1A A9 04                    ..
         sta     $9F                             ; DF1C 85 9F                    ..
         jsr     oam_clear                           ; DF1E 20 8F C3                  ..
-        jsr     LDF5E                           ; DF21 20 5E DF                  ^.
+        jsr     entity_render_all                           ; DF21 20 5E DF                  ^.
         lda     #$00                            ; DF24 A9 00                    ..
         sta     $95                             ; DF26 85 95                    ..
         sta     $73                             ; DF28 85 73                    .s
@@ -4276,7 +4284,7 @@ LDF55:  .byte   $FF                             ; DF55 FF                       
         brk                                     ; DF5B 00                       .
         brk                                     ; DF5C 00                       .
         brk                                     ; DF5D 00                       .
-LDF5E:  lda     #$FF                            ; DF5E A9 FF                    ..
+entity_render_all:  lda     #$FF                            ; DF5E A9 FF                    ..
         sta     $EC                             ; DF60 85 EC                    ..
         sta     $EE                             ; DF62 85 EE                    ..
         sta     $EF                             ; DF64 85 EF                    ..
@@ -4294,7 +4302,7 @@ LDF75:  lsr     a                               ; DF75 4A                       
         stx     $9E                             ; DF7D 86 9E                    ..
 LDF7F:  lda     $0300,x                         ; DF7F BD 00 03                 ...
         beq     LDF87                           ; DF82 F0 03                    ..
-        jsr     LDFC3                           ; DF84 20 C3 DF                  ..
+        jsr     entity_render_one                           ; DF84 20 C3 DF                  ..
 LDF87:  inc     $9E                             ; DF87 E6 9E                    ..
         ldx     $9E                             ; DF89 A6 9E                    ..
         cpx     #$18                            ; DF8B E0 18                    ..
@@ -4314,7 +4322,7 @@ LDF9E:  ldx     #$17                            ; DF9E A2 17                    
         stx     $9E                             ; DFA0 86 9E                    ..
 LDFA2:  lda     $0300,x                         ; DFA2 BD 00 03                 ...
         beq     LDFAA                           ; DFA5 F0 03                    ..
-        jsr     LDFC3                           ; DFA7 20 C3 DF                  ..
+        jsr     entity_render_one                           ; DFA7 20 C3 DF                  ..
 LDFAA:  dec     $9E                             ; DFAA C6 9E                    ..
         ldx     $9E                             ; DFAC A6 9E                    ..
         bpl     LDFA2                           ; DFAE 10 F2                    ..
@@ -4330,7 +4338,7 @@ LDFB8:  lda     $EF                             ; DFB8 A5 EF                    
 LDFC2:  rts                                     ; DFC2 60                       `
 
 ; ----------------------------------------------------------------------------
-LDFC3:  lda     $0528,x                         ; DFC3 BD 28 05                 .(.
+entity_render_one:  lda     $0528,x                         ; DFC3 BD 28 05                 .(.
         and     #$7F                            ; DFC6 29 7F                    ).
         sta     $0528,x                         ; DFC8 9D 28 05                 .(.
         lda     $0330,x                         ; DFCB BD 30 03                 .0.
@@ -7268,7 +7276,7 @@ LF34A:  lda     $F5                             ; F34A A5 F5                    
         lda     #$04                            ; F350 A9 04                    ..
         sta     $9F                             ; F352 85 9F                    ..
         jsr     oam_clear                           ; F354 20 8F C3                  ..
-        jsr     LDF5E                           ; F357 20 5E DF                  ^.
+        jsr     entity_render_all                           ; F357 20 5E DF                  ^.
         pla                                     ; F35A 68                       h
         sta     $F6                             ; F35B 85 F6                    ..
         pla                                     ; F35D 68                       h
@@ -7291,7 +7299,7 @@ LF34A:  lda     $F5                             ; F34A A5 F5                    
         ldx     #$44                            ; F377 A2 44                    .D
         stx     $9F                             ; F379 86 9F                    ..
         jsr     LC391                           ; F37B 20 91 C3                  ..
-        jsr     LDF5E                           ; F37E 20 5E DF                  ^.
+        jsr     entity_render_all                           ; F37E 20 5E DF                  ^.
         lda     #$00                            ; F381 A9 00                    ..
         sta     $95                             ; F383 85 95                    ..
         pla                                     ; F385 68                       h
@@ -7318,7 +7326,7 @@ LF39D:  sta     L0200,x                         ; F39D 9D 00 02                 
         bne     LF39D                           ; F3A6 D0 F5                    ..
         ldx     #$04                            ; F3A8 A2 04                    ..
         stx     $9F                             ; F3AA 86 9F                    ..
-        jsr     LDF5E                           ; F3AC 20 5E DF                  ^.
+        jsr     entity_render_all                           ; F3AC 20 5E DF                  ^.
         lda     #$00                            ; F3AF A9 00                    ..
         sta     $95                             ; F3B1 85 95                    ..
         pla                                     ; F3B3 68                       h
