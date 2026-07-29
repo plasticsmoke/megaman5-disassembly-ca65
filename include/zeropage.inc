@@ -161,3 +161,7 @@ hit_freeze      := $54          ; damage/weapon-get freeze counter
 spawn_ahead     := $AD          ; spawn-list cursor ahead of camera
 spawn_behind    := $AE          ; spawn-list cursor behind camera
 scroll_dir_cur  := $AC          ; scroll direction latch (mirrors $28)
+
+; Weapons
+cur_weapon      := $32          ; current weapon id (0 = buster; indexes $B0+ energy,
+                                ; fire table $1B:9571, player palette variant)

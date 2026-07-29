@@ -40,7 +40,6 @@ LE8DE           := $E8DE
 LE904           := $E904
 LEA03           := $EA03
 LEA34           := $EA34
-LF15F           := $F15F
 ; ----------------------------------------------------------------------------
         lda     $30                             ; 8000 A5 30                    .0
         cmp     #$06                            ; 8002 C9 06                    ..
@@ -2125,13 +2124,20 @@ L9069:  php                                     ; 9069 08                       
         .byte   $04                             ; 906A 04                       .
 L906B:  lda     $0390                           ; 906B AD 90 03                 ...
         bne     L90E2                           ; 906E D0 72                    .r
+; -----------------------------------------------------------------------------
+; WEAPON FIRE DISPATCH — ~$1B:9070
+; Y = current weapon ($32). Weapon energy at $B0,y ($B0 = player HP /
+; buster; $B1+ = weapon meters). If energy != weapon_empty_tbl[y],
+; dispatch through weapon_fire_lo/hi[y]. Buster shots use entity
+; slots 1-3 (sub-types $A8/$A9); the special-weapon shot uses slot 4.
+; -----------------------------------------------------------------------------
         ldy     $32                             ; 9070 A4 32                    .2
         lda     $B0,y                           ; 9072 B9 B0 00                 ...
-L9075:  cmp     L95C5,y                         ; 9075 D9 C5 95                 ...
+L9075:  cmp     weapon_empty_tbl,y                         ; 9075 D9 C5 95                 ...
         beq     L90E2                           ; 9078 F0 68                    .h
-        lda     L9571,y                         ; 907A B9 71 95                 .q.
+        lda     weapon_fire_lo,y                         ; 907A B9 71 95                 .q.
 L907D:  sta     L0000                           ; 907D 85 00                    ..
-        lda     L9581,y                         ; 907F B9 81 95                 ...
+        lda     weapon_fire_hi,y                         ; 907F B9 81 95                 ...
         sta     $01                             ; 9082 85 01                    ..
         jmp     (L0000)                         ; 9084 6C 00 00                 l..
 
@@ -2727,7 +2733,7 @@ L9568:  sta     $0420,y                         ; 9568 99 20 04                 
 L956E:  jmp     entity_facing_to_flags                           ; 956E 4C 30 EC                 L0.
 
 ; ----------------------------------------------------------------------------
-L9571:  .byte   $E3                             ; 9571 E3                       .
+weapon_fire_lo:  .byte   $E3                             ; 9571 E3                       .
         .byte   $AF                             ; 9572 AF                       .
         .byte   $3B                             ; 9573 3B                       ;
         .byte   $3B                             ; 9574 3B                       ;
@@ -2740,7 +2746,7 @@ L9571:  .byte   $E3                             ; 9571 E3                       
         bne     L9562                           ; 957D D0 E3                    ..
         .byte   $E3                             ; 957F E3                       .
         .byte   $E3                             ; 9580 E3                       .
-L9581:  bcc     L9515                           ; 9581 90 92                    ..
+weapon_fire_hi:  bcc     L9515                           ; 9581 90 92                    ..
         .byte   $92                             ; 9583 92                       .
         .byte   $92                             ; 9584 92                       .
         .byte   $93                             ; 9585 93                       .
@@ -2792,7 +2798,7 @@ L95BE:  inx                                     ; 95BE E8                       
 L95C1:  .byte   $FF                             ; 95C1 FF                       .
         .byte   $02                             ; 95C2 02                       .
         asl     $0C                             ; 95C3 06 0C                    ..
-L95C5:  brk                                     ; 95C5 00                       .
+weapon_empty_tbl:  brk                                     ; 95C5 00                       .
         .byte   $80                             ; 95C6 80                       .
         .byte   $80                             ; 95C7 80                       .
         .byte   $80                             ; 95C8 80                       .
@@ -3325,6 +3331,15 @@ L9985:  lda     L9E56,x                         ; 9985 BD 56 9E                 
 L9994:  rts                                     ; 9994 60                       `
 
 ; ----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; SPAWN ENEMY — $1B:9995 (spawn code < $C0 in $06)
+; Skips if this spawn index is already active or its bit is set in the
+; $0100 no-respawn bitmap. Fills the new slot from the stage tables
+; ($AA00/$AA80/$AB00 screen/X/Y) and this bank's parallel parameter
+; tables indexed by code: flags, type, shape, sub-type, HP, and a
+; speed row into the xvel tables. Spawn code is kept in $0510.
+; -----------------------------------------------------------------------------
+spawn_enemy:
         ldx     #$17                            ; 9995 A2 17                    ..
         lda     $06                             ; 9997 A5 06                    ..
 L9999:  cmp     $0438,x                         ; 9999 DD 38 04                 .8.
@@ -3332,7 +3347,7 @@ L9999:  cmp     $0438,x                         ; 9999 DD 38 04                 
         dex                                     ; 999E CA                       .
         cpx     #$07                            ; 999F E0 07                    ..
         bne     L9999                           ; 99A1 D0 F6                    ..
-        jsr     LF15F                           ; 99A3 20 5F F1                  _.
+        jsr     find_free_slot_x                           ; 99A3 20 5F F1                  _.
         bcs     L9994                           ; 99A6 B0 EC                    ..
         lda     $06                             ; 99A8 A5 06                    ..
         and     #$07                            ; 99AA 29 07                    ).
@@ -3359,24 +3374,24 @@ L9999:  cmp     $0438,x                         ; 9999 DD 38 04                 
         lda     $AB80,y                         ; 99D7 B9 80 AB                 ...
         sta     $0510,x                         ; 99DA 9D 10 05                 ...
         tay                                     ; 99DD A8                       .
-        lda     L9A42,y                         ; 99DE B9 42 9A                 .B.
+        lda     spawn_flags_tbl,y                         ; 99DE B9 42 9A                 .B.
         pha                                     ; 99E1 48                       H
         and     #$7F                            ; 99E2 29 7F                    ).
         sta     $0528,x                         ; 99E4 9D 28 05                 .(.
-        lda     L9AD2,y                         ; 99E7 B9 D2 9A                 ...
+        lda     spawn_type_tbl,y                         ; 99E7 B9 D2 9A                 ...
         sta     $0300,x                         ; 99EA 9D 00 03                 ...
-        lda     L9B62,y                         ; 99ED B9 62 9B                 .b.
+        lda     spawn_shape_tbl,y                         ; 99ED B9 62 9B                 .b.
         sta     $0408,x                         ; 99F0 9D 08 04                 ...
-        lda     L9BF2,y                         ; 99F3 B9 F2 9B                 ...
+        lda     spawn_subtype_tbl,y                         ; 99F3 B9 F2 9B                 ...
         jsr     entity_set_subtype                           ; 99F6 20 98 EA                  ..
         jsr     entity_set_facing                           ; 99F9 20 16 EC                  ..
-        lda     L9C82,y                         ; 99FC B9 82 9C                 ...
+        lda     spawn_hp_tbl,y                         ; 99FC B9 82 9C                 ...
         sta     $0450,x                         ; 99FF 9D 50 04                 .P.
-        lda     L9D12,y                         ; 9A02 B9 12 9D                 ...
+        lda     spawn_speed_tbl,y                         ; 9A02 B9 12 9D                 ...
         tay                                     ; 9A05 A8                       .
-        lda     L9DA2,y                         ; 9A06 B9 A2 9D                 ...
+        lda     spawn_xvel_sub_tbl,y                         ; 9A06 B9 A2 9D                 ...
         sta     $03A8,x                         ; 9A09 9D A8 03                 ...
-        lda     L9DAA,y                         ; 9A0C B9 AA 9D                 ...
+        lda     spawn_xvel_px_tbl,y                         ; 9A0C B9 AA 9D                 ...
         sta     $03C0,x                         ; 9A0F 9D C0 03                 ...
         jsr     entity_stop_y                           ; 9A12 20 1E EA                  ..
         lda     #$00                            ; 9A15 A9 00                    ..
@@ -3398,7 +3413,7 @@ L9999:  cmp     $0438,x                         ; 9999 DD 38 04                 
 L9A41:  rts                                     ; 9A41 60                       `
 
 ; ----------------------------------------------------------------------------
-L9A42:  php                                     ; 9A42 08                       .
+spawn_flags_tbl:  php                                     ; 9A42 08                       .
         brk                                     ; 9A43 00                       .
         brk                                     ; 9A44 00                       .
         brk                                     ; 9A45 00                       .
@@ -3538,7 +3553,7 @@ L9AB6:  brk                                     ; 9AB6 00                       
         .byte   $80                             ; 9ACF 80                       .
         .byte   $80                             ; 9AD0 80                       .
         .byte   $80                             ; 9AD1 80                       .
-L9AD2:  bpl     L9AE6                           ; 9AD2 10 12                    ..
+spawn_type_tbl:  bpl     L9AE6                           ; 9AD2 10 12                    ..
         .byte   $13                             ; 9AD4 13                       .
         ora     $16,x                           ; 9AD5 15 16                    ..
         .byte   $17                             ; 9AD7 17                       .
@@ -3633,7 +3648,7 @@ L9B22:  .byte   $44                             ; 9B22 44                       
         ldx     $B6,y                           ; 9B5C B6 B6                    ..
         ldx     $B6,y                           ; 9B5E B6 B6                    ..
         ldx     $B6,y                           ; 9B60 B6 B6                    ..
-L9B62:  .byte   $80                             ; 9B62 80                       .
+spawn_shape_tbl:  .byte   $80                             ; 9B62 80                       .
         cpy     #$C0                            ; 9B63 C0 C0                    ..
         cpy     #$CB                            ; 9B65 C0 CB                    ..
         cmp     ($92),y                         ; 9B67 D1 92                    ..
@@ -3739,7 +3754,7 @@ L9BB5:  asl     $031F,x                         ; 9BB5 1E 1F 03                 
         brk                                     ; 9BEF 00                       .
         brk                                     ; 9BF0 00                       .
         brk                                     ; 9BF1 00                       .
-L9BF2:  pha                                     ; 9BF2 48                       H
+spawn_subtype_tbl:  pha                                     ; 9BF2 48                       H
         .byte   $2F                             ; 9BF3 2F                       /
         .byte   $27                             ; 9BF4 27                       '
         bcc     L9C40                           ; 9BF5 90 49                    .I
@@ -3851,7 +3866,7 @@ L9C76:  .byte   $74                             ; 9C76 74                       
         .byte   $7C                             ; 9C7D 7C                       |
         adc     $7F7E,x                         ; 9C7E 7D 7E 7F                 }~.
         .byte   $80                             ; 9C81 80                       .
-L9C82:  .byte   $02                             ; 9C82 02                       .
+spawn_hp_tbl:  .byte   $02                             ; 9C82 02                       .
         ora     ($01,x)                         ; 9C83 01 01                    ..
         ora     ($03,x)                         ; 9C85 01 03                    ..
         .byte   $02                             ; 9C87 02                       .
@@ -3976,7 +3991,7 @@ L9CA4:  brk                                     ; 9CA4 00                       
         brk                                     ; 9D0F 00                       .
         brk                                     ; 9D10 00                       .
         brk                                     ; 9D11 00                       .
-L9D12:  ora     ($02,x)                         ; 9D12 01 02                    ..
+spawn_speed_tbl:  ora     ($02,x)                         ; 9D12 01 02                    ..
         .byte   $04                             ; 9D14 04                       .
         brk                                     ; 9D15 00                       .
         .byte   $03                             ; 9D16 03                       .
@@ -4107,13 +4122,13 @@ L9D12:  ora     ($02,x)                         ; 9D12 01 02                    
         brk                                     ; 9D9F 00                       .
         brk                                     ; 9DA0 00                       .
         brk                                     ; 9DA1 00                       .
-L9DA2:  brk                                     ; 9DA2 00                       .
+spawn_xvel_sub_tbl:  brk                                     ; 9DA2 00                       .
         cpy     a:$33                           ; 9DA3 CC 33 00                 .3.
         .byte   $80                             ; 9DA6 80                       .
         .byte   $80                             ; 9DA7 80                       .
         brk                                     ; 9DA8 00                       .
         brk                                     ; 9DA9 00                       .
-L9DAA:  ora     (L0000,x)                       ; 9DAA 01 00                    ..
+spawn_xvel_px_tbl:  ora     (L0000,x)                       ; 9DAA 01 00                    ..
         ora     ($02,x)                         ; 9DAC 01 02                    ..
         ora     (L0000,x)                       ; 9DAE 01 00                    ..
         .byte   $04                             ; 9DB0 04                       .

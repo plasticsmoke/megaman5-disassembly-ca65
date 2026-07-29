@@ -31,7 +31,7 @@ ent_angle       := $04B0        ; angle / AI counter
 ent_var1        := $04C8        ; general purpose
 ent_var2        := $04E0        ; general purpose
 ent_var7        := $04F8        ; general purpose
-ent_var8        := $0510        ; general purpose
+ent_spawn_code  := $0510        ; spawn-list code (set at spawn)
 ent_flags       := $0528        ; 7=renderable 6=vflip 5=hflip 4=? 3=wide-range 2=no-draw/no-collide
 ent_anim_phase  := $0540        ; animation frame index
 ent_sub_type    := $0558        ; sub-type: anim descriptor index
@@ -55,6 +55,7 @@ BTN_LEFT        = $02
 BTN_RIGHT       = $01
 
 ; Buffers
+NO_RESPAWN_BUF  := $0100        ; 32-byte bitmap: killed spawn indices (no respawn)
 OAM_BUF         := $0200        ; 256-byte OAM buffer (DMA source)
 PAL_BUF         := $0600        ; 32-byte palette buffer (uploaded when palette_dirty)
 NT_BUF          := $0780        ; nametable write buffer: records of

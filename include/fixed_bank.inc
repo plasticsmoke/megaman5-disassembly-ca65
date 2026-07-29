@@ -56,6 +56,7 @@ entity_speed_preset := $EAF5  ; velocity preset from speed tables
 entity_facing_to_flags := $EC30 ; dir -> flags bit 5 (hflip)
 entity_player_collide := $EF87 ; entity vs player hitbox
 entity_hitbox_check := $EFF8  ; entity vs slot hitbox (weapons)
+find_free_slot_x    := $F15F  ; free slot -> X (C = fail)
 find_free_slot_y    := $F16F  ; free slot $08-$17 -> Y (C = fail)
 entity_distance_calc := $ECC2 ; distance from player slot
 

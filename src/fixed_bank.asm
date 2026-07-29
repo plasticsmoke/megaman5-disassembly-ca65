@@ -6801,6 +6801,8 @@ LF146:  asl     $FC                             ; F146 06 FC                    
 LF159:  ora     ($10,x)                         ; F159 01 10                    ..
         ora     ($12),y                         ; F15B 11 12                    ..
         ora     ($10),y                         ; F15D 11 10                    ..
+; --- $F15F: find free entity slot, return in X (C set = none) ----------------
+find_free_slot_x:
         ldx     #$08                            ; F15F A2 08                    ..
 LF161:  lda     $0300,x                         ; F161 BD 00 03                 ...
         beq     LF16D                           ; F164 F0 07                    ..
