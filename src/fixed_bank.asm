@@ -582,7 +582,7 @@ LC38C:  ldx     temp_01
 ; --- $C38F: clear OAM buffer (all sprites offscreen at Y=$F8) ----------------
 oam_clear:
         ldx     #$00
-LC391:  lda     #$F8
+oam_clear_from:  lda     #$F8
 LC393:  sta     OAM_BUF,x
         inx
         inx
@@ -1183,14 +1183,14 @@ breakable_block_check:  pha                                     ; C77C 48       
         asl     a                               ; C786 0A                       .
         ora     $03                             ; C787 05 03                    ..
         tay                                     ; C789 A8                       .
-        lda     LF2B2,y                         ; C78A B9 B2 F2                 ...
+        lda     bit_masks,y                         ; C78A B9 B2 F2                 ...
         sta     $07                             ; C78D 85 07                    ..
         lda     $13                             ; C78F A5 13                    ..
         and     #$01                            ; C791 29 01                    ).
         tay                                     ; C793 A8                       .
         lda     $22                             ; C794 A5 22                    ."
         lsr     a                               ; C796 4A                       J
-        ora     LF2C2,y                         ; C797 19 C2 F2                 ...
+        ora     scr_parity_ofs,y                         ; C797 19 C2 F2                 ...
         tay                                     ; C79A A8                       .
         lda     $0680,y                         ; C79B B9 80 06                 ...
         and     $07                             ; C79E 25 07                    %.
@@ -2182,7 +2182,7 @@ LD051:  lda     $0300,y                         ; D051 B9 00 03                 
         sta     $0378,y                         ; D071 99 78 03                 .x.
         cmp     #$F0                            ; D074 C9 F0                    ..
         bcc     LD07B                           ; D076 90 03                    ..
-LD078:  jsr     LF2FE                           ; D078 20 FE F2                  ..
+LD078:  jsr     entity_wipe_y                           ; D078 20 FE F2                  ..
 LD07B:  dey                                     ; D07B 88                       .
         bne     LD051                           ; D07C D0 D3                    ..
         rts                                     ; D07E 60                       `
@@ -2598,7 +2598,7 @@ stage_load:  lda     #$00                            ; D311 A9 00               
         jsr     scroll_irq_reset                           ; D320 20 B8 C3                  ..
         jsr     frame_wait                      ; D323 20 22 FF                  ".
         jsr     disable_rendering                           ; D326 20 D1 C2                  ..
-        jsr     LF3F2                           ; D329 20 F2 F3                  ..
+        jsr     stage_state_init                           ; D329 20 F2 F3                  ..
         lda     $F9                             ; D32C A5 F9                    ..
         sta     $24                             ; D32E 85 24                    .$
         sta     $0348                           ; D330 8D 48 03                 .H.
@@ -2630,7 +2630,7 @@ LD364:  lda     $26                             ; D364 A5 26                    
         ldy     #$0F                            ; D36B A0 0F                    ..
 LD36D:  lda     $A988,y                         ; D36D B9 88 A9                 ...
         sta     $0620,y                         ; D370 99 20 06                 . .
-        lda     LD4B2,y                         ; D373 B9 B2 D4                 ...
+        lda     player_pal_bg,y                         ; D373 B9 B2 D4                 ...
         sta     $0630,y                         ; D376 99 30 06                 .0.
         cpy     #$04                            ; D379 C0 04                    ..
         bcs     LD38B                           ; D37B B0 0E                    ..
@@ -2780,11 +2780,11 @@ LD48D:  lda     $8F7F,y                         ; D48D B9 7F 8F                 
 LD4B1:  rts                                     ; D4B1 60                       `
 
 ; ----------------------------------------------------------------------------
-LD4B2:  .byte   $0F                             ; D4B2 0F                       .
+player_pal_bg:  .byte   $0F                             ; D4B2 0F                       .
         .byte   $0F                             ; D4B3 0F                       .
         .byte   $2C                             ; D4B4 2C                       ,
         .byte   $11                             ; D4B5 11                       .
-LD4B6:  .byte   $0F                             ; D4B6 0F                       .
+player_pal_spr:  .byte   $0F                             ; D4B6 0F                       .
         .byte   $0F                             ; D4B7 0F                       .
         jsr     L0F37                           ; D4B8 20 37 0F                  7.
         .byte   $0F                             ; D4BB 0F                       .
@@ -3126,14 +3126,14 @@ LD72D:  lda     $1E                             ; D72D A5 1E                    
         asl     a                               ; D736 0A                       .
         ora     $02                             ; D737 05 02                    ..
         tay                                     ; D739 A8                       .
-        lda     LF2B2,y                         ; D73A B9 B2 F2                 ...
+        lda     bit_masks,y                         ; D73A B9 B2 F2                 ...
         sta     $E6                             ; D73D 85 E6                    ..
         lda     $47                             ; D73F A5 47                    .G
         and     #$01                            ; D741 29 01                    ).
         tay                                     ; D743 A8                       .
         lda     $22                             ; D744 A5 22                    ."
         lsr     a                               ; D746 4A                       J
-        ora     LF2C2,y                         ; D747 19 C2 F2                 ...
+        ora     scr_parity_ofs,y                         ; D747 19 C2 F2                 ...
         tay                                     ; D74A A8                       .
         lda     $0680,y                         ; D74B B9 80 06                 ...
         and     $E6                             ; D74E 25 E6                    %.
@@ -3353,14 +3353,14 @@ LD8C7:  lda     $22                             ; D8C7 A5 22                    
         asl     a                               ; D8CC 0A                       .
         ora     $10                             ; D8CD 05 10                    ..
         tay                                     ; D8CF A8                       .
-        lda     LF2B2,y                         ; D8D0 B9 B2 F2                 ...
+        lda     bit_masks,y                         ; D8D0 B9 B2 F2                 ...
         sta     L0000                           ; D8D3 85 00                    ..
         lda     $0348,x                         ; D8D5 BD 48 03                 .H.
         and     #$01                            ; D8D8 29 01                    ).
         tay                                     ; D8DA A8                       .
         lda     $22                             ; D8DB A5 22                    ."
         lsr     a                               ; D8DD 4A                       J
-        ora     LF2C2,y                         ; D8DE 19 C2 F2                 ...
+        ora     scr_parity_ofs,y                         ; D8DE 19 C2 F2                 ...
         tay                                     ; D8E1 A8                       .
         lda     $0680,y                         ; D8E2 B9 80 06                 ...
         ora     L0000                           ; D8E5 05 00                    ..
@@ -3373,7 +3373,7 @@ LD8EB:  lda     $46                             ; D8EB A5 46                    
         lda     $F9                             ; D8EF A5 F9                    ..
         and     #$01                            ; D8F1 29 01                    ).
         tay                                     ; D8F3 A8                       .
-        lda     LF2C2,y                         ; D8F4 B9 C2 F2                 ...
+        lda     scr_parity_ofs,y                         ; D8F4 B9 C2 F2                 ...
         sta     L0000                           ; D8F7 85 00                    ..
         lda     $FC                             ; D8F9 A5 FC                    ..
         lsr     a                               ; D8FB 4A                       J
@@ -6194,7 +6194,7 @@ LED2B:  .byte   $04                             ; ED2B 04                       
         .byte   $0F                             ; ED48 0F                       .
         .byte   $0E                             ; ED49 0E                       .
         .byte   $04                             ; ED4A 04                       .
-LED4B:  php                                     ; ED4B 08                       .
+dir_byte_tbl:  php                                     ; ED4B 08                       .
         ora     #$09                            ; ED4C 09 09                    ..
         ora     #$01                            ; ED4E 09 01                    ..
         ora     $05                             ; ED50 05 05                    ..
@@ -6226,7 +6226,7 @@ LED7F:  lda     $04B0,x                         ; ED7F BD B0 04                 
         and     #$0F                            ; ED82 29 0F                    ).
         sta     $04B0,x                         ; ED84 9D B0 04                 ...
         tay                                     ; ED87 A8                       .
-        lda     LED4B,y                         ; ED88 B9 4B ED                 .K.
+        lda     dir_byte_tbl,y                         ; ED88 B9 4B ED                 .K.
         sta     $0420,x                         ; ED8B 9D 20 04                 . .
         rts                                     ; ED8E 60                       `
 
@@ -6971,7 +6971,7 @@ LF28D:  asl     L0000                           ; F28D 06 00                    
         lda     $0438,x                         ; F297 BD 38 04                 .8.
         and     #$07                            ; F29A 29 07                    ).
         tay                                     ; F29C A8                       .
-        lda     LF2B2,y                         ; F29D B9 B2 F2                 ...
+        lda     bit_masks,y                         ; F29D B9 B2 F2                 ...
         sta     L0000                           ; F2A0 85 00                    ..
         lda     $0438,x                         ; F2A2 BD 38 04                 .8.
         lsr     a                               ; F2A5 4A                       J
@@ -6984,48 +6984,47 @@ LF28D:  asl     L0000                           ; F28D 06 00                    
         rts                                     ; F2B1 60                       `
 
 ; ----------------------------------------------------------------------------
-LF2B2:  ora     ($02,x)                         ; F2B2 01 02                    ..
-        .byte   $04                             ; F2B4 04                       .
-        php                                     ; F2B5 08                       .
-        bpl     LF2D8                           ; F2B6 10 20                    . 
-        rti                                     ; F2B8 40                       @
+; -----------------------------------------------------------------------------
+; BIT MASK TABLES — $F2B2 (breakable-block bitmap etc.)
+; -----------------------------------------------------------------------------
+bit_masks:      .byte $01,$02,$04,$08,$10,$20,$40,$80   ; F2B2
+bit_masks_inv:  .byte $FE,$FD,$FB,$F7,$EF,$DF,$BF,$7F   ; F2BA
+scr_parity_ofs: .byte $00,$20                           ; F2C2
+
+; -----------------------------------------------------------------------------
+; ENTITY WIPE — $F2C4 (X-indexed; the standard "remove entity" call,
+; used from nearly every code bank): spawn idx = $FF, then type, AI
+; state, stun, HP, shape and all general vars cleared.
+; -----------------------------------------------------------------------------
+entity_wipe_x:
+        lda     #$FF
+        sta     ent_spawn_idx,x
+        lda     #$00
+        sta     ent_bhv_pc_hi,x
+        sta     ent_type,x
+        sta     ent_stun,x
+        sta     ent_enemy_hp,x
+        sta     $0408,x                 ; shape
+        sta     $0468,x                 ; param/timer
+        sta     $0480,x                 ; var5
+        sta     $0498,x                 ; var6
+        sta     $04B0,x                 ; angle
+        sta     $04C8,x                 ; var1
+        sta     $04E0,x                 ; var2
+        sta     $04F8,x
+        sta     $0510,x
+        rts
 
 ; ----------------------------------------------------------------------------
-        .byte   $80                             ; F2B9 80                       .
-        inc     LFBFD,x                         ; F2BA FE FD FB                 ...
-        .byte   $F7                             ; F2BD F7                       .
-        .byte   $EF                             ; F2BE EF                       .
-        .byte   $DF                             ; F2BF DF                       .
-        .byte   $BF                             ; F2C0 BF                       .
-        .byte   $7F                             ; F2C1 7F                       .
-LF2C2:  brk                                     ; F2C2 00                       .
-        jsr     LFFA9                           ; F2C3 20 A9 FF                  ..
-        sta     $0438,x                         ; F2C6 9D 38 04                 .8.
-        lda     #$00                            ; F2C9 A9 00                    ..
-        sta     $05A0,x                         ; F2CB 9D A0 05                 ...
-        sta     $0300,x                         ; F2CE 9D 00 03                 ...
-        sta     $05B8,x                         ; F2D1 9D B8 05                 ...
-        sta     $0450,x                         ; F2D4 9D 50 04                 .P.
-        .byte   $9D                             ; F2D7 9D                       .
-LF2D8:  php                                     ; F2D8 08                       .
-        .byte   $04                             ; F2D9 04                       .
-        sta     $0468,x                         ; F2DA 9D 68 04                 .h.
-        sta     $0480,x                         ; F2DD 9D 80 04                 ...
-        sta     $0498,x                         ; F2E0 9D 98 04                 ...
-        sta     $04B0,x                         ; F2E3 9D B0 04                 ...
-        sta     $04C8,x                         ; F2E6 9D C8 04                 ...
-        sta     $04E0,x                         ; F2E9 9D E0 04                 ...
-        sta     $04F8,x                         ; F2EC 9D F8 04                 ...
-        sta     $0510,x                         ; F2EF 9D 10 05                 ...
-        rts                                     ; F2F2 60                       `
-
-; ----------------------------------------------------------------------------
+; --- $F2F3: entity wipe Y, exempting types $C5/$79 ---------------------------
+entity_wipe_y_checked:
         lda     $0300,y                         ; F2F3 B9 00 03                 ...
         cmp     #$C5                            ; F2F6 C9 C5                    ..
         beq     LF32C                           ; F2F8 F0 32                    .2
         cmp     #$79                            ; F2FA C9 79                    .y
         beq     LF32C                           ; F2FC F0 2E                    ..
-LF2FE:  lda     #$FF                            ; F2FE A9 FF                    ..
+entity_wipe_y:
+        lda     #$FF                            ; F2FE A9 FF                    ..
         sta     $0438,y                         ; F300 99 38 04                 .8.
         lda     #$00                            ; F303 A9 00                    ..
         sta     $05A0,y                         ; F305 99 A0 05                 ...
@@ -7065,7 +7064,7 @@ call_bank00_frame:  lda     $F5                             ; F32D A5 F5        
         jmp     bank_load_shadow                ; F347 4C 43 FF                 LC.
 
 ; ----------------------------------------------------------------------------
-LF34A:  lda     $F5                             ; F34A A5 F5                    ..
+render_frame_banksafe:  lda     $F5                             ; F34A A5 F5                    ..
         pha                                     ; F34C 48                       H
         lda     $F6                             ; F34D A5 F6                    ..
         pha                                     ; F34F 48                       H
@@ -7080,13 +7079,17 @@ LF34A:  lda     $F5                             ; F34A A5 F5                    
         jmp     bank_load_shadow                ; F360 4C 43 FF                 LC.
 
 ; ----------------------------------------------------------------------------
+; --- $F363: render entities + one frame (quick NMI), banks saved -------------
+render_tick_frame:
         inc     $95                             ; F363 E6 95                    ..
-        jsr     LF34A                           ; F365 20 4A F3                  J.
+        jsr     render_frame_banksafe                           ; F365 20 4A F3                  J.
         lda     #$00                            ; F368 A9 00                    ..
         sta     $95                             ; F36A 85 95                    ..
         jmp     frame_wait                      ; F36C 4C 22 FF                 L".
 
 ; ----------------------------------------------------------------------------
+; --- $F36F: render tick preserving OAM 0-$10 (HUD sprites) -------------------
+render_tick_hud:
         lda     $F5                             ; F36F A5 F5                    ..
         pha                                     ; F371 48                       H
         lda     $F6                             ; F372 A5 F6                    ..
@@ -7094,7 +7097,7 @@ LF34A:  lda     $F5                             ; F34A A5 F5                    
         inc     $95                             ; F375 E6 95                    ..
         ldx     #$44                            ; F377 A2 44                    .D
         stx     $9F                             ; F379 86 9F                    ..
-        jsr     LC391                           ; F37B 20 91 C3                  ..
+        jsr     oam_clear_from                           ; F37B 20 91 C3                  ..
         jsr     entity_render_all                           ; F37E 20 5E DF                  ^.
         lda     #$00                            ; F381 A9 00                    ..
         sta     $95                             ; F383 85 95                    ..
@@ -7106,6 +7109,8 @@ LF34A:  lda     $F5                             ; F34A A5 F5                    
         jmp     frame_wait                      ; F38E 4C 22 FF                 L".
 
 ; ----------------------------------------------------------------------------
+; --- $F391: render tick clearing OAM 0-$BF only (menus) ----------------------
+render_tick_menu:
         lda     $F5                             ; F391 A5 F5                    ..
         pha                                     ; F393 48                       H
         lda     $F6                             ; F394 A5 F6                    ..
@@ -7133,6 +7138,8 @@ LF39D:  sta     L0200,x                         ; F39D 9D 00 02                 
         jmp     frame_wait                      ; F3BC 4C 22 FF                 L".
 
 ; ----------------------------------------------------------------------------
+; --- $F3BF: load player palette rows (defaults or $32-selected backup) --------
+player_palette_load:
         ldy     #$03                            ; F3BF A0 03                    ..
 LF3C1:  lda     $32                             ; F3C1 A5 32                    .2
         beq     LF3D4                           ; F3C3 F0 0F                    ..
@@ -7143,10 +7150,10 @@ LF3C1:  lda     $32                             ; F3C1 A5 32                    
         jmp     LF3E6                           ; F3D1 4C E6 F3                 L..
 
 ; ----------------------------------------------------------------------------
-LF3D4:  lda     LD4B2,y                         ; F3D4 B9 B2 D4                 ...
+LF3D4:  lda     player_pal_bg,y                         ; F3D4 B9 B2 D4                 ...
         sta     $0630,y                         ; F3D7 99 30 06                 .0.
         sta     $0610,y                         ; F3DA 99 10 06                 ...
-        lda     LD4B6,y                         ; F3DD B9 B6 D4                 ...
+        lda     player_pal_spr,y                         ; F3DD B9 B6 D4                 ...
         sta     $0634,y                         ; F3E0 99 34 06                 .4.
         sta     $0614,y                         ; F3E3 99 14 06                 ...
 LF3E6:  dey                                     ; F3E6 88                       .
@@ -7157,7 +7164,9 @@ LF3E6:  dey                                     ; F3E6 88                       
         rts                                     ; F3F1 60                       `
 
 ; ----------------------------------------------------------------------------
-LF3F2:  lda     $30                             ; F3F2 A5 30                    .0
+; --- $F3F2: wipe game/scroll zp state, tile overrides + breakable bitmap;
+; player state/palette vars survive (fully for states $16/$17) ----------------
+stage_state_init:  lda     $30                             ; F3F2 A5 30                    .0
         sta     L0000                           ; F3F4 85 00                    ..
         lda     $2D                             ; F3F6 A5 2D                    .-
         sta     $01                             ; F3F8 85 01                    ..
@@ -7216,6 +7225,8 @@ LF454:  lda     $01                             ; F454 A5 01                    
         rts                                     ; F464 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- $F465: clear $0100-$011F buffer ------------------------------------------
+clear_buf_0100:
         ldy     #$1F                            ; F465 A0 1F                    ..
         lda     #$00                            ; F467 A9 00                    ..
 LF469:  sta     L0100,y                         ; F469 99 00 01                 ...
@@ -7224,2015 +7235,263 @@ LF469:  sta     L0100,y                         ; F469 99 00 01                 
         rts                                     ; F46F 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- $F470: set entity direction + 8-dir velocity ------------------------------
+; Y = direction index (dir byte from dir_byte_tbl), A = speed row base;
+; X/Y velocity from dir_vel_sub/px_tbl[(y & 7) | base], Y at index ^ 4.
+entity_set_dir_velocity:
         sty     L0000                           ; F470 84 00                    ..
         sta     $01                             ; F472 85 01                    ..
-        lda     LED4B,y                         ; F474 B9 4B ED                 .K.
+        lda     dir_byte_tbl,y                         ; F474 B9 4B ED                 .K.
         sta     $0420,x                         ; F477 9D 20 04                 . .
         lda     L0000                           ; F47A A5 00                    ..
         and     #$07                            ; F47C 29 07                    ).
         ora     $01                             ; F47E 05 01                    ..
         tay                                     ; F480 A8                       .
-        lda     LF49E,y                         ; F481 B9 9E F4                 ...
+        lda     dir_vel_sub_tbl,y                         ; F481 B9 9E F4                 ...
         sta     $03A8,x                         ; F484 9D A8 03                 ...
-        lda     LF4EE,y                         ; F487 B9 EE F4                 ...
+        lda     dir_vel_px_tbl,y                         ; F487 B9 EE F4                 ...
         sta     $03C0,x                         ; F48A 9D C0 03                 ...
         tya                                     ; F48D 98                       .
         eor     #$04                            ; F48E 49 04                    I.
         tay                                     ; F490 A8                       .
-        lda     LF49E,y                         ; F491 B9 9E F4                 ...
+        lda     dir_vel_sub_tbl,y                         ; F491 B9 9E F4                 ...
         sta     $03D8,x                         ; F494 9D D8 03                 ...
-        lda     LF4EE,y                         ; F497 B9 EE F4                 ...
+        lda     dir_vel_px_tbl,y                         ; F497 B9 EE F4                 ...
         sta     $03F0,x                         ; F49A 9D F0 03                 ...
         rts                                     ; F49D 60                       `
 
 ; ----------------------------------------------------------------------------
-LF49E:  brk                                     ; F49E 00                       .
-        clc                                     ; F49F 18                       .
-        and     $403B                           ; F4A0 2D 3B 40                 -;@
-        .byte   $3B                             ; F4A3 3B                       ;
-        and     a:$18                           ; F4A4 2D 18 00                 -..
-        .byte   $C3                             ; F4A7 C3                       .
-        ror     a                               ; F4A8 6A                       j
-        cmp     LD900,y                         ; F4A9 D9 00 D9                 ...
-        ror     a                               ; F4AC 6A                       j
-        .byte   $C3                             ; F4AD C3                       .
-        brk                                     ; F4AE 00                       .
-        .byte   $87                             ; F4AF 87                       .
-        .byte   $D4                             ; F4B0 D4                       .
-        .byte   $B2                             ; F4B1 B2                       .
-        brk                                     ; F4B2 00                       .
-        .byte   $B2                             ; F4B3 B2                       .
-        .byte   $D4                             ; F4B4 D4                       .
-        .byte   $87                             ; F4B5 87                       .
-        brk                                     ; F4B6 00                       .
-        .byte   $9C                             ; F4B7 9C                       .
-        and     ($7A,x)                         ; F4B8 21 7A                    !z
-        sta     $217A,y                         ; F4BA 99 7A 21                 .z!
-        .byte   $9C                             ; F4BD 9C                       .
-        brk                                     ; F4BE 00                       .
-        adc     ($B5,x)                         ; F4BF 61 B5                    a.
-        cpx     LEC00                           ; F4C1 EC 00 EC                 ...
-        lda     $61,x                           ; F4C4 B5 61                    .a
-        brk                                     ; F4C6 00                       .
-        and     $1F                             ; F4C7 25 1F                    %.
-        cmp     L0000                           ; F4C9 C5 00                    ..
-        cmp     $1F                             ; F4CB C5 1F                    ..
-        and     L0000                           ; F4CD 25 00                    %.
-        sbc     #$89                            ; F4CF E9 89                    ..
-        .byte   $9E                             ; F4D1 9E                       .
-        brk                                     ; F4D2 00                       .
-        .byte   $9E                             ; F4D3 9E                       .
-        .byte   $89                             ; F4D4 89                       .
-        sbc     #$00                            ; F4D5 E9 00                    ..
-        bmi     LF533                           ; F4D7 30 5A                    0Z
-        ror     $80,x                           ; F4D9 76 80                    v.
-        ror     $5A,x                           ; F4DB 76 5A                    vZ
-        bmi     LF4DF                           ; F4DD 30 00                    0.
-LF4DF:  .byte   $F4                             ; F4DF F4                       .
-        cpy     $4F                             ; F4E0 C4 4F                    .O
-        .byte   $80                             ; F4E2 80                       .
-        .byte   $4F                             ; F4E3 4F                       O
-        cpy     $F4                             ; F4E4 C4 F4                    ..
-        brk                                     ; F4E6 00                       .
-        .byte   $0F                             ; F4E7 0F                       .
-        tay                                     ; F4E8 A8                       .
-        .byte   $64                             ; F4E9 64                       d
-        brk                                     ; F4EA 00                       .
-        .byte   $64                             ; F4EB 64                       d
-        tay                                     ; F4EC A8                       .
-        .byte   $0F                             ; F4ED 0F                       .
-LF4EE:  brk                                     ; F4EE 00                       .
-        brk                                     ; F4EF 00                       .
-        brk                                     ; F4F0 00                       .
-        brk                                     ; F4F1 00                       .
-        brk                                     ; F4F2 00                       .
-        brk                                     ; F4F3 00                       .
-        brk                                     ; F4F4 00                       .
-        brk                                     ; F4F5 00                       .
-        brk                                     ; F4F6 00                       .
-        brk                                     ; F4F7 00                       .
-        ora     ($01,x)                         ; F4F8 01 01                    ..
-        .byte   $02                             ; F4FA 02                       .
-        ora     ($01,x)                         ; F4FB 01 01                    ..
-        brk                                     ; F4FD 00                       .
-LF4FE:  brk                                     ; F4FE 00                       .
-        ora     ($02,x)                         ; F4FF 01 02                    ..
-        .byte   $03                             ; F501 03                       .
-        .byte   $04                             ; F502 04                       .
-        .byte   $03                             ; F503 03                       .
-        .byte   $02                             ; F504 02                       .
-        ora     (L0000,x)                       ; F505 01 00                    ..
-        brk                                     ; F507 00                       .
-        ora     ($01,x)                         ; F508 01 01                    ..
-        ora     ($01,x)                         ; F50A 01 01                    ..
-        ora     (L0000,x)                       ; F50C 01 00                    ..
-        brk                                     ; F50E 00                       .
-        brk                                     ; F50F 00                       .
-        brk                                     ; F510 00                       .
-        brk                                     ; F511 00                       .
-        ora     (L0000,x)                       ; F512 01 00                    ..
-        brk                                     ; F514 00                       .
-        brk                                     ; F515 00                       .
-        brk                                     ; F516 00                       .
-        ora     ($02,x)                         ; F517 01 02                    ..
-        .byte   $02                             ; F519 02                       .
-        .byte   $03                             ; F51A 03                       .
-        .byte   $02                             ; F51B 02                       .
-        .byte   $02                             ; F51C 02                       .
-        ora     (L0000,x)                       ; F51D 01 00                    ..
-        ora     ($03,x)                         ; F51F 01 03                    ..
-        .byte   $04                             ; F521 04                       .
-        ora     L0004                           ; F522 05 04                    ..
-        .byte   $03                             ; F524 03                       .
-        ora     (L0000,x)                       ; F525 01 00                    ..
-        brk                                     ; F527 00                       .
-        brk                                     ; F528 00                       .
-        brk                                     ; F529 00                       .
-        brk                                     ; F52A 00                       .
-        brk                                     ; F52B 00                       .
-        brk                                     ; F52C 00                       .
-        brk                                     ; F52D 00                       .
-        brk                                     ; F52E 00                       .
-        brk                                     ; F52F 00                       .
-        ora     ($02,x)                         ; F530 01 02                    ..
-        .byte   $02                             ; F532 02                       .
-LF533:  .byte   $02                             ; F533 02                       .
-        ora     (L0000,x)                       ; F534 01 00                    ..
-        brk                                     ; F536 00                       .
-        .byte   $03                             ; F537 03                       .
-        ora     $07                             ; F538 05 07                    ..
-        php                                     ; F53A 08                       .
-        .byte   $07                             ; F53B 07                       .
-        ora     $03                             ; F53C 05 03                    ..
-        .byte   $FF                             ; F53E FF                       .
-        adc     $FF,x                           ; F53F 75 FF                    u.
-        eor     $FF,x                           ; F541 55 FF                    U.
-        cmp     $FF,x                           ; F543 D5 FF                    ..
-        eor     $FF,x                           ; F545 55 FF                    U.
-        .byte   $DF                             ; F547 DF                       .
-        .byte   $F7                             ; F548 F7                       .
-        sbc     $55FB,x                         ; F549 FD FB 55                 ..U
-        .byte   $FF                             ; F54C FF                       .
-        .byte   $77                             ; F54D 77                       w
-        inc     LFF5D,x                         ; F54E FE 5D FF                 .].
-        cmp     $EF,x                           ; F551 D5 EF                    ..
-        eor     $FF                             ; F553 45 FF                    E.
-        cmp     LD5FF                           ; F555 CD FF D5                 ...
-        .byte   $FF                             ; F558 FF                       .
-        cmp     $FF,x                           ; F559 D5 FF                    ..
-        cmp     $FA,x                           ; F55B D5 FA                    ..
-        .byte   $7B                             ; F55D 7B                       {
-        .byte   $FF                             ; F55E FF                       .
-        .byte   $7F                             ; F55F 7F                       .
-        .byte   $FF                             ; F560 FF                       .
-        adc     $FF,x                           ; F561 75 FF                    u.
-        .byte   $F7                             ; F563 F7                       .
-        .byte   $FF                             ; F564 FF                       .
-        cmp     $FF,x                           ; F565 D5 FF                    ..
-        .byte   $D3                             ; F567 D3                       .
-        inc     LDF75,x                         ; F568 FE 75 DF                 .u.
-        .byte   $F7                             ; F56B F7                       .
-        .byte   $FB                             ; F56C FB                       .
-        .byte   $D7                             ; F56D D7                       .
-        .byte   $FF                             ; F56E FF                       .
-        eor     $FF,x                           ; F56F 55 FF                    U.
-        eor     $FE,x                           ; F571 55 FE                    U.
-        cmp     $F7                             ; F573 C5 F7                    ..
-        .byte   $77                             ; F575 77                       w
-        inc     LFE75,x                         ; F576 FE 75 FE                 .u.
-        adc     $5D7F,x                         ; F579 7D 7F 5D                 }.]
-        .byte   $7F                             ; F57C 7F                       .
-        cmp     $75F7,x                         ; F57D DD F7 75                 ..u
-        .byte   $7F                             ; F580 7F                       .
-        .byte   $7B                             ; F581 7B                       {
-        .byte   $FF                             ; F582 FF                       .
-        cmp     $41FF,x                         ; F583 DD FF 41                 ..A
-        .byte   $FF                             ; F586 FF                       .
-        eor     $FB,x                           ; F587 55 FB                    U.
-        eor     $FB,x                           ; F589 55 FB                    U.
-        sta     $FE,x                           ; F58B 95 FE                    ..
-        adc     $75FF,x                         ; F58D 7D FF 75                 }.u
-        .byte   $FF                             ; F590 FF                       .
-        .byte   $CF                             ; F591 CF                       .
-        .byte   $FF                             ; F592 FF                       .
-        .byte   $F3                             ; F593 F3                       .
-        .byte   $FF                             ; F594 FF                       .
-        eor     LF5FF,x                         ; F595 5D FF F5                 ]..
-        .byte   $FF                             ; F598 FF                       .
-        .byte   $67                             ; F599 67                       g
-        .byte   $FF                             ; F59A FF                       .
-        .byte   $D7                             ; F59B D7                       .
-        .byte   $DF                             ; F59C DF                       .
-        eor     $FF,x                           ; F59D 55 FF                    U.
-        .byte   $5F                             ; F59F 5F                       _
-        .byte   $FF                             ; F5A0 FF                       .
-        adc     $FF,x                           ; F5A1 75 FF                    u.
-        cmp     $F7,x                           ; F5A3 D5 F7                    ..
-        cmp     LDF9D,x                         ; F5A5 DD 9D DF                 ...
-        .byte   $FF                             ; F5A8 FF                       .
-        eor     $7F,x                           ; F5A9 55 7F                    U.
-        eor     $FF,x                           ; F5AB 55 FF                    U.
-        eor     $3577,x                         ; F5AD 5D 77 35                 ]w5
-        .byte   $FF                             ; F5B0 FF                       .
-        .byte   $5F                             ; F5B1 5F                       _
-        .byte   $F2                             ; F5B2 F2                       .
-        eor     LCDFF,x                         ; F5B3 5D FF CD                 ]..
-        .byte   $F7                             ; F5B6 F7                       .
-        .byte   $D7                             ; F5B7 D7                       .
-        .byte   $FF                             ; F5B8 FF                       .
-        eor     $7F,x                           ; F5B9 55 7F                    U.
-        eor     $7F,x                           ; F5BB 55 7F                    U.
-        cmp     $FB,x                           ; F5BD D5 FB                    ..
-LF5BF:  .byte   $F7                             ; F5BF F7                       .
-        .byte   $7F                             ; F5C0 7F                       .
-        eor     $7DFF                           ; F5C1 4D FF 7D                 M.}
-        inc     LFF77,x                         ; F5C4 FE 77 FF                 .w.
-        .byte   $FF                             ; F5C7 FF                       .
-        .byte   $FF                             ; F5C8 FF                       .
-        adc     $55FF,x                         ; F5C9 7D FF 55                 }.U
-        .byte   $BF                             ; F5CC BF                       .
-        eor     $57FF,x                         ; F5CD 5D FF 57                 ].W
-        sbc     LFFD5,y                         ; F5D0 F9 D5 FF                 ...
-        adc     $7F,x                           ; F5D3 75 7F                    u.
-        eor     $FD,x                           ; F5D5 55 FD                    U.
-        .byte   $57                             ; F5D7 57                       W
-        .byte   $FF                             ; F5D8 FF                       .
-        eor     $FF                             ; F5D9 45 FF                    E.
-        .byte   $77                             ; F5DB 77                       w
-        .byte   $FF                             ; F5DC FF                       .
-        adc     $EF,x                           ; F5DD 75 EF                    u.
-        sbc     $FF,x                           ; F5DF F5 FF                    ..
-        and     $DF,x                           ; F5E1 35 DF                    5.
-        .byte   $5F                             ; F5E3 5F                       _
-        .byte   $FF                             ; F5E4 FF                       .
-        adc     LD7FB,x                         ; F5E5 7D FB D7                 }..
-        .byte   $FF                             ; F5E8 FF                       .
-        adc     $FB                             ; F5E9 65 FB                    e.
-        cmp     $B5BF,x                         ; F5EB DD BF B5                 ...
-        .byte   $FF                             ; F5EE FF                       .
-LF5EF:  adc     $7FFF,x                         ; F5EF 7D FF 7F                 }..
-        .byte   $FB                             ; F5F2 FB                       .
-        cmp     $5FFB,x                         ; F5F3 DD FB 5F                 .._
-        .byte   $FF                             ; F5F6 FF                       .
-        .byte   $D7                             ; F5F7 D7                       .
-        .byte   $FF                             ; F5F8 FF                       .
-        adc     $FF,x                           ; F5F9 75 FF                    u.
-        .byte   $57                             ; F5FB 57                       W
-        .byte   $FF                             ; F5FC FF                       .
-LF5FD:  cmp     $FF,x                           ; F5FD D5 FF                    ..
-LF5FF:  adc     $07,x                           ; F5FF 75 07                    u.
-        ora     ($FF,x)                         ; F601 01 FF                    ..
-        cmp     ($FF),y                         ; F603 D1 FF                    ..
-        eor     $53FF,x                         ; F605 5D FF 53                 ].S
-        .byte   $FF                             ; F608 FF                       .
-        cmp     $77FD,x                         ; F609 DD FD 77                 ..w
-        .byte   $D7                             ; F60C D7                       .
-        .byte   $5F                             ; F60D 5F                       _
-        .byte   $F7                             ; F60E F7                       .
-        .byte   $FF                             ; F60F FF                       .
-        .byte   $F7                             ; F610 F7                       .
-        .byte   $77                             ; F611 77                       w
-        .byte   $FF                             ; F612 FF                       .
-        .byte   $57                             ; F613 57                       W
-        .byte   $FF                             ; F614 FF                       .
-        .byte   $34                             ; F615 34                       4
-        .byte   $FF                             ; F616 FF                       .
-        eor     $7F,x                           ; F617 55 7F                    U.
-        adc     $DF,x                           ; F619 75 DF                    u.
-        .byte   $57                             ; F61B 57                       W
-        .byte   $BF                             ; F61C BF                       .
-        eor     LF1F7,y                         ; F61D 59 F7 F1                 Y..
-        sbc     LFB5D,x                         ; F620 FD 5D FB                 .].
-        cmp     $FF,x                           ; F623 D5 FF                    ..
-        sta     $DD,x                           ; F625 95 DD                    ..
-        cmp     $FF,x                           ; F627 D5 FF                    ..
-        adc     $FF,x                           ; F629 75 FF                    u.
-        eor     $FF,x                           ; F62B 55 FF                    U.
-        sbc     $77FF,x                         ; F62D FD FF 77                 ..w
-        lda     LFFDD,x                         ; F630 BD DD FF                 ...
-        .byte   $FF                             ; F633 FF                       .
-        .byte   $FF                             ; F634 FF                       .
-        eor     $7F,x                           ; F635 55 7F                    U.
-        adc     $55DF,x                         ; F637 7D DF 55                 }.U
-        .byte   $FF                             ; F63A FF                       .
-        cmp     $FF,x                           ; F63B D5 FF                    ..
-        adc     $FF,x                           ; F63D 75 FF                    u.
-        eor     $DF,x                           ; F63F 55 DF                    U.
-        eor     ($BF),y                         ; F641 51 BF                    Q.
-        .byte   $5F                             ; F643 5F                       _
-        .byte   $FF                             ; F644 FF                       .
-        .byte   $77                             ; F645 77                       w
-        .byte   $BF                             ; F646 BF                       .
-        eor     $57BF,x                         ; F647 5D BF 57                 ].W
-        .byte   $7F                             ; F64A 7F                       .
-        eor     $5FFF,x                         ; F64B 5D FF 5F                 ]._
-        .byte   $7F                             ; F64E 7F                       .
-        .byte   $63                             ; F64F 63                       c
-        .byte   $FF                             ; F650 FF                       .
-        .byte   $57                             ; F651 57                       W
-        inc     LFF5F,x                         ; F652 FE 5F FF                 ._.
-LF655:  lsr     $FF,x                           ; F655 56 FF                    V.
-        cmp     $FF,x                           ; F657 D5 FF                    ..
-        .byte   $77                             ; F659 77                       w
-        .byte   $DF                             ; F65A DF                       .
-        adc     $FF,x                           ; F65B 75 FF                    u.
-        adc     $75FB,x                         ; F65D 7D FB 75                 }.u
-        .byte   $FF                             ; F660 FF                       .
-        .byte   $F7                             ; F661 F7                       .
-        .byte   $DF                             ; F662 DF                       .
-        sbc     $FF,x                           ; F663 F5 FF                    ..
-        eor     $57FF,x                         ; F665 5D FF 57                 ].W
-        .byte   $FF                             ; F668 FF                       .
-        eor     $5BFF,x                         ; F669 5D FF 5B                 ].[
-        .byte   $FF                             ; F66C FF                       .
-        .byte   $7F                             ; F66D 7F                       .
-        .byte   $FF                             ; F66E FF                       .
-        .byte   $57                             ; F66F 57                       W
-        .byte   $FF                             ; F670 FF                       .
-        .byte   $37                             ; F671 37                       7
-        .byte   $DF                             ; F672 DF                       .
-        .byte   $57                             ; F673 57                       W
-        .byte   $DF                             ; F674 DF                       .
-        eor     $FF,x                           ; F675 55 FF                    U.
-        .byte   $D7                             ; F677 D7                       .
-        .byte   $FF                             ; F678 FF                       .
-        .byte   $77                             ; F679 77                       w
-        .byte   $FF                             ; F67A FF                       .
-        .byte   $D7                             ; F67B D7                       .
-        .byte   $FF                             ; F67C FF                       .
-        .byte   $77                             ; F67D 77                       w
-        sbc     LFEDD,x                         ; F67E FD DD FE                 ...
-        eor     LDCFF,x                         ; F681 5D FF DC                 ]..
-        .byte   $F7                             ; F684 F7                       .
-        adc     $55FF,x                         ; F685 7D FF 55                 }.U
-        sbc     LF655,x                         ; F688 FD 55 F6                 .U.
-        sbc     $FF,x                           ; F68B F5 FF                    ..
-        .byte   $57                             ; F68D 57                       W
-        inc     LFF55,x                         ; F68E FE 55 FF                 .U.
-        .byte   $57                             ; F691 57                       W
-        inc     LFFD7,x                         ; F692 FE D7 FF                 ...
-        eor     $7F,x                           ; F695 55 7F                    U.
-        .byte   $73                             ; F697 73                       s
-        .byte   $F7                             ; F698 F7                       .
-        eor     $FF,x                           ; F699 55 FF                    U.
-        cmp     $DF,x                           ; F69B D5 DF                    ..
-        .byte   $4F                             ; F69D 4F                       O
-        .byte   $FF                             ; F69E FF                       .
-        adc     ($EB),y                         ; F69F 71 EB                    q.
-        sbc     $FF                             ; F6A1 E5 FF                    ..
-        eor     $FF,x                           ; F6A3 55 FF                    U.
-        adc     $FF,x                           ; F6A5 75 FF                    u.
-        .byte   $D7                             ; F6A7 D7                       .
-        .byte   $FF                             ; F6A8 FF                       .
-        .byte   $57                             ; F6A9 57                       W
-        .byte   $FF                             ; F6AA FF                       .
-        cmp     $FF,x                           ; F6AB D5 FF                    ..
-        sbc     LD57F,x                         ; F6AD FD 7F D5                 ...
-        .byte   $FF                             ; F6B0 FF                       .
-        adc     $FF,x                           ; F6B1 75 FF                    u.
-        .byte   $C7                             ; F6B3 C7                       .
-        sbc     LFA5D,x                         ; F6B4 FD 5D FA                 .].
-        eor     $55FF,x                         ; F6B7 5D FF 55                 ].U
-        sbc     LDF55,x                         ; F6BA FD 55 DF                 .U.
-        adc     LFDF7,x                         ; F6BD 7D F7 FD                 }..
-        .byte   $FF                             ; F6C0 FF                       .
-        sei                                     ; F6C1 78                       x
-        .byte   $FB                             ; F6C2 FB                       .
-        .byte   $57                             ; F6C3 57                       W
-        sbc     LFF75,y                         ; F6C4 F9 75 FF                 .u.
-        adc     $FF,x                           ; F6C7 75 FF                    u.
-        eor     $F7,x                           ; F6C9 55 F7                    U.
-        .byte   $77                             ; F6CB 77                       w
-        .byte   $FF                             ; F6CC FF                       .
-        eor     $77F7,x                         ; F6CD 5D F7 77                 ].w
-        inc     LFFD7,x                         ; F6D0 FE D7 FF                 ...
-        .byte   $D7                             ; F6D3 D7                       .
-        .byte   $FF                             ; F6D4 FF                       .
-        eor     $45FF,x                         ; F6D5 5D FF 45                 ].E
-        inc     LFF4D                           ; F6D8 EE 4D FF                 .M.
-        cmp     $57FF,x                         ; F6DB DD FF 57                 ..W
-        .byte   $FB                             ; F6DE FB                       .
-        cmp     $FF,x                           ; F6DF D5 FF                    ..
-        .byte   $7F                             ; F6E1 7F                       .
-        .byte   $FF                             ; F6E2 FF                       .
-        eor     $FD                             ; F6E3 45 FD                    E.
-        adc     $FF                             ; F6E5 65 FF                    e.
-        cmp     $FF                             ; F6E7 C5 FF                    ..
-        .byte   $57                             ; F6E9 57                       W
-        .byte   $FF                             ; F6EA FF                       .
-        adc     $FF,x                           ; F6EB 75 FF                    u.
-        eor     $77FF,x                         ; F6ED 5D FF 77                 ].w
-        .byte   $FF                             ; F6F0 FF                       .
-        adc     $FF,x                           ; F6F1 75 FF                    u.
-        .byte   $C7                             ; F6F3 C7                       .
-        sbc     $7DDF,x                         ; F6F4 FD DF 7D                 ..}
-        adc     $FF,x                           ; F6F7 75 FF                    u.
-        adc     $F4,x                           ; F6F9 75 F4                    u.
-        eor     LD57F,y                         ; F6FB 59 7F D5                 Y..
-        .byte   $FF                             ; F6FE FF                       .
-        .byte   $77                             ; F6FF 77                       w
-        .byte   $FF                             ; F700 FF                       .
-        eor     $BF,x                           ; F701 55 BF                    U.
-        eor     $5DFF,x                         ; F703 5D FF 5D                 ].]
-        .byte   $FB                             ; F706 FB                       .
-        .byte   $5F                             ; F707 5F                       _
-        .byte   $77                             ; F708 77                       w
-        .byte   $F3                             ; F709 F3                       .
-        .byte   $FF                             ; F70A FF                       .
-        eor     $FF,x                           ; F70B 55 FF                    U.
-        adc     $57EF,x                         ; F70D 7D EF 57                 }.W
-        .byte   $FF                             ; F710 FF                       .
-        .byte   $57                             ; F711 57                       W
-        .byte   $FF                             ; F712 FF                       .
-        .byte   $57                             ; F713 57                       W
-        .byte   $F7                             ; F714 F7                       .
-        .byte   $5F                             ; F715 5F                       _
-        .byte   $FF                             ; F716 FF                       .
-        .byte   $57                             ; F717 57                       W
-        .byte   $FF                             ; F718 FF                       .
-        sbc     $F9,x                           ; F719 F5 F9                    ..
-        ora     ($DF,x)                         ; F71B 01 DF                    ..
-        cmp     $7D,x                           ; F71D D5 7D                    .}
-        ora     ($FF,x)                         ; F71F 01 FF                    ..
-        eor     $77FF,x                         ; F721 5D FF 77                 ].w
-        .byte   $FF                             ; F724 FF                       .
-        eor     $94FF,x                         ; F725 5D FF 94                 ]..
-        .byte   $EF                             ; F728 EF                       .
-        cmp     $7DFF,x                         ; F729 DD FF 7D                 ..}
-        .byte   $FF                             ; F72C FF                       .
-        .byte   $54                             ; F72D 54                       T
-        .byte   $FF                             ; F72E FF                       .
-        .byte   $57                             ; F72F 57                       W
-        .byte   $FF                             ; F730 FF                       .
-        .byte   $5F                             ; F731 5F                       _
-        ldx     LEF7D,y                         ; F732 BE 7D EF                 .}.
-        adc     $FF,x                           ; F735 75 FF                    u.
-        eor     $FF,x                           ; F737 55 FF                    U.
-        .byte   $FF                             ; F739 FF                       .
-        sbc     LDF55,x                         ; F73A FD 55 DF                 .U.
-        adc     ($FF),y                         ; F73D 71 FF                    q.
-        eor     $FF,x                           ; F73F 55 FF                    U.
-        adc     $FF,x                           ; F741 75 FF                    u.
-        .byte   $67                             ; F743 67                       g
-        .byte   $EF                             ; F744 EF                       .
-        eor     $FF,x                           ; F745 55 FF                    U.
-        adc     $FF,x                           ; F747 75 FF                    u.
-        eor     $51FF,x                         ; F749 5D FF 51                 ].Q
-        .byte   $F7                             ; F74C F7                       .
-        eor     $FF,x                           ; F74D 55 FF                    U.
-        .byte   $DF                             ; F74F DF                       .
-        .byte   $FF                             ; F750 FF                       .
-        adc     $FD,x                           ; F751 75 FD                    u.
-        .byte   $7F                             ; F753 7F                       .
-        .byte   $FF                             ; F754 FF                       .
-        adc     LD5FF,x                         ; F755 7D FF D5                 }..
-        .byte   $FF                             ; F758 FF                       .
-        eor     $FF,x                           ; F759 55 FF                    U.
-        .byte   $5F                             ; F75B 5F                       _
-        .byte   $DF                             ; F75C DF                       .
-        eor     LF5FD,x                         ; F75D 5D FD F5                 ]..
-        .byte   $FF                             ; F760 FF                       .
-        cmp     $95FF,x                         ; F761 DD FF 95                 ...
-        .byte   $FF                             ; F764 FF                       .
-        .byte   $57                             ; F765 57                       W
-        .byte   $FF                             ; F766 FF                       .
-        adc     LD5DF,x                         ; F767 7D DF D5                 }..
-        .byte   $DB                             ; F76A DB                       .
-        .byte   $5F                             ; F76B 5F                       _
-        .byte   $FF                             ; F76C FF                       .
-        .byte   $5F                             ; F76D 5F                       _
-        .byte   $FF                             ; F76E FF                       .
-        adc     $5FFF,x                         ; F76F 7D FF 5F                 }._
-        inc     LFF55,x                         ; F772 FE 55 FF                 .U.
-        eor     $5F7E,x                         ; F775 5D 7E 5F                 ]~_
-        .byte   $FF                             ; F778 FF                       .
-        .byte   $DF                             ; F779 DF                       .
-        .byte   $BF                             ; F77A BF                       .
-        adc     $B7F7,x                         ; F77B 7D F7 B7                 }..
-        .byte   $BB                             ; F77E BB                       .
-        sbc     $FF,x                           ; F77F F5 FF                    ..
-        adc     $75FF,x                         ; F781 7D FF 75                 }.u
-        .byte   $FF                             ; F784 FF                       .
-        cmp     $75FF                           ; F785 CD FF 75                 ..u
-        .byte   $FF                             ; F788 FF                       .
-        ora     $FF,x                           ; F789 15 FF                    ..
-        eor     $FF,x                           ; F78B 55 FF                    U.
-        adc     $EF                             ; F78D 65 EF                    e.
-        cmp     $EF                             ; F78F C5 EF                    ..
-        .byte   $57                             ; F791 57                       W
-        .byte   $FF                             ; F792 FF                       .
-        ror     LC5FF,x                         ; F793 7E FF C5                 ~..
-        .byte   $3F                             ; F796 3F                       ?
-        adc     $FF,x                           ; F797 75 FF                    u.
-        cmp     ($FF),y                         ; F799 D1 FF                    ..
-        .byte   $FF                             ; F79B FF                       .
-        .byte   $FF                             ; F79C FF                       .
-        adc     LF5BF,x                         ; F79D 7D BF F5                 }..
-        .byte   $FF                             ; F7A0 FF                       .
-        adc     $5DFF,y                         ; F7A1 79 FF 5D                 y.]
-        .byte   $FF                             ; F7A4 FF                       .
-        cmp     $FE,x                           ; F7A5 D5 FE                    ..
-        sbc     $FF,x                           ; F7A7 F5 FF                    ..
-        and     ($FF),y                         ; F7A9 31 FF                    1.
-        .byte   $37                             ; F7AB 37                       7
-        .byte   $FF                             ; F7AC FF                       .
-        .byte   $57                             ; F7AD 57                       W
-        .byte   $FF                             ; F7AE FF                       .
-        adc     $FF,x                           ; F7AF 75 FF                    u.
-        adc     $77BF,x                         ; F7B1 7D BF 77                 }.w
-        .byte   $FF                             ; F7B4 FF                       .
-        adc     LF5EF,x                         ; F7B5 7D EF F5                 }..
-        .byte   $FB                             ; F7B8 FB                       .
-        eor     LDDEF,x                         ; F7B9 5D EF DD                 ]..
-        .byte   $FF                             ; F7BC FF                       .
-        .byte   $73                             ; F7BD 73                       s
-        .byte   $FF                             ; F7BE FF                       .
-        sbc     $79FB,x                         ; F7BF FD FB 79                 ..y
-        .byte   $DF                             ; F7C2 DF                       .
-        dec     $FF,x                           ; F7C3 D6 FF                    ..
-        eor     $FF,x                           ; F7C5 55 FF                    U.
-        sbc     $5FFF,x                         ; F7C7 FD FF 5F                 .._
-        .byte   $FF                             ; F7CA FF                       .
-        eor     $FE,x                           ; F7CB 55 FE                    U.
-        eor     $557F,y                         ; F7CD 59 7F 55                 Y.U
-        .byte   $FF                             ; F7D0 FF                       .
-        .byte   $57                             ; F7D1 57                       W
-        .byte   $FF                             ; F7D2 FF                       .
-        ror     LD7FF,x                         ; F7D3 7E FF D7                 ~..
-        .byte   $DF                             ; F7D6 DF                       .
-        .byte   $FF                             ; F7D7 FF                       .
-        .byte   $DF                             ; F7D8 DF                       .
-        .byte   $D7                             ; F7D9 D7                       .
-        .byte   $FF                             ; F7DA FF                       .
-        .byte   $D3                             ; F7DB D3                       .
-        .byte   $FF                             ; F7DC FF                       .
-        .byte   $57                             ; F7DD 57                       W
-        .byte   $FF                             ; F7DE FF                       .
-        adc     $FF,x                           ; F7DF 75 FF                    u.
-        eor     LD5FF,x                         ; F7E1 5D FF D5                 ]..
-        .byte   $FF                             ; F7E4 FF                       .
-        eor     $5D5F,x                         ; F7E5 5D 5F 5D                 ]_]
-        .byte   $E7                             ; F7E8 E7                       .
-        adc     $55FF,x                         ; F7E9 7D FF 55                 }.U
-        .byte   $FF                             ; F7EC FF                       .
-        sbc     $FF,x                           ; F7ED F5 FF                    ..
-        eor     $55FF,x                         ; F7EF 5D FF 55                 ].U
-        .byte   $FF                             ; F7F2 FF                       .
-        eor     $F7,x                           ; F7F3 55 F7                    U.
-        .byte   $5F                             ; F7F5 5F                       _
-        .byte   $FF                             ; F7F6 FF                       .
-        sbc     $F7,x                           ; F7F7 F5 F7                    ..
-        eor     $FF,x                           ; F7F9 55 FF                    U.
-        eor     $FF,x                           ; F7FB 55 FF                    U.
-        adc     ($FF),y                         ; F7FD 71 FF                    q.
-        sbc     L0000,x                         ; F7FF F5 00                    ..
-        brk                                     ; F801 00                       .
-        brk                                     ; F802 00                       .
-        brk                                     ; F803 00                       .
-        brk                                     ; F804 00                       .
-        brk                                     ; F805 00                       .
-        brk                                     ; F806 00                       .
-        brk                                     ; F807 00                       .
-        brk                                     ; F808 00                       .
-        brk                                     ; F809 00                       .
-        brk                                     ; F80A 00                       .
-        brk                                     ; F80B 00                       .
-        brk                                     ; F80C 00                       .
-        rti                                     ; F80D 40                       @
-
-; ----------------------------------------------------------------------------
-        brk                                     ; F80E 00                       .
-        brk                                     ; F80F 00                       .
-        brk                                     ; F810 00                       .
-        brk                                     ; F811 00                       .
-        brk                                     ; F812 00                       .
-        brk                                     ; F813 00                       .
-        brk                                     ; F814 00                       .
-        brk                                     ; F815 00                       .
-        brk                                     ; F816 00                       .
-        ora     (L0000,x)                       ; F817 01 00                    ..
-        brk                                     ; F819 00                       .
-        brk                                     ; F81A 00                       .
-        brk                                     ; F81B 00                       .
-        brk                                     ; F81C 00                       .
-        jsr     L0000                           ; F81D 20 00 00                  ..
-        brk                                     ; F820 00                       .
-        brk                                     ; F821 00                       .
-        brk                                     ; F822 00                       .
-        brk                                     ; F823 00                       .
-        brk                                     ; F824 00                       .
-        brk                                     ; F825 00                       .
-        brk                                     ; F826 00                       .
-        brk                                     ; F827 00                       .
-        brk                                     ; F828 00                       .
-        brk                                     ; F829 00                       .
-        brk                                     ; F82A 00                       .
-        jsr     L0000                           ; F82B 20 00 00                  ..
-        brk                                     ; F82E 00                       .
-        brk                                     ; F82F 00                       .
-        brk                                     ; F830 00                       .
-        brk                                     ; F831 00                       .
-        brk                                     ; F832 00                       .
-        rti                                     ; F833 40                       @
-
-; ----------------------------------------------------------------------------
-        brk                                     ; F834 00                       .
-        brk                                     ; F835 00                       .
-        .byte   $02                             ; F836 02                       .
-        .byte   $22                             ; F837 22                       "
-        brk                                     ; F838 00                       .
-        brk                                     ; F839 00                       .
-        brk                                     ; F83A 00                       .
-        brk                                     ; F83B 00                       .
-        brk                                     ; F83C 00                       .
-        brk                                     ; F83D 00                       .
-        brk                                     ; F83E 00                       .
-        bpl     LF841                           ; F83F 10 00                    ..
-LF841:  brk                                     ; F841 00                       .
-        brk                                     ; F842 00                       .
-        brk                                     ; F843 00                       .
-        brk                                     ; F844 00                       .
-        bpl     LF847                           ; F845 10 00                    ..
-LF847:  brk                                     ; F847 00                       .
-        brk                                     ; F848 00                       .
-        brk                                     ; F849 00                       .
-        jsr     L8040                           ; F84A 20 40 80                  @.
-        brk                                     ; F84D 00                       .
-        brk                                     ; F84E 00                       .
-        brk                                     ; F84F 00                       .
-        brk                                     ; F850 00                       .
-        brk                                     ; F851 00                       .
-        brk                                     ; F852 00                       .
-        brk                                     ; F853 00                       .
-        brk                                     ; F854 00                       .
-        brk                                     ; F855 00                       .
-        brk                                     ; F856 00                       .
-        brk                                     ; F857 00                       .
-        brk                                     ; F858 00                       .
-        .byte   $02                             ; F859 02                       .
-        brk                                     ; F85A 00                       .
-        brk                                     ; F85B 00                       .
-        brk                                     ; F85C 00                       .
-        brk                                     ; F85D 00                       .
-        brk                                     ; F85E 00                       .
-        brk                                     ; F85F 00                       .
-        brk                                     ; F860 00                       .
-        brk                                     ; F861 00                       .
-        brk                                     ; F862 00                       .
-        brk                                     ; F863 00                       .
-        brk                                     ; F864 00                       .
-        brk                                     ; F865 00                       .
-        brk                                     ; F866 00                       .
-        brk                                     ; F867 00                       .
-        brk                                     ; F868 00                       .
-        brk                                     ; F869 00                       .
-        brk                                     ; F86A 00                       .
-        brk                                     ; F86B 00                       .
-        brk                                     ; F86C 00                       .
-        brk                                     ; F86D 00                       .
-        brk                                     ; F86E 00                       .
-        brk                                     ; F86F 00                       .
-        brk                                     ; F870 00                       .
-        brk                                     ; F871 00                       .
-        brk                                     ; F872 00                       .
-        brk                                     ; F873 00                       .
-        brk                                     ; F874 00                       .
-        php                                     ; F875 08                       .
-        brk                                     ; F876 00                       .
-        eor     #$00                            ; F877 49 00                    I.
-        .byte   $80                             ; F879 80                       .
-        brk                                     ; F87A 00                       .
-        brk                                     ; F87B 00                       .
-        .byte   $82                             ; F87C 82                       .
-        .byte   $04                             ; F87D 04                       .
-        bpl     LF880                           ; F87E 10 00                    ..
-LF880:  brk                                     ; F880 00                       .
-        brk                                     ; F881 00                       .
-        brk                                     ; F882 00                       .
-        brk                                     ; F883 00                       .
-        brk                                     ; F884 00                       .
-        brk                                     ; F885 00                       .
-        brk                                     ; F886 00                       .
-        brk                                     ; F887 00                       .
-        brk                                     ; F888 00                       .
-        brk                                     ; F889 00                       .
-        .byte   $80                             ; F88A 80                       .
-        brk                                     ; F88B 00                       .
-        brk                                     ; F88C 00                       .
-LF88D:  brk                                     ; F88D 00                       .
-        .byte   $80                             ; F88E 80                       .
-        brk                                     ; F88F 00                       .
-        brk                                     ; F890 00                       .
-        brk                                     ; F891 00                       .
-        brk                                     ; F892 00                       .
-        brk                                     ; F893 00                       .
-        brk                                     ; F894 00                       .
-        brk                                     ; F895 00                       .
-        brk                                     ; F896 00                       .
-        rti                                     ; F897 40                       @
-
-; ----------------------------------------------------------------------------
-        brk                                     ; F898 00                       .
-        brk                                     ; F899 00                       .
-        brk                                     ; F89A 00                       .
-        brk                                     ; F89B 00                       .
-        brk                                     ; F89C 00                       .
-        bpl     LF89F                           ; F89D 10 00                    ..
-LF89F:  brk                                     ; F89F 00                       .
-        brk                                     ; F8A0 00                       .
-        brk                                     ; F8A1 00                       .
-        brk                                     ; F8A2 00                       .
-        brk                                     ; F8A3 00                       .
-        .byte   $02                             ; F8A4 02                       .
-        bpl     LF8A7                           ; F8A5 10 00                    ..
-LF8A7:  brk                                     ; F8A7 00                       .
-        .byte   $80                             ; F8A8 80                       .
-        brk                                     ; F8A9 00                       .
-        brk                                     ; F8AA 00                       .
-        brk                                     ; F8AB 00                       .
-        brk                                     ; F8AC 00                       .
-        brk                                     ; F8AD 00                       .
-        .byte   $02                             ; F8AE 02                       .
-        brk                                     ; F8AF 00                       .
-        brk                                     ; F8B0 00                       .
-        brk                                     ; F8B1 00                       .
-        brk                                     ; F8B2 00                       .
-        .byte   $80                             ; F8B3 80                       .
-        brk                                     ; F8B4 00                       .
-        brk                                     ; F8B5 00                       .
-        .byte   $80                             ; F8B6 80                       .
-        brk                                     ; F8B7 00                       .
-        brk                                     ; F8B8 00                       .
-        brk                                     ; F8B9 00                       .
-        brk                                     ; F8BA 00                       .
-        jsr     L0000                           ; F8BB 20 00 00                  ..
-        brk                                     ; F8BE 00                       .
-        ora     ($80,x)                         ; F8BF 01 80                    ..
-        brk                                     ; F8C1 00                       .
-        brk                                     ; F8C2 00                       .
-        brk                                     ; F8C3 00                       .
-        brk                                     ; F8C4 00                       .
-        brk                                     ; F8C5 00                       .
-        brk                                     ; F8C6 00                       .
-        .byte   $04                             ; F8C7 04                       .
-        brk                                     ; F8C8 00                       .
-        brk                                     ; F8C9 00                       .
-        brk                                     ; F8CA 00                       .
-        .byte   $80                             ; F8CB 80                       .
-        brk                                     ; F8CC 00                       .
-        brk                                     ; F8CD 00                       .
-        brk                                     ; F8CE 00                       .
-        brk                                     ; F8CF 00                       .
-        brk                                     ; F8D0 00                       .
-        brk                                     ; F8D1 00                       .
-        brk                                     ; F8D2 00                       .
-        brk                                     ; F8D3 00                       .
-        brk                                     ; F8D4 00                       .
-        brk                                     ; F8D5 00                       .
-        brk                                     ; F8D6 00                       .
-        bpl     LF8D9                           ; F8D7 10 00                    ..
-LF8D9:  brk                                     ; F8D9 00                       .
-        brk                                     ; F8DA 00                       .
-        brk                                     ; F8DB 00                       .
-        brk                                     ; F8DC 00                       .
-        brk                                     ; F8DD 00                       .
-        brk                                     ; F8DE 00                       .
-        brk                                     ; F8DF 00                       .
-        jsr     L0000                           ; F8E0 20 00 00                  ..
-        brk                                     ; F8E3 00                       .
-        brk                                     ; F8E4 00                       .
-        brk                                     ; F8E5 00                       .
-        brk                                     ; F8E6 00                       .
-        brk                                     ; F8E7 00                       .
-        brk                                     ; F8E8 00                       .
-        .byte   $80                             ; F8E9 80                       .
-        brk                                     ; F8EA 00                       .
-        ora     (L0000,x)                       ; F8EB 01 00                    ..
-        ora     ($02,x)                         ; F8ED 01 02                    ..
-        brk                                     ; F8EF 00                       .
-        .byte   $02                             ; F8F0 02                       .
-        brk                                     ; F8F1 00                       .
-        brk                                     ; F8F2 00                       .
-        pha                                     ; F8F3 48                       H
-        brk                                     ; F8F4 00                       .
-        .byte   $04                             ; F8F5 04                       .
-        ora     ($48,x)                         ; F8F6 01 48                    .H
-        php                                     ; F8F8 08                       .
-        brk                                     ; F8F9 00                       .
-        brk                                     ; F8FA 00                       .
-        ldy     #$00                            ; F8FB A0 00                    ..
-        bpl     LF8FF                           ; F8FD 10 00                    ..
-LF8FF:  .byte   $44                             ; F8FF 44                       D
-        brk                                     ; F900 00                       .
-        brk                                     ; F901 00                       .
-        brk                                     ; F902 00                       .
-        brk                                     ; F903 00                       .
-        brk                                     ; F904 00                       .
-        brk                                     ; F905 00                       .
-        brk                                     ; F906 00                       .
-        brk                                     ; F907 00                       .
-        brk                                     ; F908 00                       .
-        brk                                     ; F909 00                       .
-        brk                                     ; F90A 00                       .
-        brk                                     ; F90B 00                       .
-        brk                                     ; F90C 00                       .
-        brk                                     ; F90D 00                       .
-        brk                                     ; F90E 00                       .
-        brk                                     ; F90F 00                       .
-        brk                                     ; F910 00                       .
-        brk                                     ; F911 00                       .
-        brk                                     ; F912 00                       .
-        brk                                     ; F913 00                       .
-        brk                                     ; F914 00                       .
-        brk                                     ; F915 00                       .
-        brk                                     ; F916 00                       .
-        brk                                     ; F917 00                       .
-        brk                                     ; F918 00                       .
-        brk                                     ; F919 00                       .
-        brk                                     ; F91A 00                       .
-        brk                                     ; F91B 00                       .
-        brk                                     ; F91C 00                       .
-        brk                                     ; F91D 00                       .
-        brk                                     ; F91E 00                       .
-        brk                                     ; F91F 00                       .
-        brk                                     ; F920 00                       .
-        brk                                     ; F921 00                       .
-        brk                                     ; F922 00                       .
-        ora     (L0000,x)                       ; F923 01 00                    ..
-        bpl     LF927                           ; F925 10 00                    ..
-LF927:  brk                                     ; F927 00                       .
-        brk                                     ; F928 00                       .
-        asl     a                               ; F929 0A                       .
-        brk                                     ; F92A 00                       .
-        brk                                     ; F92B 00                       .
-        brk                                     ; F92C 00                       .
-        brk                                     ; F92D 00                       .
-        brk                                     ; F92E 00                       .
-        brk                                     ; F92F 00                       .
-        brk                                     ; F930 00                       .
-        brk                                     ; F931 00                       .
-        .byte   $02                             ; F932 02                       .
-        brk                                     ; F933 00                       .
-        php                                     ; F934 08                       .
-        brk                                     ; F935 00                       .
-        brk                                     ; F936 00                       .
-        brk                                     ; F937 00                       .
-        .byte   $02                             ; F938 02                       .
-        brk                                     ; F939 00                       .
-        php                                     ; F93A 08                       .
-        jsr     L0000                           ; F93B 20 00 00                  ..
-        brk                                     ; F93E 00                       .
-        brk                                     ; F93F 00                       .
-        brk                                     ; F940 00                       .
-        brk                                     ; F941 00                       .
-        brk                                     ; F942 00                       .
-        brk                                     ; F943 00                       .
-        brk                                     ; F944 00                       .
-        brk                                     ; F945 00                       .
-        brk                                     ; F946 00                       .
-        jsr     L0000                           ; F947 20 00 00                  ..
-        brk                                     ; F94A 00                       .
-        brk                                     ; F94B 00                       .
-        brk                                     ; F94C 00                       .
-        brk                                     ; F94D 00                       .
-        brk                                     ; F94E 00                       .
-        brk                                     ; F94F 00                       .
-        brk                                     ; F950 00                       .
-        brk                                     ; F951 00                       .
-        brk                                     ; F952 00                       .
-        bpl     LF955                           ; F953 10 00                    ..
-LF955:  brk                                     ; F955 00                       .
-        brk                                     ; F956 00                       .
-        rti                                     ; F957 40                       @
-
-; ----------------------------------------------------------------------------
-        brk                                     ; F958 00                       .
-        brk                                     ; F959 00                       .
-        brk                                     ; F95A 00                       .
-        .byte   $80                             ; F95B 80                       .
-        brk                                     ; F95C 00                       .
-        brk                                     ; F95D 00                       .
-        brk                                     ; F95E 00                       .
-        brk                                     ; F95F 00                       .
-        brk                                     ; F960 00                       .
-        brk                                     ; F961 00                       .
-        php                                     ; F962 08                       .
-        rti                                     ; F963 40                       @
-
-; ----------------------------------------------------------------------------
-        brk                                     ; F964 00                       .
-        brk                                     ; F965 00                       .
-        php                                     ; F966 08                       .
-        brk                                     ; F967 00                       .
-        brk                                     ; F968 00                       .
-        brk                                     ; F969 00                       .
-        brk                                     ; F96A 00                       .
-        brk                                     ; F96B 00                       .
-        brk                                     ; F96C 00                       .
-        brk                                     ; F96D 00                       .
-        brk                                     ; F96E 00                       .
-        brk                                     ; F96F 00                       .
-        php                                     ; F970 08                       .
-        .byte   $0C                             ; F971 0C                       .
-        .byte   $02                             ; F972 02                       .
-        brk                                     ; F973 00                       .
-        brk                                     ; F974 00                       .
-        .byte   $80                             ; F975 80                       .
-        .byte   $80                             ; F976 80                       .
-        brk                                     ; F977 00                       .
-        brk                                     ; F978 00                       .
-        rti                                     ; F979 40                       @
-
-; ----------------------------------------------------------------------------
-        brk                                     ; F97A 00                       .
-        .byte   $80                             ; F97B 80                       .
-        jsr     L0020                           ; F97C 20 20 00                   .
-        rti                                     ; F97F 40                       @
-
-; ----------------------------------------------------------------------------
-        brk                                     ; F980 00                       .
-        brk                                     ; F981 00                       .
-        brk                                     ; F982 00                       .
-        brk                                     ; F983 00                       .
-        brk                                     ; F984 00                       .
-        brk                                     ; F985 00                       .
-        brk                                     ; F986 00                       .
-        brk                                     ; F987 00                       .
-        brk                                     ; F988 00                       .
-        ora     (L0000,x)                       ; F989 01 00                    ..
-        brk                                     ; F98B 00                       .
-        brk                                     ; F98C 00                       .
-        brk                                     ; F98D 00                       .
-        brk                                     ; F98E 00                       .
-        brk                                     ; F98F 00                       .
-        brk                                     ; F990 00                       .
-        brk                                     ; F991 00                       .
-        brk                                     ; F992 00                       .
-        brk                                     ; F993 00                       .
-        brk                                     ; F994 00                       .
-        brk                                     ; F995 00                       .
-        brk                                     ; F996 00                       .
-        brk                                     ; F997 00                       .
-        brk                                     ; F998 00                       .
-        brk                                     ; F999 00                       .
-        brk                                     ; F99A 00                       .
-        brk                                     ; F99B 00                       .
-        brk                                     ; F99C 00                       .
-        brk                                     ; F99D 00                       .
-        brk                                     ; F99E 00                       .
-        brk                                     ; F99F 00                       .
-        brk                                     ; F9A0 00                       .
-        brk                                     ; F9A1 00                       .
-        brk                                     ; F9A2 00                       .
-        .byte   $02                             ; F9A3 02                       .
-        brk                                     ; F9A4 00                       .
-        php                                     ; F9A5 08                       .
-        jsr     L0000                           ; F9A6 20 00 00                  ..
-        .byte   $80                             ; F9A9 80                       .
-        brk                                     ; F9AA 00                       .
-        brk                                     ; F9AB 00                       .
-        brk                                     ; F9AC 00                       .
-        .byte   $04                             ; F9AD 04                       .
-        brk                                     ; F9AE 00                       .
-        .byte   $02                             ; F9AF 02                       .
-        brk                                     ; F9B0 00                       .
-        brk                                     ; F9B1 00                       .
-        brk                                     ; F9B2 00                       .
-        brk                                     ; F9B3 00                       .
-        brk                                     ; F9B4 00                       .
-        php                                     ; F9B5 08                       .
-        brk                                     ; F9B6 00                       .
-        brk                                     ; F9B7 00                       .
-        brk                                     ; F9B8 00                       .
-        brk                                     ; F9B9 00                       .
-        brk                                     ; F9BA 00                       .
-        brk                                     ; F9BB 00                       .
-        brk                                     ; F9BC 00                       .
-        brk                                     ; F9BD 00                       .
-        brk                                     ; F9BE 00                       .
-        bpl     LF9C1                           ; F9BF 10 00                    ..
-LF9C1:  bpl     LF9C3                           ; F9C1 10 00                    ..
-LF9C3:  brk                                     ; F9C3 00                       .
-        brk                                     ; F9C4 00                       .
-        brk                                     ; F9C5 00                       .
-        brk                                     ; F9C6 00                       .
-        brk                                     ; F9C7 00                       .
-        brk                                     ; F9C8 00                       .
-        brk                                     ; F9C9 00                       .
-        brk                                     ; F9CA 00                       .
-        brk                                     ; F9CB 00                       .
-        brk                                     ; F9CC 00                       .
-        brk                                     ; F9CD 00                       .
-        brk                                     ; F9CE 00                       .
-        brk                                     ; F9CF 00                       .
-        .byte   $02                             ; F9D0 02                       .
-        sta     (L0000,x)                       ; F9D1 81 00                    ..
-        brk                                     ; F9D3 00                       .
-        brk                                     ; F9D4 00                       .
-        brk                                     ; F9D5 00                       .
-        brk                                     ; F9D6 00                       .
-        php                                     ; F9D7 08                       .
-        brk                                     ; F9D8 00                       .
-        brk                                     ; F9D9 00                       .
-        php                                     ; F9DA 08                       .
-        .byte   $02                             ; F9DB 02                       .
-        php                                     ; F9DC 08                       .
-        brk                                     ; F9DD 00                       .
-        brk                                     ; F9DE 00                       .
-        bpl     LF9E1                           ; F9DF 10 00                    ..
-LF9E1:  brk                                     ; F9E1 00                       .
-        brk                                     ; F9E2 00                       .
-        brk                                     ; F9E3 00                       .
-        brk                                     ; F9E4 00                       .
-        brk                                     ; F9E5 00                       .
-        brk                                     ; F9E6 00                       .
-        brk                                     ; F9E7 00                       .
-        brk                                     ; F9E8 00                       .
-        brk                                     ; F9E9 00                       .
-        brk                                     ; F9EA 00                       .
-        jsr     L8100                           ; F9EB 20 00 81                  ..
-        brk                                     ; F9EE 00                       .
-        php                                     ; F9EF 08                       .
-        brk                                     ; F9F0 00                       .
-        brk                                     ; F9F1 00                       .
-        brk                                     ; F9F2 00                       .
-        .byte   $14                             ; F9F3 14                       .
-        brk                                     ; F9F4 00                       .
-        bpl     LF9F7                           ; F9F5 10 00                    ..
-LF9F7:  .byte   $80                             ; F9F7 80                       .
-        brk                                     ; F9F8 00                       .
-        .byte   $02                             ; F9F9 02                       .
-        brk                                     ; F9FA 00                       .
-        brk                                     ; F9FB 00                       .
-        .byte   $22                             ; F9FC 22                       "
-        rti                                     ; F9FD 40                       @
-
-; ----------------------------------------------------------------------------
-        brk                                     ; F9FE 00                       .
-        .byte   $04                             ; F9FF 04                       .
-        brk                                     ; FA00 00                       .
-        brk                                     ; FA01 00                       .
-        brk                                     ; FA02 00                       .
-        brk                                     ; FA03 00                       .
-        brk                                     ; FA04 00                       .
-        brk                                     ; FA05 00                       .
-        brk                                     ; FA06 00                       .
-        brk                                     ; FA07 00                       .
-        brk                                     ; FA08 00                       .
-        rti                                     ; FA09 40                       @
-
-; ----------------------------------------------------------------------------
-        brk                                     ; FA0A 00                       .
-        brk                                     ; FA0B 00                       .
-        brk                                     ; FA0C 00                       .
-        brk                                     ; FA0D 00                       .
-        brk                                     ; FA0E 00                       .
-        rti                                     ; FA0F 40                       @
-
-; ----------------------------------------------------------------------------
-        brk                                     ; FA10 00                       .
-        brk                                     ; FA11 00                       .
-        brk                                     ; FA12 00                       .
-        brk                                     ; FA13 00                       .
-        brk                                     ; FA14 00                       .
-        brk                                     ; FA15 00                       .
-        brk                                     ; FA16 00                       .
-        brk                                     ; FA17 00                       .
-        brk                                     ; FA18 00                       .
-        brk                                     ; FA19 00                       .
-        brk                                     ; FA1A 00                       .
-        brk                                     ; FA1B 00                       .
-        brk                                     ; FA1C 00                       .
-        brk                                     ; FA1D 00                       .
-        brk                                     ; FA1E 00                       .
-        brk                                     ; FA1F 00                       .
-        brk                                     ; FA20 00                       .
-        brk                                     ; FA21 00                       .
-        brk                                     ; FA22 00                       .
-        brk                                     ; FA23 00                       .
-        brk                                     ; FA24 00                       .
-        brk                                     ; FA25 00                       .
-        php                                     ; FA26 08                       .
-        brk                                     ; FA27 00                       .
-        brk                                     ; FA28 00                       .
-        brk                                     ; FA29 00                       .
-        brk                                     ; FA2A 00                       .
-        .byte   $44                             ; FA2B 44                       D
-        brk                                     ; FA2C 00                       .
-        .byte   $80                             ; FA2D 80                       .
-        brk                                     ; FA2E 00                       .
-        brk                                     ; FA2F 00                       .
-        brk                                     ; FA30 00                       .
-        brk                                     ; FA31 00                       .
-        brk                                     ; FA32 00                       .
-        brk                                     ; FA33 00                       .
-        brk                                     ; FA34 00                       .
-        brk                                     ; FA35 00                       .
-        brk                                     ; FA36 00                       .
-        brk                                     ; FA37 00                       .
-        brk                                     ; FA38 00                       .
-        brk                                     ; FA39 00                       .
-        brk                                     ; FA3A 00                       .
-        brk                                     ; FA3B 00                       .
-        jsr     L0880                           ; FA3C 20 80 08                  ..
-        brk                                     ; FA3F 00                       .
-        brk                                     ; FA40 00                       .
-        brk                                     ; FA41 00                       .
-        brk                                     ; FA42 00                       .
-        brk                                     ; FA43 00                       .
-        brk                                     ; FA44 00                       .
-        brk                                     ; FA45 00                       .
-        brk                                     ; FA46 00                       .
-        brk                                     ; FA47 00                       .
-        brk                                     ; FA48 00                       .
-        brk                                     ; FA49 00                       .
-        brk                                     ; FA4A 00                       .
-        brk                                     ; FA4B 00                       .
-        brk                                     ; FA4C 00                       .
-        brk                                     ; FA4D 00                       .
-        brk                                     ; FA4E 00                       .
-        brk                                     ; FA4F 00                       .
-        brk                                     ; FA50 00                       .
-        jsr     L0000                           ; FA51 20 00 00                  ..
-        php                                     ; FA54 08                       .
-        brk                                     ; FA55 00                       .
-        brk                                     ; FA56 00                       .
-        brk                                     ; FA57 00                       .
-        brk                                     ; FA58 00                       .
-        brk                                     ; FA59 00                       .
-        brk                                     ; FA5A 00                       .
-        brk                                     ; FA5B 00                       .
-        brk                                     ; FA5C 00                       .
-LFA5D:  eor     (L0000,x)                       ; FA5D 41 00                    A.
-        php                                     ; FA5F 08                       .
-        brk                                     ; FA60 00                       .
-        ora     ($08,x)                         ; FA61 01 08                    ..
-        bpl     LFA65                           ; FA63 10 00                    ..
-LFA65:  .byte   $02                             ; FA65 02                       .
-        brk                                     ; FA66 00                       .
-        rti                                     ; FA67 40                       @
-
-; ----------------------------------------------------------------------------
-        php                                     ; FA68 08                       .
-        brk                                     ; FA69 00                       .
-        brk                                     ; FA6A 00                       .
-        brk                                     ; FA6B 00                       .
-        brk                                     ; FA6C 00                       .
-        rti                                     ; FA6D 40                       @
-
-; ----------------------------------------------------------------------------
-        brk                                     ; FA6E 00                       .
-        rti                                     ; FA6F 40                       @
-
-; ----------------------------------------------------------------------------
-        brk                                     ; FA70 00                       .
-        brk                                     ; FA71 00                       .
-        brk                                     ; FA72 00                       .
-        brk                                     ; FA73 00                       .
-        brk                                     ; FA74 00                       .
-        brk                                     ; FA75 00                       .
-        brk                                     ; FA76 00                       .
-        cmp     (L0000,x)                       ; FA77 C1 00                    ..
-        brk                                     ; FA79 00                       .
-        brk                                     ; FA7A 00                       .
-        brk                                     ; FA7B 00                       .
-        brk                                     ; FA7C 00                       .
-        brk                                     ; FA7D 00                       .
-        jsr     L2010                           ; FA7E 20 10 20                  . 
-        brk                                     ; FA81 00                       .
-        brk                                     ; FA82 00                       .
-        brk                                     ; FA83 00                       .
-        brk                                     ; FA84 00                       .
-        brk                                     ; FA85 00                       .
-        brk                                     ; FA86 00                       .
-        brk                                     ; FA87 00                       .
-        brk                                     ; FA88 00                       .
-        brk                                     ; FA89 00                       .
-        brk                                     ; FA8A 00                       .
-        brk                                     ; FA8B 00                       .
-        brk                                     ; FA8C 00                       .
-        brk                                     ; FA8D 00                       .
-        brk                                     ; FA8E 00                       .
-        brk                                     ; FA8F 00                       .
-        brk                                     ; FA90 00                       .
-        .byte   $04                             ; FA91 04                       .
-        brk                                     ; FA92 00                       .
-        brk                                     ; FA93 00                       .
-        brk                                     ; FA94 00                       .
-        .byte   $02                             ; FA95 02                       .
-        jsr     L0000                           ; FA96 20 00 00                  ..
-        ora     (L0000,x)                       ; FA99 01 00                    ..
-        brk                                     ; FA9B 00                       .
-        brk                                     ; FA9C 00                       .
-        brk                                     ; FA9D 00                       .
-        brk                                     ; FA9E 00                       .
-        brk                                     ; FA9F 00                       .
-        brk                                     ; FAA0 00                       .
-        cmp     ($02,x)                         ; FAA1 C1 02                    ..
-        jsr     L2000                           ; FAA3 20 00 20                  . 
-        brk                                     ; FAA6 00                       .
-        bpl     LFAA9                           ; FAA7 10 00                    ..
-LFAA9:  brk                                     ; FAA9 00                       .
-        brk                                     ; FAAA 00                       .
-        jsr     L0000                           ; FAAB 20 00 00                  ..
-        php                                     ; FAAE 08                       .
-        brk                                     ; FAAF 00                       .
-        brk                                     ; FAB0 00                       .
-        ora     (L0000,x)                       ; FAB1 01 00                    ..
-        jsr     L0000                           ; FAB3 20 00 00                  ..
-        brk                                     ; FAB6 00                       .
-        brk                                     ; FAB7 00                       .
-        brk                                     ; FAB8 00                       .
-        .byte   $02                             ; FAB9 02                       .
-        jsr     L0000                           ; FABA 20 00 00                  ..
-        brk                                     ; FABD 00                       .
-        brk                                     ; FABE 00                       .
-        brk                                     ; FABF 00                       .
-        brk                                     ; FAC0 00                       .
-        brk                                     ; FAC1 00                       .
-        brk                                     ; FAC2 00                       .
-        brk                                     ; FAC3 00                       .
-        brk                                     ; FAC4 00                       .
-        brk                                     ; FAC5 00                       .
-        brk                                     ; FAC6 00                       .
-        brk                                     ; FAC7 00                       .
-        brk                                     ; FAC8 00                       .
-        brk                                     ; FAC9 00                       .
-        brk                                     ; FACA 00                       .
-        brk                                     ; FACB 00                       .
-        brk                                     ; FACC 00                       .
-        brk                                     ; FACD 00                       .
-        brk                                     ; FACE 00                       .
-        brk                                     ; FACF 00                       .
-        brk                                     ; FAD0 00                       .
-        .byte   $04                             ; FAD1 04                       .
-        brk                                     ; FAD2 00                       .
-        brk                                     ; FAD3 00                       .
-        brk                                     ; FAD4 00                       .
-        brk                                     ; FAD5 00                       .
-        brk                                     ; FAD6 00                       .
-        brk                                     ; FAD7 00                       .
-        brk                                     ; FAD8 00                       .
-        brk                                     ; FAD9 00                       .
-        brk                                     ; FADA 00                       .
-        brk                                     ; FADB 00                       .
-        brk                                     ; FADC 00                       .
-        brk                                     ; FADD 00                       .
-        brk                                     ; FADE 00                       .
-        brk                                     ; FADF 00                       .
-        brk                                     ; FAE0 00                       .
-        .byte   $04                             ; FAE1 04                       .
-        .byte   $02                             ; FAE2 02                       .
-        .byte   $04                             ; FAE3 04                       .
-        brk                                     ; FAE4 00                       .
-        .byte   $04                             ; FAE5 04                       .
-        brk                                     ; FAE6 00                       .
-        brk                                     ; FAE7 00                       .
-        brk                                     ; FAE8 00                       .
-        .byte   $02                             ; FAE9 02                       .
-        brk                                     ; FAEA 00                       .
-        pla                                     ; FAEB 68                       h
-        jsr     L0000                           ; FAEC 20 00 00                  ..
-        bpl     LFAF1                           ; FAEF 10 00                    ..
-LFAF1:  brk                                     ; FAF1 00                       .
-        brk                                     ; FAF2 00                       .
-        brk                                     ; FAF3 00                       .
-        brk                                     ; FAF4 00                       .
-        brk                                     ; FAF5 00                       .
-        brk                                     ; FAF6 00                       .
-        brk                                     ; FAF7 00                       .
-        .byte   $80                             ; FAF8 80                       .
-        bpl     LFB1B                           ; FAF9 10 20                    . 
-        jsr     L0000                           ; FAFB 20 00 00                  ..
-        brk                                     ; FAFE 00                       .
-        .byte   $02                             ; FAFF 02                       .
-        brk                                     ; FB00 00                       .
-        brk                                     ; FB01 00                       .
-        php                                     ; FB02 08                       .
-        brk                                     ; FB03 00                       .
-        brk                                     ; FB04 00                       .
-        brk                                     ; FB05 00                       .
-        brk                                     ; FB06 00                       .
-        brk                                     ; FB07 00                       .
-        brk                                     ; FB08 00                       .
-        brk                                     ; FB09 00                       .
-        brk                                     ; FB0A 00                       .
-        brk                                     ; FB0B 00                       .
-        brk                                     ; FB0C 00                       .
-        php                                     ; FB0D 08                       .
-        brk                                     ; FB0E 00                       .
-        brk                                     ; FB0F 00                       .
-        brk                                     ; FB10 00                       .
-        brk                                     ; FB11 00                       .
-        brk                                     ; FB12 00                       .
-        brk                                     ; FB13 00                       .
-        brk                                     ; FB14 00                       .
-        brk                                     ; FB15 00                       .
-        brk                                     ; FB16 00                       .
-        brk                                     ; FB17 00                       .
-        brk                                     ; FB18 00                       .
-        brk                                     ; FB19 00                       .
-        brk                                     ; FB1A 00                       .
-LFB1B:  brk                                     ; FB1B 00                       .
-        brk                                     ; FB1C 00                       .
-        brk                                     ; FB1D 00                       .
-        brk                                     ; FB1E 00                       .
-        brk                                     ; FB1F 00                       .
-        brk                                     ; FB20 00                       .
-        .byte   $04                             ; FB21 04                       .
-        brk                                     ; FB22 00                       .
-        brk                                     ; FB23 00                       .
-        brk                                     ; FB24 00                       .
-        brk                                     ; FB25 00                       .
-        brk                                     ; FB26 00                       .
-        brk                                     ; FB27 00                       .
-        brk                                     ; FB28 00                       .
-        php                                     ; FB29 08                       .
-        brk                                     ; FB2A 00                       .
-        brk                                     ; FB2B 00                       .
-        brk                                     ; FB2C 00                       .
-        bcc     LFB2F                           ; FB2D 90 00                    ..
-LFB2F:  brk                                     ; FB2F 00                       .
-        brk                                     ; FB30 00                       .
-        brk                                     ; FB31 00                       .
-        brk                                     ; FB32 00                       .
-        php                                     ; FB33 08                       .
-        .byte   $80                             ; FB34 80                       .
-        brk                                     ; FB35 00                       .
-        brk                                     ; FB36 00                       .
-        brk                                     ; FB37 00                       .
-        brk                                     ; FB38 00                       .
-        brk                                     ; FB39 00                       .
-        brk                                     ; FB3A 00                       .
-        .byte   $03                             ; FB3B 03                       .
-        brk                                     ; FB3C 00                       .
-        rti                                     ; FB3D 40                       @
-
-; ----------------------------------------------------------------------------
-        brk                                     ; FB3E 00                       .
-        rti                                     ; FB3F 40                       @
-
-; ----------------------------------------------------------------------------
-        brk                                     ; FB40 00                       .
-        brk                                     ; FB41 00                       .
-        brk                                     ; FB42 00                       .
-        brk                                     ; FB43 00                       .
-        brk                                     ; FB44 00                       .
-        brk                                     ; FB45 00                       .
-        brk                                     ; FB46 00                       .
-        brk                                     ; FB47 00                       .
-        brk                                     ; FB48 00                       .
-        brk                                     ; FB49 00                       .
-        brk                                     ; FB4A 00                       .
-        brk                                     ; FB4B 00                       .
-        brk                                     ; FB4C 00                       .
-        brk                                     ; FB4D 00                       .
-        brk                                     ; FB4E 00                       .
-        brk                                     ; FB4F 00                       .
-        brk                                     ; FB50 00                       .
-        .byte   $02                             ; FB51 02                       .
-        brk                                     ; FB52 00                       .
-        brk                                     ; FB53 00                       .
-        brk                                     ; FB54 00                       .
-        bpl     LFB57                           ; FB55 10 00                    ..
-LFB57:  brk                                     ; FB57 00                       .
-        brk                                     ; FB58 00                       .
-        brk                                     ; FB59 00                       .
-        brk                                     ; FB5A 00                       .
-LFB5B:  brk                                     ; FB5B 00                       .
-        brk                                     ; FB5C 00                       .
-LFB5D:  brk                                     ; FB5D 00                       .
-        php                                     ; FB5E 08                       .
-        brk                                     ; FB5F 00                       .
-        php                                     ; FB60 08                       .
-        brk                                     ; FB61 00                       .
-        brk                                     ; FB62 00                       .
-        brk                                     ; FB63 00                       .
-        brk                                     ; FB64 00                       .
-        ora     (L0000,x)                       ; FB65 01 00                    ..
-        brk                                     ; FB67 00                       .
-        brk                                     ; FB68 00                       .
-        sta     (L0000,x)                       ; FB69 81 00                    ..
-        .byte   $80                             ; FB6B 80                       .
-        brk                                     ; FB6C 00                       .
-        php                                     ; FB6D 08                       .
-        brk                                     ; FB6E 00                       .
-        jsr     L0000                           ; FB6F 20 00 00                  ..
-        brk                                     ; FB72 00                       .
-        brk                                     ; FB73 00                       .
-        brk                                     ; FB74 00                       .
-        brk                                     ; FB75 00                       .
-        brk                                     ; FB76 00                       .
-        cli                                     ; FB77 58                       X
-        brk                                     ; FB78 00                       .
-        brk                                     ; FB79 00                       .
-        brk                                     ; FB7A 00                       .
-        jsr     L0000                           ; FB7B 20 00 00                  ..
-        .byte   $02                             ; FB7E 02                       .
-        brk                                     ; FB7F 00                       .
-        brk                                     ; FB80 00                       .
-        .byte   $02                             ; FB81 02                       .
-        brk                                     ; FB82 00                       .
-        brk                                     ; FB83 00                       .
-        brk                                     ; FB84 00                       .
-        brk                                     ; FB85 00                       .
-        brk                                     ; FB86 00                       .
-        brk                                     ; FB87 00                       .
-        brk                                     ; FB88 00                       .
-        brk                                     ; FB89 00                       .
-        brk                                     ; FB8A 00                       .
-        brk                                     ; FB8B 00                       .
-        brk                                     ; FB8C 00                       .
-        brk                                     ; FB8D 00                       .
-        brk                                     ; FB8E 00                       .
-        brk                                     ; FB8F 00                       .
-        brk                                     ; FB90 00                       .
-        brk                                     ; FB91 00                       .
-        brk                                     ; FB92 00                       .
-        brk                                     ; FB93 00                       .
-        brk                                     ; FB94 00                       .
-        brk                                     ; FB95 00                       .
-        brk                                     ; FB96 00                       .
-        and     (L0000,x)                       ; FB97 21 00                    !.
-        brk                                     ; FB99 00                       .
-        brk                                     ; FB9A 00                       .
-        brk                                     ; FB9B 00                       .
-        brk                                     ; FB9C 00                       .
-        brk                                     ; FB9D 00                       .
-        brk                                     ; FB9E 00                       .
-        brk                                     ; FB9F 00                       .
-        brk                                     ; FBA0 00                       .
-        brk                                     ; FBA1 00                       .
-        brk                                     ; FBA2 00                       .
-        brk                                     ; FBA3 00                       .
-        brk                                     ; FBA4 00                       .
-        .byte   $02                             ; FBA5 02                       .
-        brk                                     ; FBA6 00                       .
-        brk                                     ; FBA7 00                       .
-        brk                                     ; FBA8 00                       .
-        brk                                     ; FBA9 00                       .
-        brk                                     ; FBAA 00                       .
-        brk                                     ; FBAB 00                       .
-        brk                                     ; FBAC 00                       .
-        brk                                     ; FBAD 00                       .
-        brk                                     ; FBAE 00                       .
-        brk                                     ; FBAF 00                       .
-        brk                                     ; FBB0 00                       .
-        .byte   $04                             ; FBB1 04                       .
-        php                                     ; FBB2 08                       .
-        brk                                     ; FBB3 00                       .
-        brk                                     ; FBB4 00                       .
-        rti                                     ; FBB5 40                       @
-
-; ----------------------------------------------------------------------------
-        .byte   $80                             ; FBB6 80                       .
-        brk                                     ; FBB7 00                       .
-        brk                                     ; FBB8 00                       .
-        brk                                     ; FBB9 00                       .
-        brk                                     ; FBBA 00                       .
-        sty     $6002                           ; FBBB 8C 02 60                 ..`
-        jsr     L0000                           ; FBBE 20 00 00                  ..
-        brk                                     ; FBC1 00                       .
-        brk                                     ; FBC2 00                       .
-        brk                                     ; FBC3 00                       .
-        brk                                     ; FBC4 00                       .
-        brk                                     ; FBC5 00                       .
-        brk                                     ; FBC6 00                       .
-        jsr     L0000                           ; FBC7 20 00 00                  ..
-        brk                                     ; FBCA 00                       .
-        brk                                     ; FBCB 00                       .
-        brk                                     ; FBCC 00                       .
-        brk                                     ; FBCD 00                       .
-        brk                                     ; FBCE 00                       .
-        brk                                     ; FBCF 00                       .
-        brk                                     ; FBD0 00                       .
-        php                                     ; FBD1 08                       .
-        brk                                     ; FBD2 00                       .
-        .byte   $02                             ; FBD3 02                       .
-        brk                                     ; FBD4 00                       .
-        .byte   $80                             ; FBD5 80                       .
-        brk                                     ; FBD6 00                       .
-        brk                                     ; FBD7 00                       .
-        brk                                     ; FBD8 00                       .
-        bpl     LFB5B                           ; FBD9 10 80                    ..
-        .byte   $80                             ; FBDB 80                       .
-        ldy     #$00                            ; FBDC A0 00                    ..
-        brk                                     ; FBDE 00                       .
-        brk                                     ; FBDF 00                       .
-        brk                                     ; FBE0 00                       .
-        brk                                     ; FBE1 00                       .
-        brk                                     ; FBE2 00                       .
-        brk                                     ; FBE3 00                       .
-        brk                                     ; FBE4 00                       .
-        brk                                     ; FBE5 00                       .
-        .byte   $80                             ; FBE6 80                       .
-        brk                                     ; FBE7 00                       .
-        brk                                     ; FBE8 00                       .
-        brk                                     ; FBE9 00                       .
-        brk                                     ; FBEA 00                       .
-        brk                                     ; FBEB 00                       .
-        brk                                     ; FBEC 00                       .
-        brk                                     ; FBED 00                       .
-        brk                                     ; FBEE 00                       .
-        brk                                     ; FBEF 00                       .
-        brk                                     ; FBF0 00                       .
-        brk                                     ; FBF1 00                       .
-        brk                                     ; FBF2 00                       .
-        brk                                     ; FBF3 00                       .
-        .byte   $02                             ; FBF4 02                       .
-        php                                     ; FBF5 08                       .
-        .byte   $02                             ; FBF6 02                       .
-        brk                                     ; FBF7 00                       .
-        brk                                     ; FBF8 00                       .
-        brk                                     ; FBF9 00                       .
-        brk                                     ; FBFA 00                       .
-        brk                                     ; FBFB 00                       .
-        brk                                     ; FBFC 00                       .
-LFBFD:  brk                                     ; FBFD 00                       .
-        pha                                     ; FBFE 48                       H
-        .byte   $D3                             ; FBFF D3                       .
-        brk                                     ; FC00 00                       .
-        brk                                     ; FC01 00                       .
-        brk                                     ; FC02 00                       .
-        brk                                     ; FC03 00                       .
-        brk                                     ; FC04 00                       .
-        brk                                     ; FC05 00                       .
-        brk                                     ; FC06 00                       .
-LFC07:  brk                                     ; FC07 00                       .
-        brk                                     ; FC08 00                       .
-        brk                                     ; FC09 00                       .
-        .byte   $02                             ; FC0A 02                       .
-        brk                                     ; FC0B 00                       .
-        brk                                     ; FC0C 00                       .
-        brk                                     ; FC0D 00                       .
-        brk                                     ; FC0E 00                       .
-        brk                                     ; FC0F 00                       .
-        rti                                     ; FC10 40                       @
-
-; ----------------------------------------------------------------------------
-        brk                                     ; FC11 00                       .
-        brk                                     ; FC12 00                       .
-        brk                                     ; FC13 00                       .
-        brk                                     ; FC14 00                       .
-        brk                                     ; FC15 00                       .
-        brk                                     ; FC16 00                       .
-        brk                                     ; FC17 00                       .
-        brk                                     ; FC18 00                       .
-        brk                                     ; FC19 00                       .
-        .byte   $80                             ; FC1A 80                       .
-        brk                                     ; FC1B 00                       .
-        brk                                     ; FC1C 00                       .
-        brk                                     ; FC1D 00                       .
-        brk                                     ; FC1E 00                       .
-        brk                                     ; FC1F 00                       .
-        brk                                     ; FC20 00                       .
-        brk                                     ; FC21 00                       .
-        brk                                     ; FC22 00                       .
-        brk                                     ; FC23 00                       .
-        brk                                     ; FC24 00                       .
-        brk                                     ; FC25 00                       .
-        brk                                     ; FC26 00                       .
-        brk                                     ; FC27 00                       .
-        brk                                     ; FC28 00                       .
-        .byte   $04                             ; FC29 04                       .
-        .byte   $03                             ; FC2A 03                       .
-        brk                                     ; FC2B 00                       .
-        brk                                     ; FC2C 00                       .
-        brk                                     ; FC2D 00                       .
-        .byte   $04                             ; FC2E 04                       .
-        brk                                     ; FC2F 00                       .
-        brk                                     ; FC30 00                       .
-        brk                                     ; FC31 00                       .
-        jsr     L0004                           ; FC32 20 04 00                  ..
-        ora     (L0000,x)                       ; FC35 01 00                    ..
-        brk                                     ; FC37 00                       .
-        .byte   $02                             ; FC38 02                       .
-        ora     ($10,x)                         ; FC39 01 10                    ..
-        brk                                     ; FC3B 00                       .
-        brk                                     ; FC3C 00                       .
-        brk                                     ; FC3D 00                       .
-        brk                                     ; FC3E 00                       .
-        ora     (L0000,x)                       ; FC3F 01 00                    ..
-        brk                                     ; FC41 00                       .
-        brk                                     ; FC42 00                       .
-        brk                                     ; FC43 00                       .
-        brk                                     ; FC44 00                       .
-        brk                                     ; FC45 00                       .
-        brk                                     ; FC46 00                       .
-        brk                                     ; FC47 00                       .
-        brk                                     ; FC48 00                       .
-        brk                                     ; FC49 00                       .
-        brk                                     ; FC4A 00                       .
-        brk                                     ; FC4B 00                       .
-        brk                                     ; FC4C 00                       .
-        brk                                     ; FC4D 00                       .
-        sty     L0000                           ; FC4E 84 00                    ..
-        brk                                     ; FC50 00                       .
-        brk                                     ; FC51 00                       .
-        brk                                     ; FC52 00                       .
-        brk                                     ; FC53 00                       .
-        brk                                     ; FC54 00                       .
-        brk                                     ; FC55 00                       .
-        brk                                     ; FC56 00                       .
-        brk                                     ; FC57 00                       .
-        brk                                     ; FC58 00                       .
-        brk                                     ; FC59 00                       .
-        brk                                     ; FC5A 00                       .
-        brk                                     ; FC5B 00                       .
-        brk                                     ; FC5C 00                       .
-        brk                                     ; FC5D 00                       .
-        brk                                     ; FC5E 00                       .
-        brk                                     ; FC5F 00                       .
-        ora     ($10,x)                         ; FC60 01 10                    ..
-        php                                     ; FC62 08                       .
-        brk                                     ; FC63 00                       .
-        brk                                     ; FC64 00                       .
-        brk                                     ; FC65 00                       .
-        php                                     ; FC66 08                       .
-        brk                                     ; FC67 00                       .
-        ora     (L0000,x)                       ; FC68 01 00                    ..
-        brk                                     ; FC6A 00                       .
-        .byte   $44                             ; FC6B 44                       D
-        asl     a:L0000                         ; FC6C 0E 00 00                 ...
-        eor     (L0000,x)                       ; FC6F 41 00                    A.
-        brk                                     ; FC71 00                       .
-        brk                                     ; FC72 00                       .
-        brk                                     ; FC73 00                       .
-        brk                                     ; FC74 00                       .
-        brk                                     ; FC75 00                       .
-        pha                                     ; FC76 48                       H
-        brk                                     ; FC77 00                       .
-        cpy     #$40                            ; FC78 C0 40                    .@
-        brk                                     ; FC7A 00                       .
-        rti                                     ; FC7B 40                       @
-
-; ----------------------------------------------------------------------------
-        brk                                     ; FC7C 00                       .
-        brk                                     ; FC7D 00                       .
-        .byte   $1A                             ; FC7E 1A                       .
-        brk                                     ; FC7F 00                       .
-        .byte   $04                             ; FC80 04                       .
-        brk                                     ; FC81 00                       .
-        brk                                     ; FC82 00                       .
-        brk                                     ; FC83 00                       .
-        brk                                     ; FC84 00                       .
-        brk                                     ; FC85 00                       .
-        brk                                     ; FC86 00                       .
-        brk                                     ; FC87 00                       .
-        brk                                     ; FC88 00                       .
-        brk                                     ; FC89 00                       .
-        brk                                     ; FC8A 00                       .
-        brk                                     ; FC8B 00                       .
-        brk                                     ; FC8C 00                       .
-        brk                                     ; FC8D 00                       .
-        bpl     LFC90                           ; FC8E 10 00                    ..
-LFC90:  bpl     LFC92                           ; FC90 10 00                    ..
-LFC92:  brk                                     ; FC92 00                       .
-        brk                                     ; FC93 00                       .
-        brk                                     ; FC94 00                       .
-        .byte   $14                             ; FC95 14                       .
-        brk                                     ; FC96 00                       .
-        brk                                     ; FC97 00                       .
-        brk                                     ; FC98 00                       .
-        brk                                     ; FC99 00                       .
-        brk                                     ; FC9A 00                       .
-        brk                                     ; FC9B 00                       .
-        brk                                     ; FC9C 00                       .
-        brk                                     ; FC9D 00                       .
-        brk                                     ; FC9E 00                       .
-        brk                                     ; FC9F 00                       .
-        .byte   $02                             ; FCA0 02                       .
-        .byte   $14                             ; FCA1 14                       .
-        brk                                     ; FCA2 00                       .
-        brk                                     ; FCA3 00                       .
-        php                                     ; FCA4 08                       .
-        brk                                     ; FCA5 00                       .
-        .byte   $04                             ; FCA6 04                       .
-        brk                                     ; FCA7 00                       .
-        eor     ($40,x)                         ; FCA8 41 40                    A@
-        brk                                     ; FCAA 00                       .
-        brk                                     ; FCAB 00                       .
-        brk                                     ; FCAC 00                       .
-        brk                                     ; FCAD 00                       .
-        bcs     LFCB0                           ; FCAE B0 00                    ..
-LFCB0:  brk                                     ; FCB0 00                       .
-        brk                                     ; FCB1 00                       .
-        brk                                     ; FCB2 00                       .
-        brk                                     ; FCB3 00                       .
-        brk                                     ; FCB4 00                       .
-        .byte   $04                             ; FCB5 04                       .
-        .byte   $42                             ; FCB6 42                       B
-        brk                                     ; FCB7 00                       .
-        php                                     ; FCB8 08                       .
-        brk                                     ; FCB9 00                       .
-        jsr     L8044                           ; FCBA 20 44 80                  D.
-        brk                                     ; FCBD 00                       .
-        brk                                     ; FCBE 00                       .
-        eor     (L0000,x)                       ; FCBF 41 00                    A.
-        brk                                     ; FCC1 00                       .
-        brk                                     ; FCC2 00                       .
-        brk                                     ; FCC3 00                       .
-        brk                                     ; FCC4 00                       .
-        brk                                     ; FCC5 00                       .
-        brk                                     ; FCC6 00                       .
-        brk                                     ; FCC7 00                       .
-        ora     (L0000,x)                       ; FCC8 01 00                    ..
-        .byte   $80                             ; FCCA 80                       .
-        brk                                     ; FCCB 00                       .
-        brk                                     ; FCCC 00                       .
-        brk                                     ; FCCD 00                       .
-        brk                                     ; FCCE 00                       .
-        brk                                     ; FCCF 00                       .
-        brk                                     ; FCD0 00                       .
-        brk                                     ; FCD1 00                       .
-        brk                                     ; FCD2 00                       .
-        brk                                     ; FCD3 00                       .
-        brk                                     ; FCD4 00                       .
-        brk                                     ; FCD5 00                       .
-        brk                                     ; FCD6 00                       .
-        ora     (L0000,x)                       ; FCD7 01 00                    ..
-        brk                                     ; FCD9 00                       .
-        brk                                     ; FCDA 00                       .
-        brk                                     ; FCDB 00                       .
-        brk                                     ; FCDC 00                       .
-        rti                                     ; FCDD 40                       @
-
-; ----------------------------------------------------------------------------
-        brk                                     ; FCDE 00                       .
-        brk                                     ; FCDF 00                       .
-        .byte   $04                             ; FCE0 04                       .
-        rti                                     ; FCE1 40                       @
-
-; ----------------------------------------------------------------------------
-        .byte   $80                             ; FCE2 80                       .
-        brk                                     ; FCE3 00                       .
-        brk                                     ; FCE4 00                       .
-        brk                                     ; FCE5 00                       .
-        .byte   $80                             ; FCE6 80                       .
-        bpl     LFD2B                           ; FCE7 10 42                    .B
-        brk                                     ; FCE9 00                       .
-        ora     #$04                            ; FCEA 09 04                    ..
-        .byte   $80                             ; FCEC 80                       .
-        brk                                     ; FCED 00                       .
-        brk                                     ; FCEE 00                       .
-        brk                                     ; FCEF 00                       .
-        jsr     L0100                           ; FCF0 20 00 01                  ..
-        brk                                     ; FCF3 00                       .
-        rti                                     ; FCF4 40                       @
-
-; ----------------------------------------------------------------------------
-        brk                                     ; FCF5 00                       .
-        rti                                     ; FCF6 40                       @
-
-; ----------------------------------------------------------------------------
-        .byte   $44                             ; FCF7 44                       D
-        brk                                     ; FCF8 00                       .
-        brk                                     ; FCF9 00                       .
-        bpl     LFCFC                           ; FCFA 10 00                    ..
-LFCFC:  brk                                     ; FCFC 00                       .
-        brk                                     ; FCFD 00                       .
-        rti                                     ; FCFE 40                       @
-
-; ----------------------------------------------------------------------------
-        bvc     LFD01                           ; FCFF 50 00                    P.
-LFD01:  brk                                     ; FD01 00                       .
-        brk                                     ; FD02 00                       .
-        brk                                     ; FD03 00                       .
-        brk                                     ; FD04 00                       .
-        brk                                     ; FD05 00                       .
-        brk                                     ; FD06 00                       .
-        brk                                     ; FD07 00                       .
-        brk                                     ; FD08 00                       .
-        brk                                     ; FD09 00                       .
-        bpl     LFD0C                           ; FD0A 10 00                    ..
-LFD0C:  brk                                     ; FD0C 00                       .
-        brk                                     ; FD0D 00                       .
-        .byte   $02                             ; FD0E 02                       .
-        brk                                     ; FD0F 00                       .
-        brk                                     ; FD10 00                       .
-        brk                                     ; FD11 00                       .
-        brk                                     ; FD12 00                       .
-        brk                                     ; FD13 00                       .
-        brk                                     ; FD14 00                       .
-        brk                                     ; FD15 00                       .
-        brk                                     ; FD16 00                       .
-        brk                                     ; FD17 00                       .
-        brk                                     ; FD18 00                       .
-        brk                                     ; FD19 00                       .
-        brk                                     ; FD1A 00                       .
-        brk                                     ; FD1B 00                       .
-        brk                                     ; FD1C 00                       .
-        brk                                     ; FD1D 00                       .
-        brk                                     ; FD1E 00                       .
-        brk                                     ; FD1F 00                       .
-        .byte   $02                             ; FD20 02                       .
-        brk                                     ; FD21 00                       .
-        brk                                     ; FD22 00                       .
-        brk                                     ; FD23 00                       .
-        brk                                     ; FD24 00                       .
-        brk                                     ; FD25 00                       .
-        .byte   $80                             ; FD26 80                       .
-        brk                                     ; FD27 00                       .
-        brk                                     ; FD28 00                       .
-        brk                                     ; FD29 00                       .
-        brk                                     ; FD2A 00                       .
-LFD2B:  brk                                     ; FD2B 00                       .
-        brk                                     ; FD2C 00                       .
-        rti                                     ; FD2D 40                       @
-
-; ----------------------------------------------------------------------------
-        .byte   $80                             ; FD2E 80                       .
-        brk                                     ; FD2F 00                       .
-        php                                     ; FD30 08                       .
-        brk                                     ; FD31 00                       .
-        .byte   $12                             ; FD32 12                       .
-        brk                                     ; FD33 00                       .
-        .byte   $44                             ; FD34 44                       D
-        brk                                     ; FD35 00                       .
-        brk                                     ; FD36 00                       .
-        rti                                     ; FD37 40                       @
-
-; ----------------------------------------------------------------------------
-        jsr     L0000                           ; FD38 20 00 00                  ..
-        brk                                     ; FD3B 00                       .
-        rti                                     ; FD3C 40                       @
-
-; ----------------------------------------------------------------------------
-        .byte   $04                             ; FD3D 04                       .
-        brk                                     ; FD3E 00                       .
-        brk                                     ; FD3F 00                       .
-        brk                                     ; FD40 00                       .
-        brk                                     ; FD41 00                       .
-        brk                                     ; FD42 00                       .
-        brk                                     ; FD43 00                       .
-        brk                                     ; FD44 00                       .
-        brk                                     ; FD45 00                       .
-        ora     (L0000,x)                       ; FD46 01 00                    ..
-        brk                                     ; FD48 00                       .
-        brk                                     ; FD49 00                       .
-        brk                                     ; FD4A 00                       .
-        brk                                     ; FD4B 00                       .
-        brk                                     ; FD4C 00                       .
-        brk                                     ; FD4D 00                       .
-        brk                                     ; FD4E 00                       .
-        brk                                     ; FD4F 00                       .
-        brk                                     ; FD50 00                       .
-        ora     (L0000,x)                       ; FD51 01 00                    ..
-        brk                                     ; FD53 00                       .
-        brk                                     ; FD54 00                       .
-        brk                                     ; FD55 00                       .
-        brk                                     ; FD56 00                       .
-        brk                                     ; FD57 00                       .
-        brk                                     ; FD58 00                       .
-        brk                                     ; FD59 00                       .
-        brk                                     ; FD5A 00                       .
-        brk                                     ; FD5B 00                       .
-        bpl     LFD5E                           ; FD5C 10 00                    ..
-LFD5E:  jsr     L0200                           ; FD5E 20 00 02                  ..
-        ora     (L0000,x)                       ; FD61 01 00                    ..
-        .byte   $04                             ; FD63 04                       .
-        sty     L0000                           ; FD64 84 00                    ..
-        .byte   $03                             ; FD66 03                       .
-        brk                                     ; FD67 00                       .
-        brk                                     ; FD68 00                       .
-        brk                                     ; FD69 00                       .
-        brk                                     ; FD6A 00                       .
-        brk                                     ; FD6B 00                       .
-        brk                                     ; FD6C 00                       .
-        brk                                     ; FD6D 00                       .
-        and     (L0004,x)                       ; FD6E 21 04                    !.
-        brk                                     ; FD70 00                       .
-        brk                                     ; FD71 00                       .
-        .byte   $04                             ; FD72 04                       .
-        .byte   $04                             ; FD73 04                       .
-        brk                                     ; FD74 00                       .
-        bvc     LFD77                           ; FD75 50 00                    P.
-LFD77:  brk                                     ; FD77 00                       .
-        brk                                     ; FD78 00                       .
-        brk                                     ; FD79 00                       .
-        brk                                     ; FD7A 00                       .
-        ora     (L0000,x)                       ; FD7B 01 00                    ..
-        .byte   $04                             ; FD7D 04                       .
-        brk                                     ; FD7E 00                       .
-        ora     (L0000,x)                       ; FD7F 01 00                    ..
-        brk                                     ; FD81 00                       .
-        brk                                     ; FD82 00                       .
-        brk                                     ; FD83 00                       .
-        brk                                     ; FD84 00                       .
-        brk                                     ; FD85 00                       .
-        brk                                     ; FD86 00                       .
-        brk                                     ; FD87 00                       .
-        brk                                     ; FD88 00                       .
-        brk                                     ; FD89 00                       .
-        brk                                     ; FD8A 00                       .
-        brk                                     ; FD8B 00                       .
-        brk                                     ; FD8C 00                       .
-        brk                                     ; FD8D 00                       .
-        brk                                     ; FD8E 00                       .
-        .byte   $04                             ; FD8F 04                       .
-        brk                                     ; FD90 00                       .
-        brk                                     ; FD91 00                       .
-        brk                                     ; FD92 00                       .
-        brk                                     ; FD93 00                       .
-        brk                                     ; FD94 00                       .
-        brk                                     ; FD95 00                       .
-        brk                                     ; FD96 00                       .
-        brk                                     ; FD97 00                       .
-        brk                                     ; FD98 00                       .
-        brk                                     ; FD99 00                       .
-        brk                                     ; FD9A 00                       .
-        brk                                     ; FD9B 00                       .
-        brk                                     ; FD9C 00                       .
-        brk                                     ; FD9D 00                       .
-        brk                                     ; FD9E 00                       .
-        ora     (L0000,x)                       ; FD9F 01 00                    ..
-        brk                                     ; FDA1 00                       .
-        brk                                     ; FDA2 00                       .
-        ora     ($01,x)                         ; FDA3 01 01                    ..
-        rti                                     ; FDA5 40                       @
-
-; ----------------------------------------------------------------------------
-        brk                                     ; FDA6 00                       .
-        brk                                     ; FDA7 00                       .
-        brk                                     ; FDA8 00                       .
-        brk                                     ; FDA9 00                       .
-        ora     ($01,x)                         ; FDAA 01 01                    ..
-        brk                                     ; FDAC 00                       .
-        ora     ($08,x)                         ; FDAD 01 08                    ..
-        brk                                     ; FDAF 00                       .
-        brk                                     ; FDB0 00                       .
-        brk                                     ; FDB1 00                       .
-        .byte   $80                             ; FDB2 80                       .
-        ora     (L0000,x)                       ; FDB3 01 00                    ..
-        brk                                     ; FDB5 00                       .
-        jsr     L0000                           ; FDB6 20 00 00                  ..
-        brk                                     ; FDB9 00                       .
-        brk                                     ; FDBA 00                       .
-        brk                                     ; FDBB 00                       .
-        .byte   $02                             ; FDBC 02                       .
-        brk                                     ; FDBD 00                       .
-        brk                                     ; FDBE 00                       .
-        brk                                     ; FDBF 00                       .
-        brk                                     ; FDC0 00                       .
-        brk                                     ; FDC1 00                       .
-        brk                                     ; FDC2 00                       .
-        brk                                     ; FDC3 00                       .
-        .byte   $80                             ; FDC4 80                       .
-        brk                                     ; FDC5 00                       .
-        brk                                     ; FDC6 00                       .
-        .byte   $04                             ; FDC7 04                       .
-        brk                                     ; FDC8 00                       .
-        brk                                     ; FDC9 00                       .
-        brk                                     ; FDCA 00                       .
-        brk                                     ; FDCB 00                       .
-        brk                                     ; FDCC 00                       .
-        brk                                     ; FDCD 00                       .
-        ora     (L0000,x)                       ; FDCE 01 00                    ..
-        brk                                     ; FDD0 00                       .
-        brk                                     ; FDD1 00                       .
-        brk                                     ; FDD2 00                       .
-        brk                                     ; FDD3 00                       .
-        .byte   $14                             ; FDD4 14                       .
-        brk                                     ; FDD5 00                       .
-        brk                                     ; FDD6 00                       .
-        brk                                     ; FDD7 00                       .
-        brk                                     ; FDD8 00                       .
-        brk                                     ; FDD9 00                       .
-        bcc     LFDDC                           ; FDDA 90 00                    ..
-LFDDC:  brk                                     ; FDDC 00                       .
-        brk                                     ; FDDD 00                       .
-        brk                                     ; FDDE 00                       .
-        bpl     LFDE1                           ; FDDF 10 00                    ..
-LFDE1:  brk                                     ; FDE1 00                       .
-        brk                                     ; FDE2 00                       .
-        brk                                     ; FDE3 00                       .
-        bpl     LFDE6                           ; FDE4 10 00                    ..
-LFDE6:  .byte   $44                             ; FDE6 44                       D
-        .byte   $04                             ; FDE7 04                       .
-        cpy     L0000                           ; FDE8 C4 00                    ..
-        brk                                     ; FDEA 00                       .
-        brk                                     ; FDEB 00                       .
-        brk                                     ; FDEC 00                       .
-        brk                                     ; FDED 00                       .
-        brk                                     ; FDEE 00                       .
-        rti                                     ; FDEF 40                       @
-
-; ----------------------------------------------------------------------------
-        brk                                     ; FDF0 00                       .
-        brk                                     ; FDF1 00                       .
-        rti                                     ; FDF2 40                       @
-
-; ----------------------------------------------------------------------------
-        brk                                     ; FDF3 00                       .
-        asl     a                               ; FDF4 0A                       .
-        brk                                     ; FDF5 00                       .
-        php                                     ; FDF6 08                       .
-LFDF7:  brk                                     ; FDF7 00                       .
-        rol     $0900                           ; FDF8 2E 00 09                 ...
-        brk                                     ; FDFB 00                       .
-        bpl     LFDFE                           ; FDFC 10 00                    ..
-LFDFE:  brk                                     ; FDFE 00                       .
-        .byte   $11                             ; FDFF 11                       .
+; -----------------------------------------------------------------------------
+; DATA BLOCK — $F49E-$FDFF
+; dir_vel_sub_tbl/dir_vel_px_tbl: 8-direction velocity components
+; (quarter-sine rows, Y component read at index ^4). The remainder is
+; unclassified table data (opcode density ~3%, no code found);
+; L-labels kept for stray references pending classification.
+; -----------------------------------------------------------------------------
+dir_vel_sub_tbl:
+        .byte   $00,$18,$2D,$3B,$40,$3B,$2D,$18,$00,$C3,$6A,$D9,$00,$D9,$6A,$C3   ; F49E
+        .byte   $00,$87,$D4,$B2,$00,$B2,$D4,$87,$00,$9C,$21,$7A,$99,$7A,$21,$9C   ; F4AE
+        .byte   $00,$61,$B5,$EC,$00,$EC,$B5,$61,$00,$25,$1F,$C5,$00,$C5,$1F,$25   ; F4BE
+        .byte   $00,$E9,$89,$9E,$00,$9E,$89,$E9,$00,$30,$5A,$76,$80,$76,$5A,$30   ; F4CE
+        .byte   $00   ; F4DE
+LF4DF:
+        .byte   $F4,$C4,$4F,$80,$4F,$C4,$F4,$00,$0F,$A8,$64,$00,$64,$A8,$0F   ; F4DF
+dir_vel_px_tbl:
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$01,$01,$02,$01,$01,$00   ; F4EE
+LF4FE:
+        .byte   $00,$01,$02,$03,$04,$03,$02,$01,$00,$00,$01,$01,$01,$01,$01,$00   ; F4FE
+        .byte   $00,$00,$00,$00,$01,$00,$00,$00,$00,$01,$02,$02,$03,$02,$02,$01   ; F50E
+        .byte   $00,$01,$03,$04,$05,$04,$03,$01,$00,$00,$00,$00,$00,$00,$00,$00   ; F51E
+        .byte   $00,$00,$01,$02,$02   ; F52E
+LF533:
+        .byte   $02,$01,$00,$00,$03,$05,$07,$08,$07,$05,$03,$FF,$75,$FF,$55,$FF   ; F533
+        .byte   $D5,$FF,$55,$FF,$DF,$F7,$FD,$FB,$55,$FF,$77,$FE,$5D,$FF,$D5,$EF   ; F543
+        .byte   $45,$FF,$CD,$FF,$D5,$FF,$D5,$FF,$D5,$FA,$7B,$FF,$7F,$FF,$75,$FF   ; F553
+        .byte   $F7,$FF,$D5,$FF,$D3,$FE,$75,$DF,$F7,$FB,$D7,$FF,$55,$FF,$55,$FE   ; F563
+        .byte   $C5,$F7,$77,$FE,$75,$FE,$7D,$7F,$5D,$7F,$DD,$F7,$75,$7F,$7B,$FF   ; F573
+        .byte   $DD,$FF,$41,$FF,$55,$FB,$55,$FB,$95,$FE,$7D,$FF,$75,$FF,$CF,$FF   ; F583
+        .byte   $F3,$FF,$5D,$FF,$F5,$FF,$67,$FF,$D7,$DF,$55,$FF,$5F,$FF,$75,$FF   ; F593
+        .byte   $D5,$F7,$DD,$9D,$DF,$FF,$55,$7F,$55,$FF,$5D,$77,$35,$FF,$5F,$F2   ; F5A3
+        .byte   $5D,$FF,$CD,$F7,$D7,$FF,$55,$7F,$55,$7F,$D5,$FB   ; F5B3
+LF5BF:
+        .byte   $F7,$7F,$4D,$FF,$7D,$FE,$77,$FF,$FF,$FF,$7D,$FF,$55,$BF,$5D,$FF   ; F5BF
+        .byte   $57,$F9,$D5,$FF,$75,$7F,$55,$FD,$57,$FF,$45,$FF,$77,$FF,$75,$EF   ; F5CF
+        .byte   $F5,$FF,$35,$DF,$5F,$FF,$7D,$FB,$D7,$FF,$65,$FB,$DD,$BF,$B5,$FF   ; F5DF
+LF5EF:
+        .byte   $7D,$FF,$7F,$FB,$DD,$FB,$5F,$FF,$D7,$FF,$75,$FF,$57,$FF   ; F5EF
+LF5FD:
+        .byte   $D5,$FF   ; F5FD
+LF5FF:
+        .byte   $75,$07,$01,$FF,$D1,$FF,$5D,$FF,$53,$FF,$DD,$FD,$77,$D7,$5F,$F7   ; F5FF
+        .byte   $FF,$F7,$77,$FF,$57,$FF,$34,$FF,$55,$7F,$75,$DF,$57,$BF,$59,$F7   ; F60F
+        .byte   $F1,$FD,$5D,$FB,$D5,$FF,$95,$DD,$D5,$FF,$75,$FF,$55,$FF,$FD,$FF   ; F61F
+        .byte   $77,$BD,$DD,$FF,$FF,$FF,$55,$7F,$7D,$DF,$55,$FF,$D5,$FF,$75,$FF   ; F62F
+        .byte   $55,$DF,$51,$BF,$5F,$FF,$77,$BF,$5D,$BF,$57,$7F,$5D,$FF,$5F,$7F   ; F63F
+        .byte   $63,$FF,$57,$FE,$5F,$FF   ; F64F
+LF655:
+        .byte   $56,$FF,$D5,$FF,$77,$DF,$75,$FF,$7D,$FB,$75,$FF,$F7,$DF,$F5,$FF   ; F655
+        .byte   $5D,$FF,$57,$FF,$5D,$FF,$5B,$FF,$7F,$FF,$57,$FF,$37,$DF,$57,$DF   ; F665
+        .byte   $55,$FF,$D7,$FF,$77,$FF,$D7,$FF,$77,$FD,$DD,$FE,$5D,$FF,$DC,$F7   ; F675
+        .byte   $7D,$FF,$55,$FD,$55,$F6,$F5,$FF,$57,$FE,$55,$FF,$57,$FE,$D7,$FF   ; F685
+        .byte   $55,$7F,$73,$F7,$55,$FF,$D5,$DF,$4F,$FF,$71,$EB,$E5,$FF,$55,$FF   ; F695
+        .byte   $75,$FF,$D7,$FF,$57,$FF,$D5,$FF,$FD,$7F,$D5,$FF,$75,$FF,$C7,$FD   ; F6A5
+        .byte   $5D,$FA,$5D,$FF,$55,$FD,$55,$DF,$7D,$F7,$FD,$FF,$78,$FB,$57,$F9   ; F6B5
+        .byte   $75,$FF,$75,$FF,$55,$F7,$77,$FF,$5D,$F7,$77,$FE,$D7,$FF,$D7,$FF   ; F6C5
+        .byte   $5D,$FF,$45,$EE,$4D,$FF,$DD,$FF,$57,$FB,$D5,$FF,$7F,$FF,$45,$FD   ; F6D5
+        .byte   $65,$FF,$C5,$FF,$57,$FF,$75,$FF,$5D,$FF,$77,$FF,$75,$FF,$C7,$FD   ; F6E5
+        .byte   $DF,$7D,$75,$FF,$75,$F4,$59,$7F,$D5,$FF,$77,$FF,$55,$BF,$5D,$FF   ; F6F5
+        .byte   $5D,$FB,$5F,$77,$F3,$FF,$55,$FF,$7D,$EF,$57,$FF,$57,$FF,$57,$F7   ; F705
+        .byte   $5F,$FF,$57,$FF,$F5,$F9,$01,$DF,$D5,$7D,$01,$FF,$5D,$FF,$77,$FF   ; F715
+        .byte   $5D,$FF,$94,$EF,$DD,$FF,$7D,$FF,$54,$FF,$57,$FF,$5F,$BE,$7D,$EF   ; F725
+        .byte   $75,$FF,$55,$FF,$FF,$FD,$55,$DF,$71,$FF,$55,$FF,$75,$FF,$67,$EF   ; F735
+        .byte   $55,$FF,$75,$FF,$5D,$FF,$51,$F7,$55,$FF,$DF,$FF,$75,$FD,$7F,$FF   ; F745
+        .byte   $7D,$FF,$D5,$FF,$55,$FF,$5F,$DF,$5D,$FD,$F5,$FF,$DD,$FF,$95,$FF   ; F755
+        .byte   $57,$FF,$7D,$DF,$D5,$DB,$5F,$FF,$5F,$FF,$7D,$FF,$5F,$FE,$55,$FF   ; F765
+        .byte   $5D,$7E,$5F,$FF,$DF,$BF,$7D,$F7,$B7,$BB,$F5,$FF,$7D,$FF,$75,$FF   ; F775
+        .byte   $CD,$FF,$75,$FF,$15,$FF,$55,$FF,$65,$EF,$C5,$EF,$57,$FF,$7E,$FF   ; F785
+        .byte   $C5,$3F,$75,$FF,$D1,$FF,$FF,$FF,$7D,$BF,$F5,$FF,$79,$FF,$5D,$FF   ; F795
+        .byte   $D5,$FE,$F5,$FF,$31,$FF,$37,$FF,$57,$FF,$75,$FF,$7D,$BF,$77,$FF   ; F7A5
+        .byte   $7D,$EF,$F5,$FB,$5D,$EF,$DD,$FF,$73,$FF,$FD,$FB,$79,$DF,$D6,$FF   ; F7B5
+        .byte   $55,$FF,$FD,$FF,$5F,$FF,$55,$FE,$59,$7F,$55,$FF,$57,$FF,$7E,$FF   ; F7C5
+        .byte   $D7,$DF,$FF,$DF,$D7,$FF,$D3,$FF,$57,$FF,$75,$FF,$5D,$FF,$D5,$FF   ; F7D5
+        .byte   $5D,$5F,$5D,$E7,$7D,$FF,$55,$FF,$F5,$FF,$5D,$FF,$55,$FF,$55,$F7   ; F7E5
+        .byte   $5F,$FF,$F5,$F7,$55,$FF,$55,$FF,$71,$FF,$F5,$00,$00,$00,$00,$00   ; F7F5
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$40,$00,$00,$00,$00,$00,$00,$00   ; F805
+        .byte   $00,$00,$01,$00,$00,$00,$00,$00,$20,$00,$00,$00,$00,$00,$00,$00   ; F815
+        .byte   $00,$00,$00,$00,$00,$00,$20,$00,$00,$00,$00,$00,$00,$00,$40,$00   ; F825
+        .byte   $00,$02,$22,$00,$00,$00,$00,$00,$00,$00,$10,$00   ; F835
+LF841:
+        .byte   $00,$00,$00,$00,$10,$00   ; F841
+LF847:
+        .byte   $00,$00,$00,$20,$40,$80,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00   ; F847
+        .byte   $00,$00,$02,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00   ; F857
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$08,$00   ; F867
+        .byte   $49,$00,$80,$00,$00,$82,$04,$10,$00   ; F877
+LF880:
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$80,$00,$00   ; F880
+LF88D:
+        .byte   $00,$80,$00,$00,$00,$00,$00,$00,$00,$00,$40,$00,$00,$00,$00,$00   ; F88D
+        .byte   $10,$00   ; F89D
+LF89F:
+        .byte   $00,$00,$00,$00,$00,$02,$10,$00   ; F89F
+LF8A7:
+        .byte   $00,$80,$00,$00,$00,$00,$00,$02,$00,$00,$00,$00,$80,$00,$00,$80   ; F8A7
+        .byte   $00,$00,$00,$00,$20,$00,$00,$00,$01,$80,$00,$00,$00,$00,$00,$00   ; F8B7
+        .byte   $04,$00,$00,$00,$80,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00   ; F8C7
+        .byte   $10,$00   ; F8D7
+LF8D9:
+        .byte   $00,$00,$00,$00,$00,$00,$00,$20,$00,$00,$00,$00,$00,$00,$00,$00   ; F8D9
+        .byte   $80,$00,$01,$00,$01,$02,$00,$02,$00,$00,$48,$00,$04,$01,$48,$08   ; F8E9
+        .byte   $00,$00,$A0,$00,$10,$00   ; F8F9
+LF8FF:
+        .byte   $44,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00   ; F8FF
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00   ; F90F
+        .byte   $00,$00,$00,$00,$01,$00,$10,$00   ; F91F
+LF927:
+        .byte   $00,$00,$0A,$00,$00,$00,$00,$00,$00,$00,$00,$02,$00,$08,$00,$00   ; F927
+        .byte   $00,$02,$00,$08,$20,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00   ; F937
+        .byte   $20,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$10,$00   ; F947
+LF955:
+        .byte   $00,$00,$40,$00,$00,$00,$80,$00,$00,$00,$00,$00,$00,$08,$40,$00   ; F955
+        .byte   $00,$08,$00,$00,$00,$00,$00,$00,$00,$00,$00,$08,$0C,$02,$00,$00   ; F965
+        .byte   $80,$80,$00,$00,$40,$00,$80,$20,$20,$00,$40,$00,$00,$00,$00,$00   ; F975
+        .byte   $00,$00,$00,$00,$01,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00   ; F985
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$02,$00   ; F995
+        .byte   $08,$20,$00,$00,$80,$00,$00,$00,$04,$00,$02,$00,$00,$00,$00,$00   ; F9A5
+        .byte   $08,$00,$00,$00,$00,$00,$00,$00,$00,$00,$10,$00   ; F9B5
+LF9C1:
+        .byte   $10,$00   ; F9C1
+LF9C3:
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$02,$81,$00   ; F9C3
+        .byte   $00,$00,$00,$00,$08,$00,$00,$08,$02,$08,$00,$00,$10,$00   ; F9D3
+LF9E1:
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$20,$00,$81,$00,$08,$00   ; F9E1
+        .byte   $00,$00,$14,$00,$10,$00   ; F9F1
+LF9F7:
+        .byte   $80,$00,$02,$00,$00,$22,$40,$00,$04,$00,$00,$00,$00,$00,$00,$00   ; F9F7
+        .byte   $00,$00,$40,$00,$00,$00,$00,$00,$40,$00,$00,$00,$00,$00,$00,$00   ; FA07
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$08   ; FA17
+        .byte   $00,$00,$00,$00,$44,$00,$80,$00,$00,$00,$00,$00,$00,$00,$00,$00   ; FA27
+        .byte   $00,$00,$00,$00,$00,$20,$80,$08,$00,$00,$00,$00,$00,$00,$00,$00   ; FA37
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$20,$00,$00,$08,$00,$00   ; FA47
+        .byte   $00,$00,$00,$00,$00,$00   ; FA57
+LFA5D:
+        .byte   $41,$00,$08,$00,$01,$08,$10,$00   ; FA5D
+LFA65:
+        .byte   $02,$00,$40,$08,$00,$00,$00,$00,$40,$00,$40,$00,$00,$00,$00,$00   ; FA65
+        .byte   $00,$00,$C1,$00,$00,$00,$00,$00,$00,$20,$10,$20,$00,$00,$00,$00   ; FA75
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$04,$00,$00,$00   ; FA85
+        .byte   $02,$20,$00,$00,$01,$00,$00,$00,$00,$00,$00,$00,$C1,$02,$20,$00   ; FA95
+        .byte   $20,$00,$10,$00   ; FAA5
+LFAA9:
+        .byte   $00,$00,$20,$00,$00,$08,$00,$00,$01,$00,$20,$00,$00,$00,$00,$00   ; FAA9
+        .byte   $02,$20,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00   ; FAB9
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$04,$00,$00,$00,$00,$00,$00,$00   ; FAC9
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$04,$02,$04,$00,$04,$00,$00,$00   ; FAD9
+        .byte   $02,$00,$68,$20,$00,$00,$10,$00   ; FAE9
+LFAF1:
+        .byte   $00,$00,$00,$00,$00,$00,$00,$80,$10,$20,$20,$00,$00,$00,$02,$00   ; FAF1
+        .byte   $00,$08,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$08,$00,$00,$00   ; FB01
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00   ; FB11
+LFB1B:
+        .byte   $00,$00,$00,$00,$00,$00,$04,$00,$00,$00,$00,$00,$00,$00,$08,$00   ; FB1B
+        .byte   $00,$00,$90,$00   ; FB2B
+LFB2F:
+        .byte   $00,$00,$00,$00,$08,$80,$00,$00,$00,$00,$00,$00,$03,$00,$40,$00   ; FB2F
+        .byte   $40,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00   ; FB3F
+        .byte   $00,$00,$02,$00,$00,$00,$10,$00   ; FB4F
+LFB57:
+        .byte   $00,$00,$00,$00   ; FB57
+LFB5B:
+        .byte   $00,$00   ; FB5B
+LFB5D:
+        .byte   $00,$08,$00,$08,$00,$00,$00,$00,$01,$00,$00,$00,$81,$00,$80,$00   ; FB5D
+        .byte   $08,$00,$20,$00,$00,$00,$00,$00,$00,$00,$58,$00,$00,$00,$20,$00   ; FB6D
+        .byte   $00,$02,$00,$00,$02,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00   ; FB7D
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$21,$00,$00,$00,$00,$00   ; FB8D
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$02,$00,$00,$00,$00,$00,$00,$00   ; FB9D
+        .byte   $00,$00,$00,$00,$04,$08,$00,$00,$40,$80,$00,$00,$00,$00,$8C,$02   ; FBAD
+        .byte   $60,$20,$00,$00,$00,$00,$00,$00,$00,$00,$20,$00,$00,$00,$00,$00   ; FBBD
+        .byte   $00,$00,$00,$00,$08,$00,$02,$00,$80,$00,$00,$00,$10,$80,$80,$A0   ; FBCD
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$80,$00,$00,$00,$00,$00,$00   ; FBDD
+        .byte   $00,$00,$00,$00,$00,$00,$00,$02,$08,$02,$00,$00,$00,$00,$00,$00   ; FBED
+LFBFD:
+        .byte   $00,$48,$D3,$00,$00,$00,$00,$00,$00,$00   ; FBFD
+LFC07:
+        .byte   $00,$00,$00,$02,$00,$00,$00,$00,$00,$40,$00,$00,$00,$00,$00,$00   ; FC07
+        .byte   $00,$00,$00,$80,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00   ; FC17
+        .byte   $00,$00,$04,$03,$00,$00,$00,$04,$00,$00,$00,$20,$04,$00,$01,$00   ; FC27
+        .byte   $00,$02,$01,$10,$00,$00,$00,$00,$01,$00,$00,$00,$00,$00,$00,$00   ; FC37
+        .byte   $00,$00,$00,$00,$00,$00,$00,$84,$00,$00,$00,$00,$00,$00,$00,$00   ; FC47
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$01,$10,$08,$00,$00,$00,$08   ; FC57
+        .byte   $00,$01,$00,$00,$44,$0E,$00,$00,$41,$00,$00,$00,$00,$00,$00,$48   ; FC67
+        .byte   $00,$C0,$40,$00,$40,$00,$00,$1A,$00,$04,$00,$00,$00,$00,$00,$00   ; FC77
+        .byte   $00,$00,$00,$00,$00,$00,$00,$10,$00   ; FC87
+LFC90:
+        .byte   $10,$00   ; FC90
+LFC92:
+        .byte   $00,$00,$00,$14,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$02,$14   ; FC92
+        .byte   $00,$00,$08,$00,$04,$00,$41,$40,$00,$00,$00,$00,$B0,$00   ; FCA2
+LFCB0:
+        .byte   $00,$00,$00,$00,$00,$04,$42,$00,$08,$00,$20,$44,$80,$00,$00,$41   ; FCB0
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$01,$00,$80,$00,$00,$00,$00,$00   ; FCC0
+        .byte   $00,$00,$00,$00,$00,$00,$00,$01,$00,$00,$00,$00,$00,$40,$00,$00   ; FCD0
+        .byte   $04,$40,$80,$00,$00,$00,$80,$10,$42,$00,$09,$04,$80,$00,$00,$00   ; FCE0
+        .byte   $20,$00,$01,$00,$40,$00,$40,$44,$00,$00,$10,$00   ; FCF0
+LFCFC:
+        .byte   $00,$00,$40,$50,$00   ; FCFC
+LFD01:
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$10,$00   ; FD01
+LFD0C:
+        .byte   $00,$00,$02,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00   ; FD0C
+        .byte   $00,$00,$00,$00,$02,$00,$00,$00,$00,$00,$80,$00,$00,$00,$00   ; FD1C
+LFD2B:
+        .byte   $00,$00,$40,$80,$00,$08,$00,$12,$00,$44,$00,$00,$40,$20,$00,$00   ; FD2B
+        .byte   $00,$40,$04,$00,$00,$00,$00,$00,$00,$00,$00,$01,$00,$00,$00,$00   ; FD3B
+        .byte   $00,$00,$00,$00,$00,$00,$01,$00,$00,$00,$00,$00,$00,$00,$00,$00   ; FD4B
+        .byte   $00,$10,$00   ; FD5B
+LFD5E:
+        .byte   $20,$00,$02,$01,$00,$04,$84,$00,$03,$00,$00,$00,$00,$00,$00,$00   ; FD5E
+        .byte   $21,$04,$00,$00,$04,$04,$00,$50,$00   ; FD6E
+LFD77:
+        .byte   $00,$00,$00,$00,$01,$00,$04,$00,$01,$00,$00,$00,$00,$00,$00,$00   ; FD77
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$04,$00,$00,$00,$00,$00,$00,$00   ; FD87
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$01,$00,$00,$00,$01,$01,$40,$00   ; FD97
+        .byte   $00,$00,$00,$01,$01,$00,$01,$08,$00,$00,$00,$80,$01,$00,$00,$20   ; FDA7
+        .byte   $00,$00,$00,$00,$00,$02,$00,$00,$00,$00,$00,$00,$00,$80,$00,$00   ; FDB7
+        .byte   $04,$00,$00,$00,$00,$00,$00,$01,$00,$00,$00,$00,$00,$14,$00,$00   ; FDC7
+        .byte   $00,$00,$00,$90,$00   ; FDD7
+LFDDC:
+        .byte   $00,$00,$00,$10,$00   ; FDDC
+LFDE1:
+        .byte   $00,$00,$00,$10,$00   ; FDE1
+LFDE6:
+        .byte   $44,$04,$C4,$00,$00,$00,$00,$00,$00,$40,$00,$00,$40,$00,$0A,$00   ; FDE6
+        .byte   $08   ; FDF6
+LFDF7:
+        .byte   $00,$2E,$00,$09,$00,$10,$00   ; FDF7
+LFDFE:
+        .byte   $00,$11   ; FDFE
 ; =============================================================================
 ; RESET — $FE00
 ; Hardware init, RAM clear, sound queue init, MMC3 setup, then spawns
