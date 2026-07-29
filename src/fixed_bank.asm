@@ -2,7 +2,6 @@
 .include "include/hardware.inc"
 .include "include/zeropage.inc"
 .include "include/constants.inc"
-.include "include/fixed_bank.inc"
 
 .segment "FIXED"
 
@@ -10,7 +9,6 @@
 ; FIXED BANK $1E/$1F ($C000-$FFFF) — NMI/IRQ/RESET, task scheduler,
 ; bank-switch API, sound queue, core engine. Raw da65 disassembly,
 ; annotation in progress.
-; SKELETON — raw ROM bytes, not yet classified as code or data.
 ; =============================================================================
 L0000           := $0000
 L0004           := $0004
@@ -51,503 +49,566 @@ L8100           := $8100
 L814D           := $814D
 L988A           := $988A
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; NMI HANDLER — $C000
+; Per-frame PPU update pipeline. Order: OAM DMA, nametable buffer
+; flushes, palette upload, CHR bank regs, scroll, PPUCTRL/PPUMASK,
+; MMC3 IRQ latch + per-mode IRQ vector, then the task step.
+; nmi_skip (rendering off) reduces it to the task step only;
+; nmi_quick skips the upload phase (scroll/control writes only).
+; =============================================================================
 nmi_handler:
-        php                                     ; C000 08                       .
-LC001:  pha                                     ; C001 48                       H
-        txa                                     ; C002 8A                       .
-        pha                                     ; C003 48                       H
-        tya                                     ; C004 98                       .
-        pha                                     ; C005 48                       H
-        lda     $F0                             ; C006 A5 F0                    ..
-        beq     LC00D                           ; C008 F0 03                    ..
-        jmp     LC107                           ; C00A 4C 07 C1                 L..
+        php
+        pha
+        txa
+        pha
+        tya
+        pha
+        lda     nmi_skip                ; rendering disabled?
+        beq     LC00D
+        jmp     nmi_tasks               ; -> frame counter + task step only
 
-; ----------------------------------------------------------------------------
-LC00D:  lda     $95                             ; C00D A5 95                    ..
-        beq     LC014                           ; C00F F0 03                    ..
-        jmp     LC0BE                           ; C011 4C BE C0                 L..
+LC00D:  lda     nmi_quick               ; quick mode: no uploads
+        beq     LC014
+        jmp     nmi_scroll
 
-; ----------------------------------------------------------------------------
-LC014:  lda     $19                             ; C014 A5 19                    ..
-        ora     $1A                             ; C016 05 1A                    ..
-        sta     $60                             ; C018 85 60                    .`
-        lda     $FA                             ; C01A A5 FA                    ..
-        sta     $A2                             ; C01C 85 A2                    ..
-        lda     $FC                             ; C01E A5 FC                    ..
-        sta     $A4                             ; C020 85 A4                    ..
-        lda     $FD                             ; C022 A5 FD                    ..
-        and     #$03                            ; C024 29 03                    ).
-        sta     $A5                             ; C026 85 A5                    ..
-        lda     $9B                             ; C028 A5 9B                    ..
-        sta     $9C                             ; C02A 85 9C                    ..
-        lda     $99                             ; C02C A5 99                    ..
-        sta     $9A                             ; C02E 85 9A                    ..
-        cmp     #$05                            ; C030 C9 05                    ..
-        bne     LC038                           ; C032 D0 04                    ..
-        lda     $78                             ; C034 A5 78                    .x
-        sta     $A4                             ; C036 85 A4                    ..
-LC038:  lda     $FF                             ; C038 A5 FF                    ..
-        and     #$78                            ; C03A 29 78                    )x
-        sta     L2000                           ; C03C 8D 00 20                 .. 
-        lda     #$00                            ; C03F A9 00                    ..
-        sta     $2001                           ; C041 8D 01 20                 .. 
-        sta     $2003                           ; C044 8D 03 20                 .. 
-        lda     #$02                            ; C047 A9 02                    ..
-        sta     $4014                           ; C049 8D 14 40                 ..@
-        lda     $1C                             ; C04C A5 1C                    ..
-        beq     LC059                           ; C04E F0 09                    ..
-        lda     #$00                            ; C050 A9 00                    ..
-        sta     $1C                             ; C052 85 1C                    ..
-        ldx     #$50                            ; C054 A2 50                    .P
-        jsr     LC29C                           ; C056 20 9C C2                  ..
-LC059:  lda     $19                             ; C059 A5 19                    ..
-        beq     LC060                           ; C05B F0 03                    ..
-        jsr     LC298                           ; C05D 20 98 C2                  ..
-LC060:  lda     $1A                             ; C060 A5 1A                    ..
-        beq     LC07B                           ; C062 F0 17                    ..
-        lda     $FF                             ; C064 A5 FF                    ..
-        and     #$7F                            ; C066 29 7F                    ).
-        ora     #$04                            ; C068 09 04                    ..
-        sta     L2000                           ; C06A 8D 00 20                 .. 
-        ldx     #$00                            ; C06D A2 00                    ..
-        stx     $1A                             ; C06F 86 1A                    ..
-        jsr     LC29C                           ; C071 20 9C C2                  ..
-        lda     $FF                             ; C074 A5 FF                    ..
-        and     #$7F                            ; C076 29 7F                    ).
-        sta     L2000                           ; C078 8D 00 20                 .. 
-LC07B:  lda     $18                             ; C07B A5 18                    ..
-        beq     LC0AC                           ; C07D F0 2D                    .-
-        lda     $60                             ; C07F A5 60                    .`
-        bne     LC0AC                           ; C081 D0 29                    .)
-        ldx     #$00                            ; C083 A2 00                    ..
-        stx     $18                             ; C085 86 18                    ..
-        lda     $2002                           ; C087 AD 02 20                 .. 
-        lda     #$3F                            ; C08A A9 3F                    .?
-        sta     $2006                           ; C08C 8D 06 20                 .. 
-        stx     $2006                           ; C08F 8E 06 20                 .. 
-        ldy     #$20                            ; C092 A0 20                    . 
-LC094:  lda     $0600,x                         ; C094 BD 00 06                 ...
-        sta     $2007                           ; C097 8D 07 20                 .. 
-        inx                                     ; C09A E8                       .
-        dey                                     ; C09B 88                       .
-        bne     LC094                           ; C09C D0 F6                    ..
-        lda     #$3F                            ; C09E A9 3F                    .?
-        sta     $2006                           ; C0A0 8D 06 20                 .. 
-        sty     $2006                           ; C0A3 8C 06 20                 .. 
-        sty     $2006                           ; C0A6 8C 06 20                 .. 
-        sty     $2006                           ; C0A9 8C 06 20                 .. 
-LC0AC:  ldx     #$05                            ; C0AC A2 05                    ..
-LC0AE:  stx     L8000                           ; C0AE 8E 00 80                 ...
-        lda     $EA,x                           ; C0B1 B5 EA                    ..
-        sta     $8001                           ; C0B3 8D 01 80                 ...
-        dex                                     ; C0B6 CA                       .
-        bpl     LC0AE                           ; C0B7 10 F5                    ..
-        lda     $F2                             ; C0B9 A5 F2                    ..
-        sta     L8000                           ; C0BB 8D 00 80                 ...
-LC0BE:  lda     $9A                             ; C0BE A5 9A                    ..
-        cmp     #$04                            ; C0C0 C9 04                    ..
-        bne     LC0D3                           ; C0C2 D0 0F                    ..
-        lda     $2002                           ; C0C4 AD 02 20                 .. 
-        lda     $78                             ; C0C7 A5 78                    .x
-        sta     $2005                           ; C0C9 8D 05 20                 .. 
-        lda     #$00                            ; C0CC A9 00                    ..
-        sta     $2005                           ; C0CE 8D 05 20                 .. 
-        beq     LC0E0                           ; C0D1 F0 0D                    ..
-LC0D3:  lda     $2002                           ; C0D3 AD 02 20                 .. 
-        lda     $A4                             ; C0D6 A5 A4                    ..
-        sta     $2005                           ; C0D8 8D 05 20                 .. 
-        lda     $A2                             ; C0DB A5 A2                    ..
-        sta     $2005                           ; C0DD 8D 05 20                 .. 
-LC0E0:  lda     $FE                             ; C0E0 A5 FE                    ..
-        sta     $2001                           ; C0E2 8D 01 20                 .. 
-        lda     $A5                             ; C0E5 A5 A5                    ..
-        ora     $FF                             ; C0E7 05 FF                    ..
-        sta     L2000                           ; C0E9 8D 00 20                 .. 
-        lda     $9C                             ; C0EC A5 9C                    ..
-        sta     nmi_handler                     ; C0EE 8D 00 C0                 ...
-        sta     LC001                           ; C0F1 8D 01 C0                 ...
-        ldx     $96                             ; C0F4 A6 96                    ..
-        sta     LE000,x                         ; C0F6 9D 00 E0                 ...
-        beq     LC107                           ; C0F9 F0 0C                    ..
-        ldx     $9A                             ; C0FB A6 9A                    ..
-        lda     irq_vec_lo,x                    ; C0FD BD 80 C2                 ...
-        sta     L0097                           ; C100 85 97                    ..
-        lda     irq_vec_hi,x                    ; C102 BD 88 C2                 ...
-        sta     $98                             ; C105 85 98                    ..
-LC107:  inc     $92                             ; C107 E6 92                    ..
-        ldx     #$FF                            ; C109 A2 FF                    ..
-        stx     $90                             ; C10B 86 90                    ..
-        inx                                     ; C10D E8                       .
-        ldy     #$04                            ; C10E A0 04                    ..
-LC110:  lda     $80,x                           ; C110 B5 80                    ..
-        cmp     #$01                            ; C112 C9 01                    ..
-        bne     LC11E                           ; C114 D0 08                    ..
-        dec     $81,x                           ; C116 D6 81                    ..
-        bne     LC11E                           ; C118 D0 04                    ..
-        lda     #$04                            ; C11A A9 04                    ..
-        sta     $80,x                           ; C11C 95 80                    ..
-LC11E:  inx                                     ; C11E E8                       .
-        inx                                     ; C11F E8                       .
-        inx                                     ; C120 E8                       .
-        inx                                     ; C121 E8                       .
-        dey                                     ; C122 88                       .
-        bne     LC110                           ; C123 D0 EB                    ..
-        lda     $9A                             ; C125 A5 9A                    ..
-        cmp     #$04                            ; C127 C9 04                    ..
-        beq     LC140                           ; C129 F0 15                    ..
-LC12B:  tsx                                     ; C12B BA                       .
-        lda     $0107,x                         ; C12C BD 07 01                 ...
-        sta     $E9                             ; C12F 85 E9                    ..
-        lda     $0106,x                         ; C131 BD 06 01                 ...
-        sta     $E8                             ; C134 85 E8                    ..
-        lda     #$C1                            ; C136 A9 C1                    ..
-        sta     $0107,x                         ; C138 9D 07 01                 ...
-        lda     #$47                            ; C13B A9 47                    .G
-        sta     $0106,x                         ; C13D 9D 06 01                 ...
-LC140:  pla                                     ; C140 68                       h
-        tay                                     ; C141 A8                       .
-        pla                                     ; C142 68                       h
-        tax                                     ; C143 AA                       .
-        pla                                     ; C144 68                       h
-        plp                                     ; C145 28                       (
-        rti                                     ; C146 40                       @
+LC014:  lda     nametable_dirty         ; latch "nametable writes pending"
+        ora     nt_column_dirty         ; (palette upload defers while set)
+        sta     nt_busy
+        lda     scroll_y                ; apply pending scroll/nametable
+        sta     scroll_y_apl
+        lda     scroll_x
+        sta     scroll_x_apl
+        lda     nt_select
+        and     #$03
+        sta     nt_sel_apl
+        lda     irq_latch_req           ; apply pending IRQ latch + game mode
+        sta     irq_latch
+        lda     game_mode_req
+        sta     game_mode
+        cmp     #$05                    ; mode 5: X scroll comes from irq_split0
+        bne     LC038
+        lda     irq_split0
+        sta     scroll_x_apl
+LC038:  lda     ppuctrl_shadow          ; blank: NMI off, keep pattern bits,
+        and     #$78                    ; nametable 0
+        sta     PPUCTRL
+        lda     #$00
+        sta     PPUMASK
+        sta     OAMADDR
+        lda     #>OAM_BUF               ; sprite DMA from $0200
+        sta     OAMDMA
+        lda     nt_row_dirty            ; flush second buffer region ($07D0+)
+        beq     LC059
+        lda     #$00
+        sta     nt_row_dirty
+        ldx     #$50
+        jsr     nametable_flush_at
+LC059:  lda     nametable_dirty         ; flush main nametable buffer
+        beq     LC060
+        jsr     nametable_flush
+LC060:  lda     nt_column_dirty         ; column writes: temporarily switch
+        beq     LC07B                   ; PPU to increment-32 mode
+        lda     ppuctrl_shadow
+        and     #$7F
+        ora     #$04
+        sta     PPUCTRL
+        ldx     #$00
+        stx     nt_column_dirty
+        jsr     nametable_flush_at
+        lda     ppuctrl_shadow          ; back to increment-1
+        and     #$7F
+        sta     PPUCTRL
+LC07B:  lda     palette_dirty           ; palette upload (skipped while
+        beq     LC0AC                   ; nametable writes were pending)
+        lda     nt_busy
+        bne     LC0AC
+        ldx     #$00
+        stx     palette_dirty
+        lda     PPUSTATUS
+        lda     #$3F                    ; PPUADDR = $3F00
+        sta     PPUADDR
+        stx     PPUADDR
+        ldy     #$20
+LC094:  lda     PAL_BUF,x               ; upload 32 bytes from $0600
+        sta     PPUDATA
+        inx
+        dey
+        bne     LC094
+        lda     #$3F                    ; park PPUADDR at $3F00 (avoid
+        sta     PPUADDR                 ; palette corruption artifacts)
+        sty     PPUADDR
+        sty     PPUADDR
+        sty     PPUADDR
+LC0AC:  ldx     #$05                    ; CHR banking: write MMC3 R5..R0
+LC0AE:  stx     MMC3_BANK_SELECT        ; from the chr_banks shadows
+        lda     chr_banks,x             ; (CHR animation = rewriting these)
+        sta     MMC3_BANK_DATA
+        dex
+        bpl     LC0AE
+        lda     mmc3_sel_shadow         ; restore bank-select for main code
+        sta     MMC3_BANK_SELECT
+nmi_scroll:
+        lda     game_mode               ; mode 4: X scroll from irq_split0,
+        cmp     #$04                    ; Y forced to 0
+        bne     LC0D3
+        lda     PPUSTATUS
+        lda     irq_split0
+        sta     PPUSCROLL
+        lda     #$00
+        sta     PPUSCROLL
+        beq     LC0E0
+LC0D3:  lda     PPUSTATUS               ; normal: applied X/Y scroll
+        lda     scroll_x_apl
+        sta     PPUSCROLL
+        lda     scroll_y_apl
+        sta     PPUSCROLL
+LC0E0:  lda     ppumask_shadow          ; re-enable rendering
+        sta     PPUMASK
+        lda     nt_sel_apl              ; PPUCTRL = base | nametable bits
+        ora     ppuctrl_shadow
+        sta     PPUCTRL
+        lda     irq_latch               ; arm MMC3 scanline IRQ
+        sta     MMC3_IRQ_LATCH
+        sta     MMC3_IRQ_RELOAD
+        ldx     irq_enable_idx          ; write $E000 (off) or $E001 (on)
+        sta     MMC3_IRQ_DISABLE,x
+        beq     nmi_tasks               ; latch 0 = no split this frame
+        ldx     game_mode               ; select per-mode IRQ handler
+        lda     irq_vec_lo,x
+        sta     irq_vector
+        lda     irq_vec_hi,x
+        sta     irq_vector+1
+nmi_tasks:
+        inc     frame_counter
+        ldx     #$FF                    ; flag "NMI happened" for scheduler
+        stx     nmi_occurred
+        inx
+        ldy     #$04                    ; step all 4 task records:
+LC110:  lda     task_state,x            ; state 1 (frame-wait): count down,
+        cmp     #$01                    ; at 0 -> state 4 (ready)
+        bne     LC11E
+        dec     task_arg,x
+        bne     LC11E
+        lda     #$04
+        sta     task_state,x
+LC11E:  inx
+        inx
+        inx
+        inx
+        dey
+        bne     LC110
+        lda     game_mode               ; mode 4 defers this to its IRQ
+        cmp     #$04
+        beq     LC140
+irq_hijack:
+        tsx                             ; swap the interrupted return
+        lda     $0107,x                 ; address with music_pump ($C147)
+        sta     saved_pc_hi             ; so the sound driver runs after
+        lda     $0106,x                 ; the handler exits
+        sta     saved_pc_lo
+        lda     #>music_pump
+        sta     $0107,x
+        lda     #<music_pump
+        sta     $0106,x
+LC140:  pla
+        tay
+        pla
+        tax
+        pla
+        plp
+        rti
 
-; ----------------------------------------------------------------------------
-        php                                     ; C147 08                       .
-        php                                     ; C148 08                       .
-        php                                     ; C149 08                       .
-        pha                                     ; C14A 48                       H
-        txa                                     ; C14B 8A                       .
-        pha                                     ; C14C 48                       H
-        tya                                     ; C14D 98                       .
-        pha                                     ; C14E 48                       H
-        tsx                                     ; C14F BA                       .
-        sec                                     ; C150 38                       8
-        lda     $E8                             ; C151 A5 E8                    ..
-        sbc     #$01                            ; C153 E9 01                    ..
-        sta     $0105,x                         ; C155 9D 05 01                 ...
-        lda     $E9                             ; C158 A5 E9                    ..
-        sbc     #$00                            ; C15A E9 00                    ..
-        sta     $0106,x                         ; C15C 9D 06 01                 ...
-        jsr     sound_queue_pump                ; C15F 20 68 FF                  h.
-        pla                                     ; C162 68                       h
-        tay                                     ; C163 A8                       .
-        pla                                     ; C164 68                       h
-        tax                                     ; C165 AA                       .
-        pla                                     ; C166 68                       h
-        plp                                     ; C167 28                       (
-        rts                                     ; C168 60                       `
+; -----------------------------------------------------------------------------
+; MUSIC PUMP TRAMPOLINE — $C147
+; Entered via the hijacked NMI/IRQ return. Rebuilds a return frame with
+; the original PC-1, runs the sound queue + driver, then RTS resumes
+; the interrupted code exactly where it left off.
+; -----------------------------------------------------------------------------
+music_pump:
+        php                             ; reserve 3 stack bytes (P + RTS
+        php                             ; target patched in below)
+        php
+        pha
+        txa
+        pha
+        tya
+        pha
+        tsx
+        sec                             ; write saved PC - 1 into the
+        lda     saved_pc_lo             ; reserved slot (RTS adds 1 back)
+        sbc     #$01
+        sta     $0105,x
+        lda     saved_pc_hi
+        sbc     #$00
+        sta     $0106,x
+        jsr     sound_queue_pump
+        pla
+        tay
+        pla
+        tax
+        pla
+        plp
+        rts                             ; -> interrupted code
 
-; ----------------------------------------------------------------------------
+; =============================================================================
+; IRQ HANDLER — $C169
+; MMC3 scanline IRQ. Acknowledges, applies an optional per-mode delay
+; (aligning the split with hblank), then dispatches through irq_vector
+; (set from irq_vec_lo/hi by NMI, or chained by a first-split handler).
+; =============================================================================
 irq_handler:
-        php                                     ; C169 08                       .
-        pha                                     ; C16A 48                       H
-        txa                                     ; C16B 8A                       .
-        pha                                     ; C16C 48                       H
-        tya                                     ; C16D 98                       .
-        pha                                     ; C16E 48                       H
-        sta     LE000                           ; C16F 8D 00 E0                 ...
-        sta     LE001                           ; C172 8D 01 E0                 ...
-        ldx     $9A                             ; C175 A6 9A                    ..
-        lda     LC290,x                         ; C177 BD 90 C2                 ...
-        bne     LC182                           ; C17A D0 06                    ..
-        ldx     #$07                            ; C17C A2 07                    ..
-LC17E:  nop                                     ; C17E EA                       .
-        dex                                     ; C17F CA                       .
-        bne     LC17E                           ; C180 D0 FC                    ..
-LC182:  jmp     (L0097)                         ; C182 6C 97 00                 l..
+        php
+        pha
+        txa
+        pha
+        tya
+        pha
+        sta     MMC3_IRQ_DISABLE        ; acknowledge
+        sta     MMC3_IRQ_ENABLE         ; re-arm
+        ldx     game_mode
+        lda     irq_dly_flags,x         ; some modes need extra delay
+        bne     LC182
+        ldx     #$07
+LC17E:  nop
+        dex
+        bne     LC17E
+LC182:  jmp     (irq_vector)
 
-; ----------------------------------------------------------------------------
-        lda     $2002                           ; C185 AD 02 20                 .. 
-        lda     $A4                             ; C188 A5 A4                    ..
-        lsr     a                               ; C18A 4A                       J
-        lsr     a                               ; C18B 4A                       J
-        lsr     a                               ; C18C 4A                       J
-        ora     $78                             ; C18D 05 78                    .x
-        ldy     $79                             ; C18F A4 79                    .y
-        sty     $2006                           ; C191 8C 06 20                 .. 
-        sta     $2006                           ; C194 8D 06 20                 .. 
-        lda     $FF                             ; C197 A5 FF                    ..
-        sta     L2000                           ; C199 8D 00 20                 .. 
-        lda     $A4                             ; C19C A5 A4                    ..
-        sta     $2005                           ; C19E 8D 05 20                 .. 
-        lda     #$00                            ; C1A1 A9 00                    ..
-        sta     $2005                           ; C1A3 8D 05 20                 .. 
-        jmp     LC276                           ; C1A6 4C 76 C2                 Lv.
+; --- mode 1: mid-frame seam via PPUADDR ($79 = addr hi), X-only scroll -------
+irq_m1_split:
+        lda     PPUSTATUS
+        lda     scroll_x_apl
+        lsr     a
+        lsr     a
+        lsr     a
+        ora     irq_split0
+        ldy     irq_split1
+        sty     PPUADDR
+        sta     PPUADDR
+        lda     ppuctrl_shadow
+        sta     PPUCTRL
+        lda     scroll_x_apl
+        sta     PPUSCROLL
+        lda     #$00
+        sta     PPUSCROLL
+        jmp     irq_ack_off
 
-; ----------------------------------------------------------------------------
-        lda     $2002                           ; C1A9 AD 02 20                 .. 
-        lda     #$23                            ; C1AC A9 23                    .#
-        sta     $2006                           ; C1AE 8D 06 20                 .. 
-        lda     #$00                            ; C1B1 A9 00                    ..
-        sta     $2006                           ; C1B3 8D 06 20                 .. 
-        lda     #$00                            ; C1B6 A9 00                    ..
-        sta     $2005                           ; C1B8 8D 05 20                 .. 
-        sta     $2005                           ; C1BB 8D 05 20                 .. 
-        lda     $A5                             ; C1BE A5 A5                    ..
-        eor     #$01                            ; C1C0 49 01                    I.
-        ora     $FF                             ; C1C2 05 FF                    ..
-        sta     L2000                           ; C1C4 8D 00 20                 .. 
-        jmp     LC276                           ; C1C7 4C 76 C2                 Lv.
+; --- mode 2: reset seam to $2300 row, flip nametable ------------------------
+irq_m2_split:
+        lda     PPUSTATUS
+        lda     #$23
+        sta     PPUADDR
+        lda     #$00
+        sta     PPUADDR
+        lda     #$00
+        sta     PPUSCROLL
+        sta     PPUSCROLL
+        lda     nt_sel_apl
+        eor     #$01
+        ora     ppuctrl_shadow
+        sta     PPUCTRL
+        jmp     irq_ack_off
 
-; ----------------------------------------------------------------------------
-        lda     $2002                           ; C1CA AD 02 20                 .. 
-        lda     $78                             ; C1CD A5 78                    .x
-        sta     $2005                           ; C1CF 8D 05 20                 .. 
-        lda     #$00                            ; C1D2 A9 00                    ..
-        sta     $2005                           ; C1D4 8D 05 20                 .. 
-        lda     #$2E                            ; C1D7 A9 2E                    ..
-        sta     nmi_handler                     ; C1D9 8D 00 C0                 ...
-        lda     #$04                            ; C1DC A9 04                    ..
-        sta     L0097                           ; C1DE 85 97                    ..
-        lda     #$C2                            ; C1E0 A9 C2                    ..
-        sta     $98                             ; C1E2 85 98                    ..
-        jmp     LC279                           ; C1E4 4C 79 C2                 Ly.
+; --- mode 3: X-scroll split, chain second split at line $2E -----------------
+irq_m3_split:
+        lda     PPUSTATUS
+        lda     irq_split0
+        sta     PPUSCROLL
+        lda     #$00
+        sta     PPUSCROLL
+        lda     #$2E                    ; next split scanline
+        sta     MMC3_IRQ_LATCH
+        lda     #<irq_second_split
+        sta     irq_vector
+        lda     #>irq_second_split
+        sta     irq_vector+1
+        jmp     irq_exit
 
-; ----------------------------------------------------------------------------
-        lda     $2002                           ; C1E7 AD 02 20                 .. 
-        lda     $79                             ; C1EA A5 79                    .y
-        sta     $2005                           ; C1EC 8D 05 20                 .. 
-        lda     $A2                             ; C1EF A5 A2                    ..
-        sta     $2005                           ; C1F1 8D 05 20                 .. 
-        lda     $7A                             ; C1F4 A5 7A                    .z
-        sta     nmi_handler                     ; C1F6 8D 00 C0                 ...
-        lda     #$04                            ; C1F9 A9 04                    ..
-        sta     L0097                           ; C1FB 85 97                    ..
-        lda     #$C2                            ; C1FD A9 C2                    ..
-        sta     $98                             ; C1FF 85 98                    ..
-        jmp     LC12B                           ; C201 4C 2B C1                 L+.
+; --- mode 4: X/Y scroll split, chain at line $7A; runs the task step --------
+irq_m4_split:
+        lda     PPUSTATUS
+        lda     irq_split1
+        sta     PPUSCROLL
+        lda     scroll_y_apl
+        sta     PPUSCROLL
+        lda     irq_split2              ; next split scanline
+        sta     MMC3_IRQ_LATCH
+        lda     #$04
+        sta     irq_vector
+        lda     #$C2
+        sta     irq_vector+1
+        jmp     irq_hijack              ; task step deferred from NMI
 
-; ----------------------------------------------------------------------------
-        lda     $2002                           ; C204 AD 02 20                 .. 
-        lda     $A4                             ; C207 A5 A4                    ..
-        sta     $2005                           ; C209 8D 05 20                 .. 
-        lda     $A2                             ; C20C A5 A2                    ..
-        sta     $2005                           ; C20E 8D 05 20                 .. 
-        beq     LC276                           ; C211 F0 63                    .c
-        lda     $2002                           ; C213 AD 02 20                 .. 
-        lda     $7A                             ; C216 A5 7A                    .z
-        sta     $2006                           ; C218 8D 06 20                 .. 
-        lda     $7B                             ; C21B A5 7B                    .{
-        sta     $2006                           ; C21D 8D 06 20                 .. 
-        lda     #$00                            ; C220 A9 00                    ..
-        sta     $2005                           ; C222 8D 05 20                 .. 
-        sta     $2005                           ; C225 8D 05 20                 .. 
-        lda     $FF                             ; C228 A5 FF                    ..
-        sta     L2000                           ; C22A 8D 00 20                 .. 
-        bne     LC276                           ; C22D D0 47                    .G
-        lda     $2002                           ; C22F AD 02 20                 .. 
-        lda     #$29                            ; C232 A9 29                    .)
-        sta     $2006                           ; C234 8D 06 20                 .. 
-        lda     #$C0                            ; C237 A9 C0                    ..
-        sta     $2006                           ; C239 8D 06 20                 .. 
-        lda     #$00                            ; C23C A9 00                    ..
-        sta     $2005                           ; C23E 8D 05 20                 .. 
-        sta     $2005                           ; C241 8D 05 20                 .. 
-        lda     $FF                             ; C244 A5 FF                    ..
-        ora     #$02                            ; C246 09 02                    ..
-        sta     L2000                           ; C248 8D 00 20                 .. 
-        bne     LC276                           ; C24B D0 29                    .)
-        lda     $2002                           ; C24D AD 02 20                 .. 
-        lda     $78                             ; C250 A5 78                    .x
-        sta     $2005                           ; C252 8D 05 20                 .. 
-        lda     #$00                            ; C255 A9 00                    ..
-        sta     $2005                           ; C257 8D 05 20                 .. 
-        lda     #$1F                            ; C25A A9 1F                    ..
-        sta     nmi_handler                     ; C25C 8D 00 C0                 ...
-        lda     #$69                            ; C25F A9 69                    .i
-        sta     L0097                           ; C261 85 97                    ..
-        lda     #$C2                            ; C263 A9 C2                    ..
-        sta     $98                             ; C265 85 98                    ..
-        bne     LC279                           ; C267 D0 10                    ..
-        lda     $2002                           ; C269 AD 02 20                 .. 
-        lda     $79                             ; C26C A5 79                    .y
-        sta     $2005                           ; C26E 8D 05 20                 .. 
-        lda     #$00                            ; C271 A9 00                    ..
-        sta     $2005                           ; C273 8D 05 20                 .. 
-LC276:  sta     LE000                           ; C276 8D 00 E0                 ...
-LC279:  pla                                     ; C279 68                       h
-        tay                                     ; C27A A8                       .
-        pla                                     ; C27B 68                       h
-        tax                                     ; C27C AA                       .
-        pla                                     ; C27D 68                       h
-        plp                                     ; C27E 28                       (
-        rti                                     ; C27F 40                       @
+; --- second split ($C204): restore main scroll (chained by modes 3/4) -------
+irq_second_split:
+        lda     PPUSTATUS
+        lda     scroll_x_apl
+        sta     PPUSCROLL
+        lda     scroll_y_apl
+        sta     PPUSCROLL
+        beq     irq_ack_off             ; Y = 0: done
+; --- mode 5 entry: seam via PPUADDR $7A/$7B ----------------------------------
+irq_m5_split:
+        lda     PPUSTATUS
+        lda     irq_split2
+        sta     PPUADDR
+        lda     irq_split3
+        sta     PPUADDR
+        lda     #$00
+        sta     PPUSCROLL
+        sta     PPUSCROLL
+        lda     ppuctrl_shadow
+        sta     PPUCTRL
+        bne     irq_ack_off             ; (always)
 
-; ----------------------------------------------------------------------------
+; --- mode 6: seam to $29C0, nametable bit 1 ----------------------------------
+irq_m6_split:
+        lda     PPUSTATUS
+        lda     #$29
+        sta     PPUADDR
+        lda     #$C0
+        sta     PPUADDR
+        lda     #$00
+        sta     PPUSCROLL
+        sta     PPUSCROLL
+        lda     ppuctrl_shadow
+        ora     #$02
+        sta     PPUCTRL
+        bne     irq_ack_off             ; (always)
+
+; --- mode 7: X-scroll split, chain X-only second split at line $1F ----------
+irq_m7_split:
+        lda     PPUSTATUS
+        lda     irq_split0
+        sta     PPUSCROLL
+        lda     #$00
+        sta     PPUSCROLL
+        lda     #$1F                    ; next split scanline
+        sta     MMC3_IRQ_LATCH
+        lda     #<irq_m7_second
+        sta     irq_vector
+        lda     #>irq_m7_second
+        sta     irq_vector+1
+        bne     irq_exit                ; (always)
+
+irq_m7_second:
+        lda     PPUSTATUS
+        lda     irq_split1
+        sta     PPUSCROLL
+        lda     #$00
+        sta     PPUSCROLL
+irq_ack_off:
+        sta     MMC3_IRQ_DISABLE        ; no more splits this frame
+irq_exit:
+        pla
+        tay
+        pla
+        tax
+        pla
+        plp
+        rti
+
+; --- per-game-mode IRQ handler vectors (indexed by game_mode) ---------------
 irq_vec_lo:
-        .byte   $76,$85,$A9,$CA,$E7,$13,$2F,$4D ; C280 76 85 A9 CA E7 13 2F 4D  v...../M
+        .byte   $76,$85,$A9,$CA,$E7,$13,$2F,$4D ; C280
 irq_vec_hi:
-        .byte   $C2,$C1,$C1,$C1,$C1,$C2,$C2,$C2 ; C288 C2 C1 C1 C1 C1 C2 C2 C2  ........
-; ----------------------------------------------------------------------------
-LC290:  brk                                     ; C290 00                       .
-        brk                                     ; C291 00                       .
-        brk                                     ; C292 00                       .
-        ora     ($01,x)                         ; C293 01 01                    ..
-        brk                                     ; C295 00                       .
-        brk                                     ; C296 00                       .
-        .byte   $01                             ; C297 01                       .
-LC298:  ldx     #$00                            ; C298 A2 00                    ..
-        stx     $19                             ; C29A 86 19                    ..
-LC29C:  lda     $0780,x                         ; C29C BD 80 07                 ...
-        bmi     LC2BC                           ; C29F 30 1B                    0.
-        sta     $2006                           ; C2A1 8D 06 20                 .. 
-        lda     $0781,x                         ; C2A4 BD 81 07                 ...
-        sta     $2006                           ; C2A7 8D 06 20                 .. 
-        ldy     $0782,x                         ; C2AA BC 82 07                 ...
-LC2AD:  lda     $0783,x                         ; C2AD BD 83 07                 ...
-        sta     $2007                           ; C2B0 8D 07 20                 .. 
-        inx                                     ; C2B3 E8                       .
-        dey                                     ; C2B4 88                       .
-        bpl     LC2AD                           ; C2B5 10 F6                    ..
-        inx                                     ; C2B7 E8                       .
-        inx                                     ; C2B8 E8                       .
-        inx                                     ; C2B9 E8                       .
-        bne     LC29C                           ; C2BA D0 E0                    ..
-LC2BC:  rts                                     ; C2BC 60                       `
+        .byte   $C2,$C1,$C1,$C1,$C1,$C2,$C2,$C2 ; C288
+; mode 0 -> irq_ack_off (no split), 1-7 -> irq_mN_split above
 
-; ----------------------------------------------------------------------------
-        lda     $FF                             ; C2BD A5 FF                    ..
-        and     #$11                            ; C2BF 29 11                    ).
-        sta     $FF                             ; C2C1 85 FF                    ..
-        sta     L2000                           ; C2C3 8D 00 20                 .. 
-        rts                                     ; C2C6 60                       `
+; --- per-mode IRQ delay flags (1 = skip the hblank-align delay loop) ---------
+irq_dly_flags:
+        .byte   $00,$00,$00,$01,$01,$00,$00,$01 ; C290
 
-; ----------------------------------------------------------------------------
-        lda     $FF                             ; C2C7 A5 FF                    ..
-        ora     #$80                            ; C2C9 09 80                    ..
-        sta     $FF                             ; C2CB 85 FF                    ..
-        sta     L2000                           ; C2CD 8D 00 20                 .. 
-        rts                                     ; C2D0 60                       `
+; =============================================================================
+; NAMETABLE WRITE BUFFER FLUSH — $C298 / $C29C
+; NT_BUF ($0780) records: [PPU addr hi (bit 7 set = end of buffer),
+; addr lo, length-1, data bytes...]. X = starting offset.
+; =============================================================================
+nametable_flush:
+        ldx     #$00
+        stx     nametable_dirty
+nametable_flush_at:
+        lda     NT_BUF,x                ; bit 7 set = end marker
+        bmi     LC2BC
+        sta     PPUADDR
+        lda     NT_BUF+1,x
+        sta     PPUADDR
+        ldy     NT_BUF+2,x              ; length - 1
+LC2AD:  lda     NT_BUF+3,x
+        sta     PPUDATA
+        inx
+        dey
+        bpl     LC2AD
+        inx                             ; skip the 3 header bytes
+        inx
+        inx
+        bne     nametable_flush_at
+LC2BC:  rts
 
-; ----------------------------------------------------------------------------
-LC2D1:  inc     $F0                             ; C2D1 E6 F0                    ..
-        lda     #$00                            ; C2D3 A9 00                    ..
-        sta     $FE                             ; C2D5 85 FE                    ..
-        sta     $2001                           ; C2D7 8D 01 20                 .. 
-        rts                                     ; C2DA 60                       `
+; --- $C2BD: PPUCTRL &= $11 — NMI off (keeps sprite pattern bit) --------------
+render_ctrl_off:
+        lda     ppuctrl_shadow
+        and     #$11
+        sta     ppuctrl_shadow
+        sta     PPUCTRL
+        rts
 
-; ----------------------------------------------------------------------------
-LC2DB:  dec     $F0                             ; C2DB C6 F0                    ..
-        lda     #$18                            ; C2DD A9 18                    ..
-        sta     $FE                             ; C2DF 85 FE                    ..
-        sta     $2001                           ; C2E1 8D 01 20                 .. 
-        rts                                     ; C2E4 60                       `
+; --- $C2C7: PPUCTRL |= $80 — NMI on ------------------------------------------
+nmi_ctrl_on:
+        lda     ppuctrl_shadow
+        ora     #$80
+        sta     ppuctrl_shadow
+        sta     PPUCTRL
+        rts
 
-; ----------------------------------------------------------------------------
-LC2E5:  ldx     #$01                            ; C2E5 A2 01                    ..
-        stx     $4016                           ; C2E7 8E 16 40                 ..@
-        dex                                     ; C2EA CA                       .
-        stx     $4016                           ; C2EB 8E 16 40                 ..@
-        ldx     #$08                            ; C2EE A2 08                    ..
-LC2F0:  lda     $4016                           ; C2F0 AD 16 40                 ..@
-        lsr     a                               ; C2F3 4A                       J
-        rol     $14                             ; C2F4 26 14                    &.
-        lsr     a                               ; C2F6 4A                       J
-        rol     L0000                           ; C2F7 26 00                    &.
-        lda     $4017                           ; C2F9 AD 17 40                 ..@
-        lsr     a                               ; C2FC 4A                       J
-        rol     $15                             ; C2FD 26 15                    &.
-        lsr     a                               ; C2FF 4A                       J
-        rol     $01                             ; C300 26 01                    &.
-        dex                                     ; C302 CA                       .
-        bne     LC2F0                           ; C303 D0 EB                    ..
-        lda     L0000                           ; C305 A5 00                    ..
-        ora     $14                             ; C307 05 14                    ..
-        sta     $14                             ; C309 85 14                    ..
-        lda     $01                             ; C30B A5 01                    ..
-        ora     $15                             ; C30D 05 15                    ..
-        sta     $15                             ; C30F 85 15                    ..
-        ldx     #$01                            ; C311 A2 01                    ..
-LC313:  lda     $14,x                           ; C313 B5 14                    ..
-        tay                                     ; C315 A8                       .
-        eor     $16,x                           ; C316 55 16                    U.
-        and     $14,x                           ; C318 35 14                    5.
-        sta     $14,x                           ; C31A 95 14                    ..
-        sty     $16,x                           ; C31C 94 16                    ..
-        dex                                     ; C31E CA                       .
-        bpl     LC313                           ; C31F 10 F2                    ..
-        ldx     #$03                            ; C321 A2 03                    ..
-LC323:  lda     $14,x                           ; C323 B5 14                    ..
-        and     #$0C                            ; C325 29 0C                    ).
-        cmp     #$0C                            ; C327 C9 0C                    ..
-        beq     LC333                           ; C329 F0 08                    ..
-        lda     $14,x                           ; C32B B5 14                    ..
-        and     #$03                            ; C32D 29 03                    ).
-        cmp     #$03                            ; C32F C9 03                    ..
-        bne     LC339                           ; C331 D0 06                    ..
-LC333:  lda     $14,x                           ; C333 B5 14                    ..
-        and     #$F0                            ; C335 29 F0                    ).
-        sta     $14,x                           ; C337 95 14                    ..
-LC339:  dex                                     ; C339 CA                       .
-        bpl     LC323                           ; C33A 10 E7                    ..
-        lda     #$00                            ; C33C A9 00                    ..
-        sta     $15                             ; C33E 85 15                    ..
-        sta     $17                             ; C340 85 17                    ..
-        rts                                     ; C342 60                       `
+; --- $C2D1: rendering off (nested; NMI reduces to task step) -----------------
+disable_rendering:
+        inc     nmi_skip
+        lda     #$00
+        sta     ppumask_shadow
+        sta     PPUMASK
+        rts
 
-; ----------------------------------------------------------------------------
-LC343:  sta     L0000                           ; C343 85 00                    ..
-        stx     $01                             ; C345 86 01                    ..
-        sty     $02                             ; C347 84 02                    ..
-        lda     $2002                           ; C349 AD 02 20                 .. 
-        lda     $FF                             ; C34C A5 FF                    ..
-        and     #$FE                            ; C34E 29 FE                    ).
-        sta     L2000                           ; C350 8D 00 20                 .. 
-        lda     L0000                           ; C353 A5 00                    ..
-        sta     $2006                           ; C355 8D 06 20                 .. 
-        ldy     #$00                            ; C358 A0 00                    ..
-        sty     $2006                           ; C35A 8C 06 20                 .. 
-        ldx     #$04                            ; C35D A2 04                    ..
-        cmp     #$20                            ; C35F C9 20                    . 
-        bcs     LC365                           ; C361 B0 02                    ..
-        ldx     $02                             ; C363 A6 02                    ..
-LC365:  ldy     #$00                            ; C365 A0 00                    ..
-        lda     $01                             ; C367 A5 01                    ..
-LC369:  sta     $2007                           ; C369 8D 07 20                 .. 
-        dey                                     ; C36C 88                       .
-        bne     LC369                           ; C36D D0 FA                    ..
-        dex                                     ; C36F CA                       .
-        bne     LC369                           ; C370 D0 F7                    ..
-        ldy     $02                             ; C372 A4 02                    ..
-        lda     L0000                           ; C374 A5 00                    ..
-        cmp     #$20                            ; C376 C9 20                    . 
-        bcc     LC38C                           ; C378 90 12                    ..
-        adc     #$02                            ; C37A 69 02                    i.
-        sta     $2006                           ; C37C 8D 06 20                 .. 
-        lda     #$C0                            ; C37F A9 C0                    ..
-        sta     $2006                           ; C381 8D 06 20                 .. 
-        ldx     #$40                            ; C384 A2 40                    .@
-LC386:  sty     $2007                           ; C386 8C 07 20                 .. 
-        dex                                     ; C389 CA                       .
-        bne     LC386                           ; C38A D0 FA                    ..
-LC38C:  ldx     $01                             ; C38C A6 01                    ..
-        rts                                     ; C38E 60                       `
+; --- $C2DB: rendering on ------------------------------------------------------
+enable_rendering:
+        dec     nmi_skip
+        lda     #$18
+        sta     ppumask_shadow
+        sta     PPUMASK
+        rts
 
-; ----------------------------------------------------------------------------
-LC38F:  ldx     #$00                            ; C38F A2 00                    ..
-LC391:  lda     #$F8                            ; C391 A9 F8                    ..
-LC393:  sta     L0200,x                         ; C393 9D 00 02                 ...
-        inx                                     ; C396 E8                       .
-        inx                                     ; C397 E8                       .
-        inx                                     ; C398 E8                       .
-        inx                                     ; C399 E8                       .
-        bne     LC393                           ; C39A D0 F7                    ..
-        rts                                     ; C39C 60                       `
+; =============================================================================
+; READ CONTROLLERS — $C2E5
+; Reads both pads (merged with expansion port), computes new-press
+; (joyN_press) and held (joyN_held), applies U+D/L+R lockout, then
+; discards controller 2 entirely.
+; =============================================================================
+read_controllers:
+        ldx     #$01                    ; strobe
+        stx     JOY1
+        dex
+        stx     JOY1
+        ldx     #$08
+LC2F0:  lda     JOY1                    ; 8 bits: pad 1 + expansion
+        lsr     a
+        rol     joy1_press
+        lsr     a
+        rol     temp_00
+        lda     JOY2                    ; pad 2 + expansion
+        lsr     a
+        rol     joy2_press
+        lsr     a
+        rol     temp_01
+        dex
+        bne     LC2F0
+        lda     temp_00                 ; merge expansion-port bits
+        ora     joy1_press
+        sta     joy1_press
+        lda     temp_01
+        ora     joy2_press
+        sta     joy2_press
+        ldx     #$01
+LC313:  lda     joy1_press,x            ; press = (new ^ old) & new
+        tay
+        eor     joy1_held,x
+        and     joy1_press,x
+        sta     joy1_press,x
+        sty     joy1_held,x
+        dex
+        bpl     LC313
+        ldx     #$03
+LC323:  lda     joy1_press,x            ; opposite-direction lockout:
+        and     #$0C                    ; U+D or L+R -> drop the D-pad
+        cmp     #$0C
+        beq     LC333
+        lda     joy1_press,x
+        and     #$03
+        cmp     #$03
+        bne     LC339
+LC333:  lda     joy1_press,x
+        and     #$F0
+        sta     joy1_press,x
+LC339:  dex
+        bpl     LC323
+        lda     #$00                    ; controller 2 is discarded
+        sta     joy2_press
+        sta     joy2_held
+        rts
 
-; ----------------------------------------------------------------------------
-LC39D:  ldx     #$17                            ; C39D A2 17                    ..
-LC39F:  lda     #$00                            ; C39F A9 00                    ..
-        sta     $0300,x                         ; C3A1 9D 00 03                 ...
-        sta     $05A0,x                         ; C3A4 9D A0 05                 ...
-        sta     $05B8,x                         ; C3A7 9D B8 05                 ...
-        sta     $0450,x                         ; C3AA 9D 50 04                 .P.
-        lda     #$FF                            ; C3AD A9 FF                    ..
-        sta     $0438,x                         ; C3AF 9D 38 04                 .8.
-        dex                                     ; C3B2 CA                       .
-        bne     LC39F                           ; C3B3 D0 EA                    ..
-        stx     $74                             ; C3B5 86 74                    .t
-        rts                                     ; C3B7 60                       `
+; =============================================================================
+; PPU FILL NAMETABLE — $C343
+; A = PPU address hi ($20/$24/$28/$2C: full nametable incl. attributes),
+; X = fill byte, Y = attribute fill byte. A < $20 fills Y*256 bytes.
+; =============================================================================
+ppu_fill_nametable:
+        sta     temp_00
+        stx     temp_01
+        sty     temp_02
+        lda     PPUSTATUS
+        lda     ppuctrl_shadow
+        and     #$FE
+        sta     PPUCTRL
+        lda     temp_00
+        sta     PPUADDR
+        ldy     #$00
+        sty     PPUADDR
+        ldx     #$04                    ; nametable: 4 pages
+        cmp     #$20
+        bcs     LC365
+        ldx     temp_02                 ; below $2000: Y pages
+LC365:  ldy     #$00
+        lda     temp_01
+LC369:  sta     PPUDATA
+        dey
+        bne     LC369
+        dex
+        bne     LC369
+        ldy     temp_02
+        lda     temp_00
+        cmp     #$20
+        bcc     LC38C
+        adc     #$02                    ; attribute table at $x3C0
+        sta     PPUADDR                 ; (carry set: +$300 total)
+        lda     #$C0
+        sta     PPUADDR
+        ldx     #$40
+LC386:  sty     PPUDATA                 ; 64 attribute bytes = Y
+        dex
+        bne     LC386
+LC38C:  ldx     temp_01
+        rts
+
+; --- $C38F: clear OAM buffer (all sprites offscreen at Y=$F8) ----------------
+oam_clear:
+        ldx     #$00
+LC391:  lda     #$F8
+LC393:  sta     OAM_BUF,x
+        inx
+        inx
+        inx
+        inx
+        bne     LC393
+        rts
+
+; =============================================================================
+; ENTITY CLEAR ALL — $C39D
+; Deactivates entity slots $01-$17 (player slot 0 untouched): clears
+; type, behavior PC hi, stun, enemy HP; spawn index reset to $FF.
+; =============================================================================
+entity_clear_all:
+        ldx     #ENT_SLOT_MAX
+LC39F:  lda     #$00
+        sta     ent_type,x
+        sta     ent_bhv_pc_hi,x
+        sta     ent_stun,x
+        sta     ent_enemy_hp,x
+        lda     #$FF
+        sta     ent_spawn_idx,x
+        dex
+        bne     LC39F
+        stx     $74
+        rts
 
 ; ----------------------------------------------------------------------------
 LC3B8:  lda     #$00                            ; C3B8 A9 00                    ..
@@ -1730,7 +1791,7 @@ LCB5F:  lda     $55                             ; CB5F A5 55                    
         bpl     LCB96                           ; CB91 10 03                    ..
         jsr     LD0FC                           ; CB93 20 FC D0                  ..
 LCB96:  jsr     LC3B8                           ; CB96 20 B8 C3                  ..
-        jsr     LC39D                           ; CB99 20 9D C3                  ..
+        jsr     entity_clear_all                           ; CB99 20 9D C3                  ..
         jsr     LF32D                           ; CB9C 20 2D F3                  -.
         jsr     LD07F                           ; CB9F 20 7F D0                  ..
         lda     $28                             ; CBA2 A5 28                    .(
@@ -1784,7 +1845,7 @@ LCBFE:  lda     $FC                             ; CBFE A5 FC                    
         sta     $44                             ; CC00 85 44                    .D
         lda     #$04                            ; CC02 A9 04                    ..
         sta     $9F                             ; CC04 85 9F                    ..
-        jsr     LC38F                           ; CC06 20 8F C3                  ..
+        jsr     oam_clear                           ; CC06 20 8F C3                  ..
         lda     $F6                             ; CC09 A5 F6                    ..
         pha                                     ; CC0B 48                       H
         lda     #$12                            ; CC0C A9 12                    ..
@@ -1841,7 +1902,7 @@ LCC49:  lda     $29                             ; CC49 A5 29                    
         sta     $2A                             ; CC6F 85 2A                    .*
         sta     $2B                             ; CC71 85 2B                    .+
         jsr     LC3B8                           ; CC73 20 B8 C3                  ..
-        jsr     LC39D                           ; CC76 20 9D C3                  ..
+        jsr     entity_clear_all                           ; CC76 20 9D C3                  ..
         jsr     LF32D                           ; CC79 20 2D F3                  -.
         lda     $28                             ; CC7C A5 28                    .(
         pha                                     ; CC7E 48                       H
@@ -1898,7 +1959,7 @@ LCCDF:  lda     $FC                             ; CCDF A5 FC                    
         sta     $44                             ; CCE1 85 44                    .D
         lda     #$04                            ; CCE3 A9 04                    ..
         sta     $9F                             ; CCE5 85 9F                    ..
-        jsr     LC38F                           ; CCE7 20 8F C3                  ..
+        jsr     oam_clear                           ; CCE7 20 8F C3                  ..
         lda     $F6                             ; CCEA A5 F6                    ..
         pha                                     ; CCEC 48                       H
         lda     #$12                            ; CCED A9 12                    ..
@@ -2128,7 +2189,7 @@ LCE7C:  lda     $01                             ; CE7C A5 01                    
         lda     $28                             ; CE9A A5 28                    .(
         and     #$04                            ; CE9C 29 04                    ).
         beq     LCEA3                           ; CE9E F0 03                    ..
-LCEA0:  jsr     LC39D                           ; CEA0 20 9D C3                  ..
+LCEA0:  jsr     entity_clear_all                           ; CEA0 20 9D C3                  ..
 LCEA3:  lda     $28                             ; CEA3 A5 28                    .(
         and     #$04                            ; CEA5 29 04                    ).
         beq     LCED3                           ; CEA7 F0 2A                    .*
@@ -2179,7 +2240,7 @@ LCF01:  jsr     LCF94                           ; CF01 20 94 CF                 
         pha                                     ; CF06 48                       H
         lda     #$04                            ; CF07 A9 04                    ..
         sta     $9F                             ; CF09 85 9F                    ..
-        jsr     LC38F                           ; CF0B 20 8F C3                  ..
+        jsr     oam_clear                           ; CF0B 20 8F C3                  ..
         lda     $F6                             ; CF0E A5 F6                    ..
         pha                                     ; CF10 48                       H
         lda     #$12                            ; CF11 A9 12                    ..
@@ -2581,7 +2642,7 @@ LD1D9:  lda     $07D9,y                         ; D1D9 B9 D9 07                 
         lda     #$00                            ; D1EA A9 00                    ..
         sta     $1C                             ; D1EC 85 1C                    ..
         ldx     #$50                            ; D1EE A2 50                    .P
-        jsr     LC29C                           ; D1F0 20 9C C2                  ..
+        jsr     nametable_flush_at                           ; D1F0 20 9C C2                  ..
         jmp     LD207                           ; D1F3 4C 07 D2                 L..
 
 ; ----------------------------------------------------------------------------
@@ -2775,11 +2836,11 @@ LD311:  lda     #$00                            ; D311 A9 00                    
         sta     $95                             ; D313 85 95                    ..
         jsr     LC3F1                           ; D315 20 F1 C3                  ..
         inc     $1B                             ; D318 E6 1B                    ..
-        jsr     LC38F                           ; D31A 20 8F C3                  ..
-        jsr     LC39D                           ; D31D 20 9D C3                  ..
+        jsr     oam_clear                           ; D31A 20 8F C3                  ..
+        jsr     entity_clear_all                           ; D31D 20 9D C3                  ..
         jsr     LC3B8                           ; D320 20 B8 C3                  ..
         jsr     frame_wait                      ; D323 20 22 FF                  ".
-        jsr     LC2D1                           ; D326 20 D1 C2                  ..
+        jsr     disable_rendering                           ; D326 20 D1 C2                  ..
         jsr     LF3F2                           ; D329 20 F2 F3                  ..
         lda     $F9                             ; D32C A5 F9                    ..
         sta     $24                             ; D32E 85 24                    .$
@@ -2793,7 +2854,7 @@ LD33A:  jsr     LD4E2                           ; D33A 20 E2 D4                 
         sta     L2000                           ; D341 8D 00 20                 .. 
         ldx     #$00                            ; D344 A2 00                    ..
         stx     $1A                             ; D346 86 1A                    ..
-        jsr     LC29C                           ; D348 20 9C C2                  ..
+        jsr     nametable_flush_at                           ; D348 20 9C C2                  ..
         lda     $FF                             ; D34B A5 FF                    ..
         sta     L2000                           ; D34D 8D 00 20                 .. 
         lda     $24                             ; D350 A5 24                    .$
@@ -2908,7 +2969,7 @@ LD3F0:  jsr     LF32D                           ; D3F0 20 2D F3                 
         bne     LD450                           ; D44B D0 03                    ..
         jsr     L8000                           ; D44D 20 00 80                  ..
 LD450:  jsr     LD474                           ; D450 20 74 D4                  t.
-        jsr     LC2DB                           ; D453 20 DB C2                  ..
+        jsr     enable_rendering                           ; D453 20 DB C2                  ..
         jsr     frame_wait                      ; D456 20 22 FF                  ".
         lda     #$00                            ; D459 A9 00                    ..
         sta     $1B                             ; D45B 85 1B                    ..
@@ -3814,7 +3875,7 @@ LDB06:  lda     $10                             ; DB06 A5 10                    
         jsr     LD95D                           ; DB09 20 5D D9                  ].
         pla                                     ; DB0C 68                       h
         sta     $10                             ; DB0D 85 10                    ..
-        jsr     LC298                           ; DB0F 20 98 C2                  ..
+        jsr     nametable_flush                           ; DB0F 20 98 C2                  ..
         dec     $22                             ; DB12 C6 22                    ."
         bpl     LDB06                           ; DB14 10 F0                    ..
         lda     #$00                            ; DB16 A9 00                    ..
@@ -4424,7 +4485,7 @@ LDF15:  lda     LDF4F,y                         ; DF15 B9 4F DF                 
         sta     $EA                             ; DF18 85 EA                    ..
 LDF1A:  lda     #$04                            ; DF1A A9 04                    ..
         sta     $9F                             ; DF1C 85 9F                    ..
-        jsr     LC38F                           ; DF1E 20 8F C3                  ..
+        jsr     oam_clear                           ; DF1E 20 8F C3                  ..
         jsr     LDF5E                           ; DF21 20 5E DF                  ^.
         lda     #$00                            ; DF24 A9 00                    ..
         sta     $95                             ; DF26 85 95                    ..
@@ -5298,7 +5359,7 @@ LE496:  ora     ($02,x)                         ; E496 01 02                    
         .byte   $0C                             ; E4A1 0C                       .
         ora     $0F0E                           ; E4A2 0D 0E 0F                 ...
         brk                                     ; E4A5 00                       .
-LE4A6:  jsr     LC38F                           ; E4A6 20 8F C3                  ..
+LE4A6:  jsr     oam_clear                           ; E4A6 20 8F C3                  ..
         ldy     #$00                            ; E4A9 A0 00                    ..
         ldx     #$00                            ; E4AB A2 00                    ..
         stx     $95                             ; E4AD 86 95                    ..
@@ -7441,7 +7502,7 @@ LF34A:  lda     $F5                             ; F34A A5 F5                    
         pha                                     ; F34F 48                       H
         lda     #$04                            ; F350 A9 04                    ..
         sta     $9F                             ; F352 85 9F                    ..
-        jsr     LC38F                           ; F354 20 8F C3                  ..
+        jsr     oam_clear                           ; F354 20 8F C3                  ..
         jsr     LDF5E                           ; F357 20 5E DF                  ^.
         pla                                     ; F35A 68                       h
         sta     $F6                             ; F35B 85 F6                    ..
@@ -9603,334 +9664,310 @@ LFDF7:  brk                                     ; FDF7 00                       
         bpl     LFDFE                           ; FDFC 10 00                    ..
 LFDFE:  brk                                     ; FDFE 00                       .
         .byte   $11                             ; FDFF 11                       .
-reset:  sei                                     ; FE00 78                       x
-        cld                                     ; FE01 D8                       .
-        lda     #$08                            ; FE02 A9 08                    ..
-        sta     L2000                           ; FE04 8D 00 20                 .. 
-        lda     #$40                            ; FE07 A9 40                    .@
-        sta     $4017                           ; FE09 8D 17 40                 ..@
-        ldx     #$00                            ; FE0C A2 00                    ..
-        stx     $2001                           ; FE0E 8E 01 20                 .. 
-        stx     $4010                           ; FE11 8E 10 40                 ..@
-        stx     $4015                           ; FE14 8E 15 40                 ..@
-        dex                                     ; FE17 CA                       .
-        txs                                     ; FE18 9A                       .
-        ldx     #$04                            ; FE19 A2 04                    ..
-LFE1B:  lda     $2002                           ; FE1B AD 02 20                 .. 
-        bpl     LFE1B                           ; FE1E 10 FB                    ..
-LFE20:  lda     $2002                           ; FE20 AD 02 20                 .. 
-        bmi     LFE20                           ; FE23 30 FB                    0.
-        dex                                     ; FE25 CA                       .
-        bne     LFE1B                           ; FE26 D0 F3                    ..
-        lda     $2002                           ; FE28 AD 02 20                 .. 
-        lda     #$10                            ; FE2B A9 10                    ..
-        tay                                     ; FE2D A8                       .
-LFE2E:  sta     $2006                           ; FE2E 8D 06 20                 .. 
-        sta     $2006                           ; FE31 8D 06 20                 .. 
-        eor     #$10                            ; FE34 49 10                    I.
-        dey                                     ; FE36 88                       .
-        bne     LFE2E                           ; FE37 D0 F5                    ..
-        tya                                     ; FE39 98                       .
-LFE3A:  sta     L0000,y                         ; FE3A 99 00 00                 ...
-        sta     L0100,y                         ; FE3D 99 00 01                 ...
-        sta     L0200,y                         ; FE40 99 00 02                 ...
-        sta     $0300,y                         ; FE43 99 00 03                 ...
-        sta     $0400,y                         ; FE46 99 00 04                 ...
-        sta     $0500,y                         ; FE49 99 00 05                 ...
-        sta     $0600,y                         ; FE4C 99 00 06                 ...
-        sta     $0700,y                         ; FE4F 99 00 07                 ...
-        dey                                     ; FE52 88                       .
-        bne     LFE3A                           ; FE53 D0 E5                    ..
-        ldx     #$07                            ; FE55 A2 07                    ..
-        lda     #$88                            ; FE57 A9 88                    ..
-LFE59:  sta     $DC,x                           ; FE59 95 DC                    ..
-        dex                                     ; FE5B CA                       .
-        bpl     LFE59                           ; FE5C 10 FB                    ..
-        lda     #$18                            ; FE5E A9 18                    ..
-        sta     $FE                             ; FE60 85 FE                    ..
-        lda     #$01                            ; FE62 A9 01                    ..
-        jsr     set_mirroring                   ; FE64 20 B7 FF                  ..
-        ldx     #$05                            ; FE67 A2 05                    ..
-        lda     #$00                            ; FE69 A9 00                    ..
-LFE6B:  stx     L8000                           ; FE6B 8E 00 80                 ...
-        sta     $8001                           ; FE6E 8D 01 80                 ...
-        dex                                     ; FE71 CA                       .
-        bpl     LFE6B                           ; FE72 10 F7                    ..
-        .byte   $20                             ; FE74 20                        
-LFE75:  .byte   $8F                             ; FE75 8F                       .
-        .byte   $C3                             ; FE76 C3                       .
-        lda     #$20                            ; FE77 A9 20                    . 
-        ldx     #$00                            ; FE79 A2 00                    ..
-        ldy     #$00                            ; FE7B A0 00                    ..
-        jsr     LC343                           ; FE7D 20 43 C3                  C.
-        lda     #$28                            ; FE80 A9 28                    .(
-        ldx     #$00                            ; FE82 A2 00                    ..
-        ldy     #$00                            ; FE84 A0 00                    ..
-        jsr     LC343                           ; FE86 20 43 C3                  C.
-        lda     #$DD                            ; FE89 A9 DD                    ..
-        sta     $94                             ; FE8B 85 94                    ..
-        lda     #$E8                            ; FE8D A9 E8                    ..
-        sta     L0093                           ; FE8F 85 93                    ..
-        lda     #$02                            ; FE91 A9 02                    ..
-        jsr     task_create                     ; FE93 20 F3 FE                  ..
-        lda     #$88                            ; FE96 A9 88                    ..
-        sta     $E4                             ; FE98 85 E4                    ..
-        sta     $9B                             ; FE9A 85 9B                    ..
-        sta     $FF                             ; FE9C 85 FF                    ..
-        sta     L2000                           ; FE9E 8D 00 20                 .. 
-        lda     #$02                            ; FEA1 A9 02                    ..
-        sta     $BF                             ; FEA3 85 BF                    ..
-        lda     #$9C                            ; FEA5 A9 9C                    ..
-        sta     $B0                             ; FEA7 85 B0                    ..
-        sta     $BA                             ; FEA9 85 BA                    ..
+; =============================================================================
+; RESET — $FE00
+; Hardware init, RAM clear, sound queue init, MMC3 setup, then spawns
+; the main game task ($E8DD) as task 2 and falls into the scheduler.
+; =============================================================================
+; da65 artifacts: addresses referenced from not-yet-converted data
+; regions that fall mid-instruction here are kept as constants.
+LFE75           := $FE75
+LFEDD           := $FEDD
+LFF4D           := $FF4D
+LFF5D           := $FF5D
+LFF5F           := $FF5F
+LFF77           := $FF77
+
+reset:  sei
+        cld
+        lda     #$08                    ; NMI off, sprites pattern $1000
+        sta     PPUCTRL
+        lda     #$40                    ; APU frame IRQ off
+        sta     APU_FRAME
+        ldx     #$00
+        stx     PPUMASK
+        stx     $4010                   ; DMC IRQ off
+        stx     SND_CHN
+        dex
+        txs
+        ldx     #$04                    ; wait 4 PPU frames (warmup)
+LFE1B:  lda     PPUSTATUS
+        bpl     LFE1B
+LFE20:  lda     PPUSTATUS
+        bmi     LFE20
+        dex
+        bne     LFE1B
+        lda     PPUSTATUS
+        lda     #$10                    ; exercise PPUADDR toggle
+        tay
+LFE2E:  sta     PPUADDR
+        sta     PPUADDR
+        eor     #$10
+        dey
+        bne     LFE2E
+        tya                             ; clear all 2KB of RAM
+LFE3A:  sta     temp_00,y
+        sta     $0100,y
+        sta     OAM_BUF,y
+        sta     $0300,y
+        sta     $0400,y
+        sta     $0500,y
+        sta     $0600,y
+        sta     $0700,y
+        dey
+        bne     LFE3A
+        ldx     #$07                    ; sound queue: all slots empty
+        lda     #$88
+LFE59:  sta     sound_queue,x
+        dex
+        bpl     LFE59
+        lda     #$18                    ; rendering on (BG + sprites)
+        sta     ppumask_shadow
+        lda     #$01                    ; horizontal-scroll mirroring
+        jsr     set_mirroring
+        ldx     #$05                    ; CHR banks R5..R0 = 0
+        lda     #$00
+LFE6B:  stx     MMC3_BANK_SELECT
+        sta     MMC3_BANK_DATA
+        dex
+        bpl     LFE6B
+        jsr     oam_clear
+        lda     #$20                    ; clear both nametables
+        ldx     #$00
+        ldy     #$00
+        jsr     ppu_fill_nametable
+        lda     #$28
+        ldx     #$00
+        ldy     #$00
+        jsr     ppu_fill_nametable
+        lda     #$DD                    ; spawn main game task:
+        sta     task_ptr_hi_arg         ; task 2, entry $E8DD
+        lda     #$E8
+        sta     task_ptr_lo
+        lda     #$02
+        jsr     task_create
+        lda     #$88
+        sta     $E4                     ; sound queue guard slot
+        sta     irq_latch_req
+        sta     ppuctrl_shadow          ; NMI on, BG pattern $1000
+        sta     PPUCTRL
+        lda     #$02
+        sta     $BF                     ; (player state init: $BF = 2,
+        lda     #$9C                    ;  $B0/$BA = $9C — cf. MM4 player
+        sta     $B0                     ;  HP full+owned encoding; to be
+        sta     $BA                     ;  confirmed and named)
+; =============================================================================
+; TASK SCHEDULER — $FEAB
+; Cooperative multitasker, 4 task records (4 bytes each at $80).
+; States: 0 = free, 1 = frame-wait (NMI counts down), 2 = running,
+; 4 = ready, 8 = new (entry pointer in record). Runs every ready task
+; until all are waiting; task 0 also reads the controllers each frame.
+; =============================================================================
 scheduler_run:
-        ldx     #$FF                            ; FEAB A2 FF                    ..
-        txs                                     ; FEAD 9A                       .
-LFEAE:  ldx     #$00                            ; FEAE A2 00                    ..
-        stx     $90                             ; FEB0 86 90                    ..
-        ldy     #$04                            ; FEB2 A0 04                    ..
-LFEB4:  lda     $80,x                           ; FEB4 B5 80                    ..
-        cmp     #$04                            ; FEB6 C9 04                    ..
-        bcs     LFEC4                           ; FEB8 B0 0A                    ..
-        inx                                     ; FEBA E8                       .
-        inx                                     ; FEBB E8                       .
-        inx                                     ; FEBC E8                       .
-        inx                                     ; FEBD E8                       .
-        dey                                     ; FEBE 88                       .
-        bne     LFEB4                           ; FEBF D0 F3                    ..
-        jmp     LFEAE                           ; FEC1 4C AE FE                 L..
+        ldx     #$FF                    ; discard stack
+        txs
+LFEAE:  ldx     #$00
+        stx     nmi_occurred
+        ldy     #$04
+LFEB4:  lda     task_state,x            ; scan for state >= 4 (ready/new)
+        cmp     #$04
+        bcs     LFEC4
+        inx
+        inx
+        inx
+        inx
+        dey
+        bne     LFEB4
+        jmp     LFEAE                   ; none ready: idle until NMI
 
-; ----------------------------------------------------------------------------
-LFEC4:  lda     $90                             ; FEC4 A5 90                    ..
-        bne     LFEAE                           ; FEC6 D0 E6                    ..
-        dey                                     ; FEC8 88                       .
-        tya                                     ; FEC9 98                       .
-        eor     #$03                            ; FECA 49 03                    I.
-        sta     $91                             ; FECC 85 91                    ..
-        ldy     $80,x                           ; FECE B4 80                    ..
-        lda     #$02                            ; FED0 A9 02                    ..
-        sta     $80,x                           ; FED2 95 80                    ..
-        cpy     #$08                            ; FED4 C0 08                    ..
-        bne     LFEE3                           ; FED6 D0 0B                    ..
-        lda     $82,x                           ; FED8 B5 82                    ..
-        sta     L0093                           ; FEDA 85 93                    ..
-        .byte   $B5                             ; FEDC B5                       .
-LFEDD:  .byte   $83                             ; FEDD 83                       .
-        sta     $94                             ; FEDE 85 94                    ..
-        jmp     (L0093)                         ; FEE0 6C 93 00                 l..
+LFEC4:  lda     nmi_occurred            ; NMI during scan? rescan
+        bne     LFEAE
+        dey
+        tya
+        eor     #$03                    ; cur_task = record index (0-3)
+        sta     cur_task
+        ldy     task_state,x
+        lda     #$02                    ; mark running
+        sta     task_state,x
+        cpy     #$08                    ; new task?
+        bne     LFEE3
+        lda     task_sp,x               ; yes: jump to its entry point
+        sta     task_ptr_lo
+        lda     task_ptr_hi,x
+        sta     task_ptr_hi_arg
+        jmp     (task_ptr_lo)
 
-; ----------------------------------------------------------------------------
-LFEE3:  lda     $82,x                           ; FEE3 B5 82                    ..
-        tax                                     ; FEE5 AA                       .
-        txs                                     ; FEE6 9A                       .
-        lda     $91                             ; FEE7 A5 91                    ..
-        bne     LFEEE                           ; FEE9 D0 03                    ..
-        jsr     LC2E5                           ; FEEB 20 E5 C2                  ..
-LFEEE:  pla                                     ; FEEE 68                       h
-        tay                                     ; FEEF A8                       .
-        pla                                     ; FEF0 68                       h
-        tax                                     ; FEF1 AA                       .
-        rts                                     ; FEF2 60                       `
+LFEE3:  lda     task_sp,x               ; ready: restore its stack
+        tax
+        txs
+        lda     cur_task                ; task 0 reads the pads first
+        bne     LFEEE
+        jsr     read_controllers
+LFEEE:  pla                             ; restore Y/X saved by frame_wait
+        tay
+        pla
+        tax
+        rts                             ; -> resume after frame_wait
 
-; ----------------------------------------------------------------------------
+; --- $FEF3: create task A (0-3), entry pointer in task_ptr_lo/hi ------------
 task_create:
-        jsr     LFF17                           ; FEF3 20 17 FF                  ..
-        lda     L0093                           ; FEF6 A5 93                    ..
-        sta     $82,x                           ; FEF8 95 82                    ..
-        lda     $94                             ; FEFA A5 94                    ..
-LFEFC:  sta     $83,x                           ; FEFC 95 83                    ..
-        lda     #$08                            ; FEFE A9 08                    ..
-        sta     $80,x                           ; FF00 95 80                    ..
-        rts                                     ; FF02 60                       `
+        jsr     LFF17
+        lda     task_ptr_lo
+        sta     task_sp,x
+        lda     task_ptr_hi_arg
+LFEFC:  sta     task_ptr_hi,x
+        lda     #$08                    ; state: new
+        sta     task_state,x
+        rts
 
-; ----------------------------------------------------------------------------
+; --- $FF03: free task slot A -------------------------------------------------
 task_kill:
-        jsr     LFF17                           ; FF03 20 17 FF                  ..
-        lda     #$00                            ; FF06 A9 00                    ..
-        sta     $80,x                           ; FF08 95 80                    ..
-        rts                                     ; FF0A 60                       `
+        jsr     LFF17
+        lda     #$00
+        sta     task_state,x
+        rts
 
-; ----------------------------------------------------------------------------
+; --- $FF0B: terminate current task, re-enter scheduler ------------------------
 task_exit:
-        jsr     LFF15                           ; FF0B 20 15 FF                  ..
-        lda     #$00                            ; FF0E A9 00                    ..
-        sta     $80,x                           ; FF10 95 80                    ..
-        jmp     scheduler_run                   ; FF12 4C AB FE                 L..
+        jsr     LFF15
+        lda     #$00
+        sta     task_state,x
+        jmp     scheduler_run
 
-; ----------------------------------------------------------------------------
-LFF15:  lda     $91                             ; FF15 A5 91                    ..
-LFF17:  asl     a                               ; FF17 0A                       .
-        asl     a                               ; FF18 0A                       .
-        tax                                     ; FF19 AA                       .
-        rts                                     ; FF1A 60                       `
+LFF15:  lda     cur_task                ; X = task record offset (id * 4)
+LFF17:  asl     a
+        asl     a
+        tax
+        rts
 
-; ----------------------------------------------------------------------------
+; --- $FF1B: yield X frames ----------------------------------------------------
 frame_wait_x:
-        jsr     frame_wait                      ; FF1B 20 22 FF                  ".
-        dex                                     ; FF1E CA                       .
-        bne     frame_wait_x                    ; FF1F D0 FA                    ..
-        rts                                     ; FF21 60                       `
+        jsr     frame_wait
+        dex
+        bne     frame_wait_x
+        rts
 
-; ----------------------------------------------------------------------------
+; --- $FF22: yield one frame ---------------------------------------------------
+; Saves X/Y on the task's stack, records SP, sets state 1 with a
+; 1-frame counter, and drops back into the scheduler.
 frame_wait:
-        lda     #$01                            ; FF22 A9 01                    ..
-        sta     L0093                           ; FF24 85 93                    ..
-        txa                                     ; FF26 8A                       .
-        pha                                     ; FF27 48                       H
-        tya                                     ; FF28 98                       .
-        pha                                     ; FF29 48                       H
-        jsr     LFF15                           ; FF2A 20 15 FF                  ..
-        lda     L0093                           ; FF2D A5 93                    ..
-        sta     $81,x                           ; FF2F 95 81                    ..
-        lda     #$01                            ; FF31 A9 01                    ..
-        sta     $80,x                           ; FF33 95 80                    ..
-        txa                                     ; FF35 8A                       .
-        tay                                     ; FF36 A8                       .
-        tsx                                     ; FF37 BA                       .
-        stx     $82,y                           ; FF38 96 82                    ..
-        jmp     scheduler_run                   ; FF3A 4C AB FE                 L..
+        lda     #$01
+        sta     task_ptr_lo
+        txa
+        pha
+        tya
+        pha
+        jsr     LFF15
+        lda     task_ptr_lo
+        sta     task_arg,x
+        lda     #$01                    ; state: frame-wait
+        sta     task_state,x
+        txa
+        tay
+        tsx
+        stx     task_sp,y
+        jmp     scheduler_run
 
-; ----------------------------------------------------------------------------
+; =============================================================================
+; PRG BANK SWITCHING — $FF3D / $FF43
+; Banks swap in 16KB pairs: bank_load_pair maps A at $8000 (R6) and
+; A+1 at $A000 (R7); bank_load_shadow (re)maps from prg_bank_8000/a000.
+; bank_nest guards against IRQ/NMI re-entry; a sound request arriving
+; while nested sets sound_pending and is pumped on the way out.
+; =============================================================================
 bank_load_pair:
-        sta     $F5                             ; FF3D 85 F5                    ..
-        sta     $F6                             ; FF3F 85 F6                    ..
-        inc     $F6                             ; FF41 E6 F6                    ..
+        sta     prg_bank_8000
+        sta     prg_bank_a000
+        inc     prg_bank_a000
 bank_load_shadow:
-        inc     $F7                             ; FF43 E6 F7                    ..
-        lda     #$06                            ; FF45 A9 06                    ..
-        sta     $F2                             ; FF47 85 F2                    ..
-        sta     L8000                           ; FF49 8D 00 80                 ...
-        .byte   $A5                             ; FF4C A5                       .
-LFF4D:  sbc     $85,x                           ; FF4D F5 85                    ..
-        .byte   $F3                             ; FF4F F3                       .
-        sta     $8001                           ; FF50 8D 01 80                 ...
-        lda     #$07                            ; FF53 A9 07                    ..
-LFF55:  sta     $F2                             ; FF55 85 F2                    ..
-        sta     L8000                           ; FF57 8D 00 80                 ...
-        lda     $F6                             ; FF5A A5 F6                    ..
-        .byte   $85                             ; FF5C 85                       .
-LFF5D:  .byte   $F4                             ; FF5D F4                       .
-        .byte   $8D                             ; FF5E 8D                       .
-LFF5F:  ora     ($80,x)                         ; FF5F 01 80                    ..
-        dec     $F7                             ; FF61 C6 F7                    ..
-        lda     $F8                             ; FF63 A5 F8                    ..
-        bne     sound_queue_pump                ; FF65 D0 01                    ..
-        rts                                     ; FF67 60                       `
+        inc     bank_nest
+        lda     #$06                    ; MMC3 R6 <- prg_bank_8000
+        sta     mmc3_sel_shadow
+        sta     MMC3_BANK_SELECT
+        lda     prg_bank_8000
+        sta     $F3                     ; last bank actually written
+        sta     MMC3_BANK_DATA
+        lda     #$07                    ; MMC3 R7 <- prg_bank_a000
+LFF55:  sta     mmc3_sel_shadow
+        sta     MMC3_BANK_SELECT
+        lda     prg_bank_a000
+        sta     $F4                     ; last bank actually written
+        sta     MMC3_BANK_DATA
+        dec     bank_nest
+        lda     sound_pending           ; deferred sound request?
+        bne     sound_queue_pump
+        rts
 
-; ----------------------------------------------------------------------------
+; =============================================================================
+; SOUND QUEUE PUMP — $FF68
+; Maps the sound engine pair ($18 at $8000, $19 at $A000), drains the
+; queue through the driver's play entry ($8003), runs its per-frame
+; update ($8000), then restores the previous banks. If called while
+; bank switching is in progress, defers via sound_pending.
+; =============================================================================
 sound_queue_pump:
-        lda     $F7                             ; FF68 A5 F7                    ..
-        bne     LFFB4                           ; FF6A D0 48                    .H
-        lda     #$06                            ; FF6C A9 06                    ..
-        sta     $F2                             ; FF6E 85 F2                    ..
-        sta     L8000                           ; FF70 8D 00 80                 ...
-        lda     #$18                            ; FF73 A9 18                    ..
-LFF75:  .byte   $8D                             ; FF75 8D                       .
-        .byte   $01                             ; FF76 01                       .
-LFF77:  .byte   $80                             ; FF77 80                       .
-        lda     #$07                            ; FF78 A9 07                    ..
-        sta     $F2                             ; FF7A 85 F2                    ..
-        sta     L8000                           ; FF7C 8D 00 80                 ...
-        lda     #$19                            ; FF7F A9 19                    ..
-        sta     $8001                           ; FF81 8D 01 80                 ...
+        lda     bank_nest
+        bne     LFFB4                   ; nested: defer
+        lda     #$06                    ; map sound engine bank $18
+        sta     mmc3_sel_shadow
+        sta     MMC3_BANK_SELECT
+        lda     #$18
+LFF75:  sta     MMC3_BANK_DATA
+        lda     #$07                    ; map sound data bank $19
+        sta     mmc3_sel_shadow
+        sta     MMC3_BANK_SELECT
+        lda     #$19
+        sta     MMC3_BANK_DATA
+; --- $FF84: drain queue, then run driver update -------------------------------
 sound_play:
-        stx     $A7                             ; FF84 86 A7                    ..
-        sty     $A8                             ; FF86 84 A8                    ..
-        ldx     $DB                             ; FF88 A6 DB                    ..
-        lda     $DC,x                           ; FF8A B5 DC                    ..
-        cmp     #$88                            ; FF8C C9 88                    ..
-        beq     LFFA6                           ; FF8E F0 16                    ..
-        pha                                     ; FF90 48                       H
-        lda     #$88                            ; FF91 A9 88                    ..
-        sta     $DC,x                           ; FF93 95 DC                    ..
-        inx                                     ; FF95 E8                       .
-        txa                                     ; FF96 8A                       .
-        and     #$07                            ; FF97 29 07                    ).
-        sta     $DB                             ; FF99 85 DB                    ..
-        pla                                     ; FF9B 68                       h
-        jsr     L8003                           ; FF9C 20 03 80                  ..
-        ldx     $A7                             ; FF9F A6 A7                    ..
-        ldy     $A8                             ; FFA1 A4 A8                    ..
-        jmp     sound_play                      ; FFA3 4C 84 FF                 L..
+        stx     $A7                     ; save caller X/Y
+        sty     $A8
+        ldx     sound_q_idx
+        lda     sound_queue,x
+        cmp     #$88                    ; empty slot = queue drained
+        beq     LFFA6
+        pha
+        lda     #$88                    ; free the slot, advance (mod 8)
+        sta     sound_queue,x
+        inx
+        txa
+        and     #$07
+        sta     sound_q_idx
+        pla
+        jsr     L8003                   ; sound driver: play sound A
+        ldx     $A7
+        ldy     $A8
+        jmp     sound_play
 
-; ----------------------------------------------------------------------------
-LFFA6:  jsr     L8000                           ; FFA6 20 00 80                  ..
-LFFA9:  lda     #$00                            ; FFA9 A9 00                    ..
-        sta     $F8                             ; FFAB 85 F8                    ..
-        ldx     $A7                             ; FFAD A6 A7                    ..
-        ldy     $A8                             ; FFAF A4 A8                    ..
-        jmp     bank_load_shadow                ; FFB1 4C 43 FF                 LC.
+LFFA6:  jsr     L8000                   ; sound driver: per-frame update
+LFFA9:  lda     #$00
+        sta     sound_pending
+        ldx     $A7
+        ldy     $A8
+        jmp     bank_load_shadow        ; restore game banks
 
-; ----------------------------------------------------------------------------
-LFFB4:  inc     $F8                             ; FFB4 E6 F8                    ..
-        rts                                     ; FFB6 60                       `
+LFFB4:  inc     sound_pending           ; deferred: pumped after restore
+        rts
 
-; ----------------------------------------------------------------------------
+; --- $FFB7: set mirroring (1 = horizontal scroll, 0 = vertical scroll) --------
 set_mirroring:
-        sta     $A000                           ; FFB7 8D 00 A0                 ...
-        sta     $2C                             ; FFBA 85 2C                    .,
-        rts                                     ; FFBC 60                       `
+        sta     MMC3_MIRRORING
+        sta     $2C                     ; mirroring shadow
+        rts
 
-; ----------------------------------------------------------------------------
-        brk                                     ; FFBD 00                       .
-        rti                                     ; FFBE 40                       @
+; --- $FFBD-$FFF9: padding / unreferenced data ---------------------------------
+        .byte   $00,$40,$01,$C0,$00,$00,$00,$00 ; FFBD
+        .byte   $00,$00,$00,$00,$00,$81,$00,$00 ; FFC5
+        .byte   $00,$00,$01,$00,$01,$00,$40,$00 ; FFCD
+LFFD5:  .byte   $04,$00                         ; FFD5
+LFFD7:  .byte   $01,$00,$00,$00,$40,$00         ; FFD7
+LFFDD:  .byte   $00,$00,$00,$00,$00,$00,$00,$01 ; FFDD
+        .byte   $00,$00,$00,$04,$00,$00,$00,$00 ; FFE5
+        .byte   $00,$10,$00                     ; FFED
+LFFF0:  .byte   $6B,$3F,$A6,$15,$44,$04,$00,$00 ; FFF0
+        .byte   $08,$F5                         ; FFF8
 
-; ----------------------------------------------------------------------------
-        ora     (L00C0,x)                       ; FFBF 01 C0                    ..
-        brk                                     ; FFC1 00                       .
-        brk                                     ; FFC2 00                       .
-        brk                                     ; FFC3 00                       .
-        brk                                     ; FFC4 00                       .
-        brk                                     ; FFC5 00                       .
-        brk                                     ; FFC6 00                       .
-        brk                                     ; FFC7 00                       .
-        brk                                     ; FFC8 00                       .
-        brk                                     ; FFC9 00                       .
-        sta     (L0000,x)                       ; FFCA 81 00                    ..
-        brk                                     ; FFCC 00                       .
-        brk                                     ; FFCD 00                       .
-        brk                                     ; FFCE 00                       .
-        ora     (L0000,x)                       ; FFCF 01 00                    ..
-        ora     (L0000,x)                       ; FFD1 01 00                    ..
-        rti                                     ; FFD3 40                       @
-
-; ----------------------------------------------------------------------------
-        brk                                     ; FFD4 00                       .
-LFFD5:  .byte   $04                             ; FFD5 04                       .
-        brk                                     ; FFD6 00                       .
-LFFD7:  ora     (L0000,x)                       ; FFD7 01 00                    ..
-        brk                                     ; FFD9 00                       .
-        brk                                     ; FFDA 00                       .
-        rti                                     ; FFDB 40                       @
-
-; ----------------------------------------------------------------------------
-        brk                                     ; FFDC 00                       .
-LFFDD:  brk                                     ; FFDD 00                       .
-        brk                                     ; FFDE 00                       .
-        brk                                     ; FFDF 00                       .
-        brk                                     ; FFE0 00                       .
-        brk                                     ; FFE1 00                       .
-        brk                                     ; FFE2 00                       .
-        brk                                     ; FFE3 00                       .
-        ora     (L0000,x)                       ; FFE4 01 00                    ..
-        brk                                     ; FFE6 00                       .
-        brk                                     ; FFE7 00                       .
-        .byte   $04                             ; FFE8 04                       .
-        brk                                     ; FFE9 00                       .
-        brk                                     ; FFEA 00                       .
-        brk                                     ; FFEB 00                       .
-        brk                                     ; FFEC 00                       .
-        brk                                     ; FFED 00                       .
-        bpl     LFFF0                           ; FFEE 10 00                    ..
-LFFF0:  .byte   $6B                             ; FFF0 6B                       k
-        .byte   $3F                             ; FFF1 3F                       ?
-        ldx     $15                             ; FFF2 A6 15                    ..
-        .byte   $44                             ; FFF4 44                       D
-        .byte   $04                             ; FFF5 04                       .
-        brk                                     ; FFF6 00                       .
-        brk                                     ; FFF7 00                       .
-        php                                     ; FFF8 08                       .
-        sbc     L0000,x                         ; FFF9 F5 00                    ..
-        .addr   L00C0                           ; FFFB C0 00                    ..
-        .addr   L69FE                           ; FFFD FE 69                    .i
-        .byte   $C1                             ; FFFF C1                       .
+; --- CPU vectors ---------------------------------------------------------------
+        .addr   nmi_handler             ; FFFA NMI    = $C000
+        .addr   reset                   ; FFFC RESET  = $FE00
+        .addr   irq_handler             ; FFFE IRQ    = $C169
