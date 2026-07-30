@@ -151,7 +151,7 @@ L80D9:  lda     $08                             ; 80D9 A5 08                    
         clc                                     ; 80DC 18                       .
         adc     #$08                            ; 80DD 69 08                    i.
         tay                                     ; 80DF A8                       .
-        jsr     L984F                           ; 80E0 20 4F 98                  O.
+        jsr     probe_vert                           ; 80E0 20 4F 98                  O.
         lda     L0010                           ; 80E3 A5 10                    ..
         and     #$10                            ; 80E5 29 10                    ).
         bne     L814A                           ; 80E7 D0 61                    .a
@@ -297,14 +297,14 @@ L8201:  lda     #$01                            ; 8201 A9 01                    
         beq     L820E                           ; 8209 F0 03                    ..
 L820B:  jsr     entity_set_subtype                           ; 820B 20 98 EA                  ..
 L820E:  jsr     player_weapon_fire                           ; 820E 20 6B 90                  k.
-        jsr     L95F8                           ; 8211 20 F8 95                  ..
+        jsr     ladder_grab_up                           ; 8211 20 F8 95                  ..
 L8214:  rts                                     ; 8214 60                       `
 
 ; ----------------------------------------------------------------------------
 player_st_air:  ldy     #$00                            ; 8215 A0 00                    ..
         jsr     entity_gravity_collide                           ; 8217 20 B7 E7                  ..
-        jsr     L97DF                           ; 821A 20 DF 97                  ..
-        jsr     L964C                           ; 821D 20 4C 96                  L.
+        jsr     landing_surface_fx                           ; 821A 20 DF 97                  ..
+        jsr     player_env_effects                           ; 821D 20 4C 96                  L.
         php                                     ; 8220 08                       .
         bcc     L823A                           ; 8221 90 17                    ..
         lda     $26                             ; 8223 A5 26                    .&
@@ -358,21 +358,21 @@ L8283:  lda     $16                             ; 8283 A5 16                    
         ldy     #$00                            ; 828C A0 00                    ..
         jsr     entity_horiz_dispatch                           ; 828E 20 3F EA                  ?.
         jsr     player_weapon_fire                           ; 8291 20 6B 90                  k.
-        jsr     L95F8                           ; 8294 20 F8 95                  ..
+        jsr     ladder_grab_up                           ; 8294 20 F8 95                  ..
         clc                                     ; 8297 18                       .
 L8298:  rts                                     ; 8298 60                       `
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
 ; state $02 — SLIDE ($8299; entered from ground with A+Down, timer $35=$1A)
-; A press (Down released) probes headroom (L9845) and pops into a jump.
+; A press (Down released) probes headroom (probe_horiz) and pops into a jump.
 ; Head blocked (probe bit $10) extends the slide past the timer; L/R can
 ; reverse direction. Expiry restores stand/walk with a slide_yvel y-kick.
 ; =============================================================================
 player_st_slide:
         ldy     #$04                            ; 8299 A0 04                    ..
         jsr     entity_gravity_collide                           ; 829B 20 B7 E7                  ..
-        jsr     L964C                           ; 829E 20 4C 96                  L.
+        jsr     player_env_effects                           ; 829E 20 4C 96                  L.
         bcc     L830C                           ; 82A1 90 69                    .i
         lda     $14                             ; 82A3 A5 14                    ..
         and     #$80                            ; 82A5 29 80                    ).
@@ -383,7 +383,7 @@ player_st_slide:
         lda     #$02                            ; 82AF A9 02                    ..
         ora     $AF                             ; 82B1 05 AF                    ..
         tay                                     ; 82B3 A8                       .
-        jsr     L9845                           ; 82B4 20 45 98                  E.
+        jsr     probe_horiz                           ; 82B4 20 45 98                  E.
         lda     L0010                           ; 82B7 A5 10                    ..
         bne     L82C8                           ; 82B9 D0 0D                    ..
         lda     #$4C                            ; 82BB A9 4C                    .L
@@ -480,7 +480,7 @@ L8354:  sta     $0420                           ; 8354 8D 20 04                 
 L836C:  lda     #$02                            ; 836C A9 02                    ..
         ora     $AF                             ; 836E 05 AF                    ..
         tay                                     ; 8370 A8                       .
-        jsr     L984F                           ; 8371 20 4F 98                  O.
+        jsr     probe_vert                           ; 8371 20 4F 98                  O.
         ldy     #$02                            ; 8374 A0 02                    ..
 L8376:  lda     $48,y                           ; 8376 B9 48 00                 .H.
         cmp     #$20                            ; 8379 C9 20                    . 
@@ -584,7 +584,7 @@ L841C:  lda     $16                             ; 841C A5 16                    
         lda     $0528                           ; 8437 AD 28 05                 .(.
         ora     #$20                            ; 843A 09 20                    . 
         sta     $0528                           ; 843C 8D 28 05                 .(.
-        jsr     L9859                           ; 843F 20 59 98                  Y.
+        jsr     clamp_x_to_screen                           ; 843F 20 59 98                  Y.
 L8442:  jsr     fire_buster                           ; 8442 20 E3 90                  ..
         plp                                     ; 8445 28                       (
         bcc     L845D                           ; 8446 90 15                    ..
@@ -649,7 +649,7 @@ L849E:  iny                                     ; 849E C8                       
 L84A2:  lda     $0498                           ; 84A2 AD 98 04                 ...
         cmp     #$04                            ; 84A5 C9 04                    ..
         bne     L84AC                           ; 84A7 D0 03                    ..
-        jsr     L9859                           ; 84A9 20 59 98                  Y.
+        jsr     clamp_x_to_screen                           ; 84A9 20 59 98                  Y.
 L84AC:  lda     $055D                           ; 84AC AD 5D 05                 .].
         cmp     #$12                            ; 84AF C9 12                    ..
         bne     L84BF                           ; 84B1 D0 0C                    ..
@@ -763,7 +763,7 @@ L857C:  lda     $0378                           ; 857C AD 78 03                 
         cmp     #$70                            ; 857F C9 70                    .p
         bcc     L8592                           ; 8581 90 0F                    ..
         ldy     #$02                            ; 8583 A0 02                    ..
-        jsr     L984F                           ; 8585 20 4F 98                  O.
+        jsr     probe_vert                           ; 8585 20 4F 98                  O.
         lda     $49                             ; 8588 A5 49                    .I
         sta     $53                             ; 858A 85 53                    .S
         lda     L0010                           ; 858C A5 10                    ..
@@ -2177,9 +2177,11 @@ cast_rec_x:     .byte   $A8                     ; 9024
         .byte   $0A,$07,$02,$84,$18,$E8         ; 9055
         .byte   $0A,$0F,$01,$00,$28,$F8         ; 905B
         .byte   $0A,$07,$03,$80,$18,$F8         ; 9061
+; A+dir masks by gravity flip: +0/+1 slide combo (Down/Up); +2/+3 ladder
+; grab up (Up/Down) — see ladder_grab_up.
 slide_input_mask:  .byte   $04                             ; 9067 04                       .
         php                                     ; 9068 08                       .
-L9069:  php                                     ; 9069 08                       .
+ladder_up_mask:  php                                     ; 9069 08                       .
         .byte   $04                             ; 906A 04                       .
 player_weapon_fire:  lda     $0390                           ; 906B AD 90 03                 ...
         bne     L90E2                           ; 906E D0 72                    .r
@@ -2510,7 +2512,7 @@ fire_water_wave:
         lsr     a                               ; 92C8 4A                       J
         ora     #$20                            ; 92C9 09 20                    . 
         tay                                     ; 92CB A8                       .
-        jsr     L984F                           ; 92CC 20 4F 98                  O.
+        jsr     probe_vert                           ; 92CC 20 4F 98                  O.
         lda     $48                             ; 92CF A5 48                    .H
         and     #$10                            ; 92D1 29 10                    ).
         bne     L92AE                           ; 92D3 D0 D9                    ..
@@ -2833,7 +2835,7 @@ shot_snap_to_wall:
         lsr     a                               ; 9521 4A
         ora     #$22                            ; 9522 09 22
         tay                                     ; 9524 A8
-        jsr     L984F                           ; 9525 20 4F 98
+        jsr     probe_vert                           ; 9525 20 4F 98
         ldy     $0F                             ; 9528 A4 0F
         lda     L0010                           ; 952A A5 10
         and     #$10                            ; 952C 29 10
@@ -2918,16 +2920,21 @@ weapon_empty_tbl:.byte   $00,$80,$80,$80,$80,$80,$80,$80,$00,$80,$00,$00,$00,$00
 wave_phase_tbl: .byte   $00,$00,$03             ; 95E1  segment phase +1..3: 0 / 3 / 6
 wave_flag_tbl:  .byte   $06,$00,$04,$04         ; 95E4  segment ent_flags OR +1..3
 water_line_tbl: .byte   $00,$00,$00,$B4,$00,$00,$00,$00,$00,$00,$00,$B4,$C4,$00,$00,$00 ; 95E8  water-surface y per stage bank (vscroll)
-L95F8:  lda     $16                             ; 95F8 A5 16                    ..
+; -----------------------------------------------------------------------------
+; ladder_grab_up — Up held (ladder_up_mask by gravity flip): probe above/
+; below; a ladder tile ($20) at head, body or feet grabs on: state $03,
+; x snapped to the rung centre, climb impulse $01.4C, climb pose $0A.
+; -----------------------------------------------------------------------------
+ladder_grab_up:  lda     $16                             ; 95F8 A5 16                    ..
         ldy     $AF                             ; 95FA A4 AF                    ..
-        and     L9069,y                         ; 95FC 39 69 90                 9i.
+        and     ladder_up_mask,y                         ; 95FC 39 69 90                 9i.
         beq     L964B                           ; 95FF F0 4A                    .J
         lda     $0528                           ; 9601 AD 28 05                 .(.
         bpl     L964B                           ; 9604 10 45                    .E
         lda     #$02                            ; 9606 A9 02                    ..
         ora     $AF                             ; 9608 05 AF                    ..
         tay                                     ; 960A A8                       .
-        jsr     L984F                           ; 960B 20 4F 98                  O.
+        jsr     probe_vert                           ; 960B 20 4F 98                  O.
         lda     $0390                           ; 960E AD 90 03                 ...
         bne     L964B                           ; 9611 D0 38                    .8
         lda     $AF                             ; 9613 A5 AF                    ..
@@ -2959,7 +2966,21 @@ L962B:  lda     #$03                            ; 962B A9 03                    
 L964B:  rts                                     ; 964B 60                       `
 
 ; ----------------------------------------------------------------------------
-L964C:  php                                     ; 964C 08                       .
+; -----------------------------------------------------------------------------
+; player_env_effects — per-frame surface/room effects (C = grounded from
+; entity_gravity_collide; probe results preserved):
+;  - conveyor belts: floor tile $50/$70 sets belt dir $39 and drags the
+;    player $00.80/frame (velocity+facing swapped in, then restored)
+;  - stage banks 3/$0B/$0C vscroll rooms: side-wall contact latches $36=$F0
+;  - water (stage-alt bank 4 = always submerged; stage bank $0D pools):
+;    crossing the surface spawns a splash (sub_type $8B, sound $3A);
+;    $52 = splash cooldown, $53 = last water state
+;  - stage bank 5, scroll screens 5-$12 (jet-ski run): alternating wake
+;    sounds $33/$34 and a 1px scroll-y bob (jetski_wake_time/jetski_wake_sound/jetski_bob_y)
+;  - every 2nd frame: behind-background priority (ent_flags bit 4) while
+;    the head/feet probes sit in tile $60
+; -----------------------------------------------------------------------------
+player_env_effects:  php                                     ; 964C 08                       .
         lda     $49                             ; 964D A5 49                    .I
         pha                                     ; 964F 48                       H
         lda     $11                             ; 9650 A5 11                    ..
@@ -2998,8 +3019,7 @@ L9684:  lda     $0528                           ; 9684 AD 28 05                 
         pha                                     ; 968F 48                       H
         lda     $0420                           ; 9690 AD 20 04                 . .
         pha                                     ; 9693 48                       H
-        .byte   $A5                             ; 9694 A5                       .
-L9695:  .byte   $3A                             ; 9695 3A                       :
+        lda     $3A                             ; 9694 A5 3A                    .:
         sta     $03A8                           ; 9696 8D A8 03                 ...
         lda     $3B                             ; 9699 A5 3B                    .;
         sta     $03C0                           ; 969B 8D C0 03                 ...
@@ -3024,7 +3044,7 @@ L96C0:  lda     #$00                            ; 96C0 A9 00                    
         lda     $46                             ; 96C4 A5 46                    .F
         beq     L96E5                           ; 96C6 F0 1D                    ..
         ldy     $26                             ; 96C8 A4 26                    .&
-        lda     L97CF,y                         ; 96CA B9 CF 97                 ...
+        lda     wall_latch_stage_tbl,y                         ; 96CA B9 CF 97                 ...
         beq     L96E5                           ; 96CD F0 16                    ..
         ldy     #$25                            ; 96CF A0 25                    .%
         lda     $30                             ; 96D1 A5 30                    .0
@@ -3056,7 +3076,7 @@ L96FF:  lda     $0378                           ; 96FF AD 78 03                 
         lda     $0390                           ; 9706 AD 90 03                 ...
         bne     L9724                           ; 9709 D0 19                    ..
         ldy     #$06                            ; 970B A0 06                    ..
-        jsr     L9845                           ; 970D 20 45 98                  E.
+        jsr     probe_horiz                           ; 970D 20 45 98                  E.
         lda     L0010                           ; 9710 A5 10                    ..
         cmp     #$80                            ; 9712 C9 80                    ..
         beq     L9728                           ; 9714 F0 12                    ..
@@ -3112,13 +3132,13 @@ L9766:  lda     $26                             ; 9766 A5 26                    
         inc     $58                             ; 977C E6 58                    .X
         and     #$01                            ; 977E 29 01                    ).
         tay                                     ; 9780 A8                       .
-        lda     L97C9,y                         ; 9781 B9 C9 97                 ...
+        lda     jetski_wake_time,y                         ; 9781 B9 C9 97                 ...
         sta     $57                             ; 9784 85 57                    .W
-        lda     L97CB,y                         ; 9786 B9 CB 97                 ...
+        lda     jetski_wake_sound,y                         ; 9786 B9 CB 97                 ...
         jsr     queue_sound                           ; 9789 20 5D EC                  ].
         lda     $99                             ; 978C A5 99                    ..
         bne     L9795                           ; 978E D0 05                    ..
-        lda     L97CD,y                         ; 9790 B9 CD 97                 ...
+        lda     jetski_bob_y,y                         ; 9790 B9 CD 97                 ...
         sta     $FA                             ; 9793 85 FA                    ..
 L9795:  lda     $9D                             ; 9795 A5 9D                    ..
         lsr     a                               ; 9797 4A                       J
@@ -3128,12 +3148,12 @@ L9795:  lda     $9D                             ; 9795 A5 9D                    
         and     #$EF                            ; 979E 29 EF                    ).
         sta     $0528                           ; 97A0 8D 28 05                 .(.
         ldy     #$18                            ; 97A3 A0 18                    ..
-        jsr     L984F                           ; 97A5 20 4F 98                  O.
+        jsr     probe_vert                           ; 97A5 20 4F 98                  O.
         lda     $42                             ; 97A8 A5 42                    .B
         cmp     #$60                            ; 97AA C9 60                    .`
         beq     L97B9                           ; 97AC F0 0B                    ..
         ldy     #$19                            ; 97AE A0 19                    ..
-        jsr     L984F                           ; 97B0 20 4F 98                  O.
+        jsr     probe_vert                           ; 97B0 20 4F 98                  O.
         lda     $42                             ; 97B3 A5 42                    .B
         cmp     #$60                            ; 97B5 C9 60                    .`
         bne     L97C1                           ; 97B7 D0 08                    ..
@@ -3148,28 +3168,20 @@ L97C1:  pla                                     ; 97C1 68                       
         rts                                     ; 97C8 60                       `
 
 ; ----------------------------------------------------------------------------
-L97C9:  .byte   $14                             ; 97C9 14                       .
-        .byte   $50                             ; 97CA 50                       P
-L97CB:  .byte   $33                             ; 97CB 33                       3
-        .byte   $34                             ; 97CC 34                       4
-L97CD:  ora     (L0000,x)                       ; 97CD 01 00                    ..
-L97CF:  brk                                     ; 97CF 00                       .
-        brk                                     ; 97D0 00                       .
-        brk                                     ; 97D1 00                       .
-        .byte   $FF                             ; 97D2 FF                       .
-        brk                                     ; 97D3 00                       .
-        brk                                     ; 97D4 00                       .
-        brk                                     ; 97D5 00                       .
-        brk                                     ; 97D6 00                       .
-        brk                                     ; 97D7 00                       .
-        brk                                     ; 97D8 00                       .
-        brk                                     ; 97D9 00                       .
-        .byte   $FF                             ; 97DA FF                       .
-        .byte   $FF                             ; 97DB FF                       .
-        brk                                     ; 97DC 00                       .
-        brk                                     ; 97DD 00                       .
-        brk                                     ; 97DE 00                       .
-L97DF:  bcc     L9844                           ; 97DF 90 63                    .c
+jetski_wake_time:  .byte $14,$50               ; 97C9  frames between wakes
+jetski_wake_sound: .byte $33,$34               ; 97CB  alternating wake sfx
+jetski_bob_y:   .byte   $01,$00                ; 97CD  scroll-y bob
+; nonzero = vscroll side-wall latch stage banks (3/$0B/$0C)
+wall_latch_stage_tbl:
+        .byte   $00,$00,$00,$FF,$00,$00,$00,$00 ; 97CF
+        .byte   $00,$00,$00,$FF,$FF,$00,$00,$00 ; 97D7
+; -----------------------------------------------------------------------------
+; landing_surface_fx — while grounded (C set) in stage-alt-bank 3 rooms:
+; a foot probe on tile $30 spawns a surface-contact effect actor (type
+; $0C, preset $62) at the fixed line y=$C8, claiming its sprite bank via
+; LD8A2/LD8C7; ent_var6 = $1E/$1F for the matching side.
+; -----------------------------------------------------------------------------
+landing_surface_fx:  bcc     L9844                           ; 97DF 90 63                    .c
         php                                     ; 97E1 08                       .
         lda     $27                             ; 97E2 A5 27                    .'
         cmp     #$03                            ; 97E4 C9 03                    ..
@@ -3217,7 +3229,8 @@ L9843:  plp                                     ; 9843 28                       
 L9844:  rts                                     ; 9844 60                       `
 
 ; ----------------------------------------------------------------------------
-L9845:  lda     $36                             ; 9845 A5 36                    .6
+; --- probe_horiz — tile_collide_horiz with the spike latch ($36) preserved. ---
+probe_horiz:  lda     $36                             ; 9845 A5 36                    .6
         pha                                     ; 9847 48                       H
         jsr     tile_collide_horiz                           ; 9848 20 A1 C4                  ..
         pla                                     ; 984B 68                       h
@@ -3225,7 +3238,9 @@ L9845:  lda     $36                             ; 9845 A5 36                    
         rts                                     ; 984E 60                       `
 
 ; ----------------------------------------------------------------------------
-L984F:  lda     $36                             ; 984F A5 36                    .6
+; --- probe_vert — tile_collide_vert with the spike latch ($36) preserved
+; (steering probes must not overwrite contact damage state). ---
+probe_vert:  lda     $36                             ; 984F A5 36                    .6
         pha                                     ; 9851 48                       H
         jsr     tile_collide_vert                           ; 9852 20 AA C5                  ..
         pla                                     ; 9855 68                       h
@@ -3233,7 +3248,9 @@ L984F:  lda     $36                             ; 984F A5 36                    
         rts                                     ; 9858 60                       `
 
 ; ----------------------------------------------------------------------------
-L9859:  lda     #$FF                            ; 9859 A9 FF                    ..
+; --- clamp_x_to_screen — keep the player inside the visible strip
+; [camera+$10 .. camera+$F2] (jet-ski and other forced-scroll rides). ---
+clamp_x_to_screen:  lda     #$FF                            ; 9859 A9 FF                    ..
         sta     $03                             ; 985B 85 03                    ..
         lda     $0330                           ; 985D AD 30 03                 .0.
         sec                                     ; 9860 38                       8
@@ -3335,13 +3352,20 @@ L9907:  sty     $AE                             ; 9907 84 AE                    
 L9909:  rts                                     ; 9909 60                       `
 
 ; ----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; spawn_entry — process spawn-list entry Y. Code ($AB80) < $C0: enemy spawn.
+; Code >= $C0 (& $3F -> command index into spawn_cmd_slot/prog):
+;   slot < 0   -> start the background CHR-anim program ($05D0)
+;   slot < $10 -> palette: prog < 0 starts a palette-cycle program in
+;                 $05F0+slot; else static record spawn_pal_rec[prog] into
+;                 PAL_BUF row (BG+sprite), ctl byte adds backdrop/CHR pair
+;   slot >= $10 -> BG CHR bank pair spawn_chr_pairs[slot] -> R0/R1
+; -----------------------------------------------------------------------------
 spawn_entry:  sty     $06                             ; 990A 84 06                    ..
         lda     $AB80,y                         ; 990C B9 80 AB                 ...
         cmp     #$C0                            ; 990F C9 C0                    ..
         bcs     L9916                           ; 9911 B0 03                    ..
-        .byte   $4C                             ; 9913 4C                       L
-        .byte   $95                             ; 9914 95                       .
-L9915:  .byte   $99                             ; 9915 99                       .
+        jmp     spawn_enemy                     ; 9913 4C 95 99
 L9916:  and     #$3F                            ; 9916 29 3F                    )?
         tay                                     ; 9918 A8                       .
         ldx     spawn_cmd_slot,y                         ; 9919 BE B2 9D                 ...
@@ -3367,13 +3391,13 @@ L9933:  stx     $05D0                           ; 9933 8E D0 05                 
 L993F:  asl     a                               ; 993F 0A                       .
         asl     a                               ; 9940 0A                       .
         tay                                     ; 9941 A8                       .
-        lda     L9E13,y                         ; 9942 B9 13 9E                 ...
+        lda     spawn_pal_c1,y                         ; 9942 B9 13 9E                 ...
         sta     $0601,x                         ; 9945 9D 01 06                 ...
         sta     $0621,x                         ; 9948 9D 21 06                 .!.
-        lda     L9E14,y                         ; 994B B9 14 9E                 ...
+        lda     spawn_pal_c2,y                         ; 994B B9 14 9E                 ...
         sta     $0602,x                         ; 994E 9D 02 06                 ...
         sta     $0622,x                         ; 9951 9D 22 06                 .".
-        lda     L9E15,y                         ; 9954 B9 15 9E                 ...
+        lda     spawn_pal_c3,y                         ; 9954 B9 15 9E                 ...
         sta     $0603,x                         ; 9957 9D 03 06                 ...
         sta     $0623,x                         ; 995A 9D 23 06                 .#.
         txa                                     ; 995D 8A                       .
@@ -3384,7 +3408,7 @@ L993F:  asl     a                               ; 993F 0A                       
         sta     $05F0,x                         ; 9963 9D F0 05                 ...
         lda     #$FF                            ; 9966 A9 FF                    ..
         sta     $18                             ; 9968 85 18                    ..
-        ldx     L9E12,y                         ; 996A BE 12 9E                 ...
+        ldx     spawn_pal_ctl,y                         ; 996A BE 12 9E                 ...
         beq     L9909                           ; 996D F0 9A                    ..
         bpl     L9985                           ; 996F 10 14                    ..
         txa                                     ; 9971 8A                       .
@@ -3398,9 +3422,9 @@ L993F:  asl     a                               ; 993F 0A                       
         rts                                     ; 9984 60                       `
 
 ; ----------------------------------------------------------------------------
-L9985:  lda     L9E56,x                         ; 9985 BD 56 9E                 .V.
+L9985:  lda     spawn_chr_pairs,x                         ; 9985 BD 56 9E                 .V.
         sta     $EA                             ; 9988 85 EA                    ..
-        lda     L9E57,x                         ; 998A BD 57 9E                 .W.
+        lda     spawn_chr_pairs+1,x                         ; 998A BD 57 9E                 .W.
         sta     $EB                             ; 998D 85 EB                    ..
         lda     #$00                            ; 998F A9 00                    ..
         sta     $05D0                           ; 9991 8D D0 05                 ...
@@ -3489,1268 +3513,129 @@ L9999:  cmp     $0438,x                         ; 9999 DD 38 04                 
 L9A41:  rts                                     ; 9A41 60                       `
 
 ; ----------------------------------------------------------------------------
-spawn_flags_tbl:  php                                     ; 9A42 08                       .
-        brk                                     ; 9A43 00                       .
-        brk                                     ; 9A44 00                       .
-        brk                                     ; 9A45 00                       .
-        brk                                     ; 9A46 00                       .
-        brk                                     ; 9A47 00                       .
-        brk                                     ; 9A48 00                       .
-        brk                                     ; 9A49 00                       .
-        brk                                     ; 9A4A 00                       .
-        brk                                     ; 9A4B 00                       .
-        sty     L0000                           ; 9A4C 84 00                    ..
-        php                                     ; 9A4E 08                       .
-        brk                                     ; 9A4F 00                       .
-        dey                                     ; 9A50 88                       .
-        iny                                     ; 9A51 C8                       .
-        sty     $04                             ; 9A52 84 04                    ..
-        .byte   $80                             ; 9A54 80                       .
-        .byte   $80                             ; 9A55 80                       .
-        brk                                     ; 9A56 00                       .
-        brk                                     ; 9A57 00                       .
-        brk                                     ; 9A58 00                       .
-        brk                                     ; 9A59 00                       .
-        brk                                     ; 9A5A 00                       .
-        brk                                     ; 9A5B 00                       .
-        rti                                     ; 9A5C 40                       @
-
-; ----------------------------------------------------------------------------
-        brk                                     ; 9A5D 00                       .
-        rti                                     ; 9A5E 40                       @
-
-; ----------------------------------------------------------------------------
-        brk                                     ; 9A5F 00                       .
-        php                                     ; 9A60 08                       .
-        php                                     ; 9A61 08                       .
-        .byte   $89                             ; 9A62 89                       .
-        .byte   $89                             ; 9A63 89                       .
-        .byte   $89                             ; 9A64 89                       .
-        .byte   $89                             ; 9A65 89                       .
-        .byte   $89                             ; 9A66 89                       .
-        .byte   $89                             ; 9A67 89                       .
-        .byte   $89                             ; 9A68 89                       .
-        .byte   $89                             ; 9A69 89                       .
-        ldy     L0000                           ; 9A6A A4 00                    ..
-        brk                                     ; 9A6C 00                       .
-        brk                                     ; 9A6D 00                       .
-        .byte   $04                             ; 9A6E 04                       .
-        tay                                     ; 9A6F A8                       .
-        dey                                     ; 9A70 88                       .
-        tay                                     ; 9A71 A8                       .
-        dey                                     ; 9A72 88                       .
-        brk                                     ; 9A73 00                       .
-        .byte   $80                             ; 9A74 80                       .
-        .byte   $80                             ; 9A75 80                       .
-        .byte   $80                             ; 9A76 80                       .
-        brk                                     ; 9A77 00                       .
-        brk                                     ; 9A78 00                       .
-        brk                                     ; 9A79 00                       .
-        brk                                     ; 9A7A 00                       .
-        brk                                     ; 9A7B 00                       .
-        brk                                     ; 9A7C 00                       .
-        brk                                     ; 9A7D 00                       .
-        dey                                     ; 9A7E 88                       .
-        tay                                     ; 9A7F A8                       .
-        dey                                     ; 9A80 88                       .
-        brk                                     ; 9A81 00                       .
-        brk                                     ; 9A82 00                       .
-        brk                                     ; 9A83 00                       .
-        brk                                     ; 9A84 00                       .
-        brk                                     ; 9A85 00                       .
-        brk                                     ; 9A86 00                       .
-        brk                                     ; 9A87 00                       .
-        brk                                     ; 9A88 00                       .
-        brk                                     ; 9A89 00                       .
-        brk                                     ; 9A8A 00                       .
-        brk                                     ; 9A8B 00                       .
-        brk                                     ; 9A8C 00                       .
-        .byte   $02                             ; 9A8D 02                       .
-        dey                                     ; 9A8E 88                       .
-        brk                                     ; 9A8F 00                       .
-        ldy     #$08                            ; 9A90 A0 08                    ..
-        brk                                     ; 9A92 00                       .
-        brk                                     ; 9A93 00                       .
-        .byte   $02                             ; 9A94 02                       .
-        .byte   $02                             ; 9A95 02                       .
-        .byte   $02                             ; 9A96 02                       .
-        .byte   $02                             ; 9A97 02                       .
-        brk                                     ; 9A98 00                       .
-        brk                                     ; 9A99 00                       .
-        brk                                     ; 9A9A 00                       .
-        .byte   $04                             ; 9A9B 04                       .
-        .byte   $04                             ; 9A9C 04                       .
-        asl     $04                             ; 9A9D 06 04                    ..
-        .byte   $04                             ; 9A9F 04                       .
-        .byte   $04                             ; 9AA0 04                       .
-        .byte   $04                             ; 9AA1 04                       .
-        brk                                     ; 9AA2 00                       .
-        brk                                     ; 9AA3 00                       .
-        .byte   $04                             ; 9AA4 04                       .
-        .byte   $04                             ; 9AA5 04                       .
-        .byte   $14                             ; 9AA6 14                       .
-        .byte   $04                             ; 9AA7 04                       .
-        .byte   $04                             ; 9AA8 04                       .
-        .byte   $04                             ; 9AA9 04                       .
-        .byte   $04                             ; 9AAA 04                       .
-        .byte   $04                             ; 9AAB 04                       .
-        .byte   $04                             ; 9AAC 04                       .
-        .byte   $04                             ; 9AAD 04                       .
-        .byte   $04                             ; 9AAE 04                       .
-        brk                                     ; 9AAF 00                       .
-        brk                                     ; 9AB0 00                       .
-        brk                                     ; 9AB1 00                       .
-        brk                                     ; 9AB2 00                       .
-        brk                                     ; 9AB3 00                       .
-        bpl     L9AB6                           ; 9AB4 10 00                    ..
-L9AB6:  brk                                     ; 9AB6 00                       .
-        brk                                     ; 9AB7 00                       .
-        brk                                     ; 9AB8 00                       .
-        brk                                     ; 9AB9 00                       .
-        brk                                     ; 9ABA 00                       .
-        brk                                     ; 9ABB 00                       .
-        brk                                     ; 9ABC 00                       .
-        brk                                     ; 9ABD 00                       .
-        brk                                     ; 9ABE 00                       .
-        brk                                     ; 9ABF 00                       .
-        brk                                     ; 9AC0 00                       .
-        tay                                     ; 9AC1 A8                       .
-        sty     $80                             ; 9AC2 84 80                    ..
-        sty     $80                             ; 9AC4 84 80                    ..
-        .byte   $80                             ; 9AC6 80                       .
-        .byte   $80                             ; 9AC7 80                       .
-        .byte   $80                             ; 9AC8 80                       .
-        .byte   $80                             ; 9AC9 80                       .
-        .byte   $80                             ; 9ACA 80                       .
-        .byte   $80                             ; 9ACB 80                       .
-        .byte   $80                             ; 9ACC 80                       .
-        .byte   $80                             ; 9ACD 80                       .
-        .byte   $80                             ; 9ACE 80                       .
-        .byte   $80                             ; 9ACF 80                       .
-        .byte   $80                             ; 9AD0 80                       .
-        .byte   $80                             ; 9AD1 80                       .
-spawn_type_tbl:  bpl     L9AE6                           ; 9AD2 10 12                    ..
-        .byte   $13                             ; 9AD4 13                       .
-        ora     $16,x                           ; 9AD5 15 16                    ..
-        .byte   $17                             ; 9AD7 17                       .
-        clc                                     ; 9AD8 18                       .
-        ora     $1D1B,y                         ; 9AD9 19 1B 1D                 ...
-        rol     $1F                             ; 9ADC 26 1F                    &.
-        jsr     L2321                           ; 9ADE 20 21 23                  !#
-        .byte   $23                             ; 9AE1 23                       #
-        bit     $38                             ; 9AE2 24 38                    $8
-        plp                                     ; 9AE4 28                       (
-        .byte   $27                             ; 9AE5 27                       '
-L9AE6:  .byte   $2B                             ; 9AE6 2B                       +
-        and     ($33),y                         ; 9AE7 31 33                    13
-        and     $2A,x                           ; 9AE9 35 2A                    5*
-        rol     $36,x                           ; 9AEB 36 36                    66
-        eor     $6463,y                         ; 9AED 59 63 64                 Ycd
-        .byte   $9C                             ; 9AF0 9C                       .
-        .byte   $9C                             ; 9AF1 9C                       .
-        rol     $2E2E                           ; 9AF2 2E 2E 2E                 ...
-        rol     $2E2E                           ; 9AF5 2E 2E 2E                 ...
-        rol     $352E                           ; 9AF8 2E 2E 35                 ..5
-        .byte   $9E                             ; 9AFB 9E                       .
-        .byte   $3A                             ; 9AFC 3A                       :
-        .byte   $3B                             ; 9AFD 3B                       ;
-L9AFE:  rol     $3D3D,x                         ; 9AFE 3E 3D 3D                 >==
-        and     $503D,x                         ; 9B01 3D 3D 50                 ==P
-        .byte   $53                             ; 9B04 53                       S
-        .byte   $54                             ; 9B05 54                       T
-        lsr     $BD,x                           ; 9B06 56 BD                    V.
-        ror     $5A                             ; 9B08 66 5A                    fZ
-        .byte   $5C                             ; 9B0A 5C                       \
-        eor     $605F,x                         ; 9B0B 5D 5F 60                 ]_`
-        and     $3D3D,x                         ; 9B0E 3D 3D 3D                 ===
-        ror     $04                             ; 9B11 66 04                    f.
-        ora     $06                             ; 9B13 05 06                    ..
-        .byte   $07                             ; 9B15 07                       .
-        asl     $07                             ; 9B16 06 07                    ..
-        php                                     ; 9B18 08                       .
-        ora     #$0A                            ; 9B19 09 0A                    ..
-        .byte   $0B                             ; 9B1B 0B                       .
-        asl     $400F                           ; 9B1C 0E 0F 40                 ..@
-        eor     ($42,x)                         ; 9B1F 41 42                    AB
-        .byte   $43                             ; 9B21 43                       C
-L9B22:  .byte   $44                             ; 9B22 44                       D
-        .byte   $47                             ; 9B23 47                       G
-        pha                                     ; 9B24 48                       H
-        pha                                     ; 9B25 48                       H
-        pha                                     ; 9B26 48                       H
-        eor     #$4A                            ; 9B27 49 4A                    IJ
-        .byte   $4B                             ; 9B29 4B                       K
-        jmp     L714F                           ; 9B2A 4C 4F 71                 LOq
-
-; ----------------------------------------------------------------------------
-        .byte   $7A                             ; 9B2D 7A                       z
-        .byte   $7C                             ; 9B2E 7C                       |
-        ldy     #$A2                            ; 9B2F A0 A2                    ..
-        lda     $67                             ; 9B31 A5 67                    .g
-        pla                                     ; 9B33 68                       h
-        .byte   $B3                             ; 9B34 B3                       .
-        .byte   $B3                             ; 9B35 B3                       .
-        .byte   $B3                             ; 9B36 B3                       .
-        .byte   $B3                             ; 9B37 B3                       .
-        .byte   $B3                             ; 9B38 B3                       .
-        .byte   $B3                             ; 9B39 B3                       .
-        .byte   $B3                             ; 9B3A B3                       .
-        .byte   $B3                             ; 9B3B B3                       .
-        .byte   $B3                             ; 9B3C B3                       .
-        .byte   $B3                             ; 9B3D B3                       .
-        .byte   $B3                             ; 9B3E B3                       .
-        brk                                     ; 9B3F 00                       .
-        brk                                     ; 9B40 00                       .
-        brk                                     ; 9B41 00                       .
-        .byte   $AF                             ; 9B42 AF                       .
-        bcs     L9AFE                           ; 9B43 B0 B9                    ..
-        brk                                     ; 9B45 00                       .
-        brk                                     ; 9B46 00                       .
-        brk                                     ; 9B47 00                       .
-        brk                                     ; 9B48 00                       .
-        brk                                     ; 9B49 00                       .
-        brk                                     ; 9B4A 00                       .
-        brk                                     ; 9B4B 00                       .
-        brk                                     ; 9B4C 00                       .
-        brk                                     ; 9B4D 00                       .
-        brk                                     ; 9B4E 00                       .
-        brk                                     ; 9B4F 00                       .
-        brk                                     ; 9B50 00                       .
-        and     $B622,x                         ; 9B51 3D 22 B6                 =".
-        ldx     $B6,y                           ; 9B54 B6 B6                    ..
-        ldx     $B6,y                           ; 9B56 B6 B6                    ..
-        ldx     $B6,y                           ; 9B58 B6 B6                    ..
-        ldx     $B6,y                           ; 9B5A B6 B6                    ..
-        ldx     $B6,y                           ; 9B5C B6 B6                    ..
-        ldx     $B6,y                           ; 9B5E B6 B6                    ..
-        ldx     $B6,y                           ; 9B60 B6 B6                    ..
-spawn_shape_tbl:  .byte   $80                             ; 9B62 80                       .
-        cpy     #$C0                            ; 9B63 C0 C0                    ..
-        cpy     #$CB                            ; 9B65 C0 CB                    ..
-        cmp     ($92),y                         ; 9B67 D1 92                    ..
-        .byte   $D2                             ; 9B69 D2                       .
-        .byte   $93                             ; 9B6A 93                       .
-        .byte   $89                             ; 9B6B 89                       .
-        stx     $C0,y                           ; 9B6C 96 C0                    ..
-        inc     $01D7                           ; 9B6E EE D7 01                 ...
-        ora     (L0000,x)                       ; 9B71 01 00                    ..
-        brk                                     ; 9B73 00                       .
-        bne     L9B76                           ; 9B74 D0 00                    ..
-L9B76:  cpy     $CCC8                           ; 9B76 CC C8 CC                 ...
-        cmp     $F088                           ; 9B79 CD 88 F0                 ...
-        beq     L9B22                           ; 9B7C F0 A4                    ..
-        cmp     ($C8,x)                         ; 9B7E C1 C8                    ..
-        .byte   $AF                             ; 9B80 AF                       .
-        .byte   $AF                             ; 9B81 AF                       .
-        brk                                     ; 9B82 00                       .
-        brk                                     ; 9B83 00                       .
-        brk                                     ; 9B84 00                       .
-        brk                                     ; 9B85 00                       .
-        brk                                     ; 9B86 00                       .
-        brk                                     ; 9B87 00                       .
-        brk                                     ; 9B88 00                       .
-        brk                                     ; 9B89 00                       .
-        cmp     $C091                           ; 9B8A CD 91 C0                 ...
-        iny                                     ; 9B8D C8                       .
-        cmp     $C1C1                           ; 9B8E CD C1 C1                 ...
-        cmp     ($C1,x)                         ; 9B91 C1 C1                    ..
-        sta     ($C0,x)                         ; 9B93 81 C0                    ..
-        cpy     $CC90                           ; 9B95 CC 90 CC                 ...
-        cmp     ($A2),y                         ; 9B98 D1 A2                    ..
-        cmp     ($D7,x)                         ; 9B9A C1 D7                    ..
-        dec     $C1CA                           ; 9B9C CE CA C1                 ...
-        cmp     ($C1,x)                         ; 9B9F C1 C1                    ..
-        cmp     (L0000),y                       ; 9BA1 D1 00                    ..
-        brk                                     ; 9BA3 00                       .
-        .byte   $04                             ; 9BA4 04                       .
-        .byte   $04                             ; 9BA5 04                       .
-        .byte   $02                             ; 9BA6 02                       .
-        .byte   $02                             ; 9BA7 02                       .
-        .byte   $03                             ; 9BA8 03                       .
-        brk                                     ; 9BA9 00                       .
-        .byte   $02                             ; 9BAA 02                       .
-        .byte   $02                             ; 9BAB 02                       .
-        brk                                     ; 9BAC 00                       .
-        .byte   $03                             ; 9BAD 03                       .
-        tay                                     ; 9BAE A8                       .
-        brk                                     ; 9BAF 00                       .
-        brk                                     ; 9BB0 00                       .
-        cmp     $A7,y                           ; 9BB1 D9 A7 00                 ...
-        .byte   $1D                             ; 9BB4 1D                       .
-L9BB5:  asl     $031F,x                         ; 9BB5 1E 1F 03                 ...
-        brk                                     ; 9BB8 00                       .
-        brk                                     ; 9BB9 00                       .
-        brk                                     ; 9BBA 00                       .
-        .byte   $89                             ; 9BBB 89                       .
-        sbc     ($A1,x)                         ; 9BBC E1 A1                    ..
-        lda     #$89                            ; 9BBE A9 89                    ..
-        brk                                     ; 9BC0 00                       .
-        .byte   $AB                             ; 9BC1 AB                       .
-        cpy     #$C1                            ; 9BC2 C0 C1                    ..
-        brk                                     ; 9BC4 00                       .
-        brk                                     ; 9BC5 00                       .
-        brk                                     ; 9BC6 00                       .
-        brk                                     ; 9BC7 00                       .
-        brk                                     ; 9BC8 00                       .
-        brk                                     ; 9BC9 00                       .
-        brk                                     ; 9BCA 00                       .
-        brk                                     ; 9BCB 00                       .
-        brk                                     ; 9BCC 00                       .
-        brk                                     ; 9BCD 00                       .
-        brk                                     ; 9BCE 00                       .
-        cpy     #$00                            ; 9BCF C0 00                    ..
-        brk                                     ; 9BD1 00                       .
-        asl     $06                             ; 9BD2 06 06                    ..
-        brk                                     ; 9BD4 00                       .
-        brk                                     ; 9BD5 00                       .
-        brk                                     ; 9BD6 00                       .
-        brk                                     ; 9BD7 00                       .
-        brk                                     ; 9BD8 00                       .
-        brk                                     ; 9BD9 00                       .
-        brk                                     ; 9BDA 00                       .
-        brk                                     ; 9BDB 00                       .
-        brk                                     ; 9BDC 00                       .
-        brk                                     ; 9BDD 00                       .
-        brk                                     ; 9BDE 00                       .
-        brk                                     ; 9BDF 00                       .
-        brk                                     ; 9BE0 00                       .
-        cmp     (L0000,x)                       ; 9BE1 C1 00                    ..
-        brk                                     ; 9BE3 00                       .
-        brk                                     ; 9BE4 00                       .
-        brk                                     ; 9BE5 00                       .
-        brk                                     ; 9BE6 00                       .
-        brk                                     ; 9BE7 00                       .
-        brk                                     ; 9BE8 00                       .
-        brk                                     ; 9BE9 00                       .
-        brk                                     ; 9BEA 00                       .
-        brk                                     ; 9BEB 00                       .
-        brk                                     ; 9BEC 00                       .
-        brk                                     ; 9BED 00                       .
-        brk                                     ; 9BEE 00                       .
-        brk                                     ; 9BEF 00                       .
-        brk                                     ; 9BF0 00                       .
-        brk                                     ; 9BF1 00                       .
-spawn_subtype_tbl:  pha                                     ; 9BF2 48                       H
-        .byte   $2F                             ; 9BF3 2F                       /
-        .byte   $27                             ; 9BF4 27                       '
-        bcc     L9C40                           ; 9BF5 90 49                    .I
-        rol     $3123                           ; 9BF7 2E 23 31                 .#1
-        .byte   $43                             ; 9BFA 43                       C
-        rol     $22                             ; 9BFB 26 22                    &"
-        and     $39,x                           ; 9BFD 35 39                    59
-        .byte   $3C                             ; 9BFF 3C                       <
-        jmp     L4F4C                           ; 9C00 4C 4C 4F                 LLO
-
-; ----------------------------------------------------------------------------
-        .byte   $4B                             ; 9C03 4B                       K
-        .byte   $53                             ; 9C04 53                       S
-        eor     $0156,y                         ; 9C05 59 56 01                 YV.
-        rts                                     ; 9C08 60                       `
-
-; ----------------------------------------------------------------------------
-        bvc     L9C58                           ; 9C09 50 4D                    PM
-        asl     a                               ; 9C0B 0A                       .
-        asl     a                               ; 9C0C 0A                       .
-        adc     ($1D,x)                         ; 9C0D 61 1D                    a.
-        stx     $89,y                           ; 9C0F 96 89                    ..
-        .byte   $89                             ; 9C11 89                       .
-        .byte   $52                             ; 9C12 52                       R
-        .byte   $52                             ; 9C13 52                       R
-        .byte   $52                             ; 9C14 52                       R
-        .byte   $52                             ; 9C15 52                       R
-        .byte   $52                             ; 9C16 52                       R
-        .byte   $52                             ; 9C17 52                       R
-        .byte   $52                             ; 9C18 52                       R
-        .byte   $52                             ; 9C19 52                       R
-        bvc     L9BB5                           ; 9C1A 50 99                    P.
-        .byte   $67                             ; 9C1C 67                       g
-        jmp     (L066F)                         ; 9C1D 6C 6F 06                 lo.
-
-; ----------------------------------------------------------------------------
-        asl     $06                             ; 9C20 06 06                    ..
-        asl     $72                             ; 9C22 06 72                    .r
-        .byte   $74                             ; 9C24 74                       t
-        .byte   $77                             ; 9C25 77                       w
-        adc     $1C90,y                         ; 9C26 79 90 1C                 y..
-        ror     $AE6B,x                         ; 9C29 7E 6B AE                 ~k.
-        .byte   $93                             ; 9C2C 93                       .
-        .byte   $89                             ; 9C2D 89                       .
-        ora     $05                             ; 9C2E 05 05                    ..
-        ora     $86                             ; 9C30 05 86                    ..
-        brk                                     ; 9C32 00                       .
-        brk                                     ; 9C33 00                       .
-        brk                                     ; 9C34 00                       .
-        brk                                     ; 9C35 00                       .
-        .byte   $62                             ; 9C36 62                       b
-        brk                                     ; 9C37 00                       .
-        brk                                     ; 9C38 00                       .
-        brk                                     ; 9C39 00                       .
-        brk                                     ; 9C3A 00                       .
-        .byte   $62                             ; 9C3B 62                       b
-        brk                                     ; 9C3C 00                       .
-        brk                                     ; 9C3D 00                       .
-        .byte   $83                             ; 9C3E 83                       .
-        brk                                     ; 9C3F 00                       .
-L9C40:  bpl     L9CA4                           ; 9C40 10 62                    .b
-        .byte   $62                             ; 9C42 62                       b
-        brk                                     ; 9C43 00                       .
-        .byte   $62                             ; 9C44 62                       b
-        .byte   $62                             ; 9C45 62                       b
-        .byte   $62                             ; 9C46 62                       b
-        .byte   $62                             ; 9C47 62                       b
-        ldx     L0000,y                         ; 9C48 B6 00                    ..
-        brk                                     ; 9C4A 00                       .
-        .byte   $C3                             ; 9C4B C3                       .
-        .byte   $BF                             ; 9C4C BF                       .
-        .byte   $62                             ; 9C4D 62                       b
-        tsx                                     ; 9C4E BA                       .
-        eor     $9E,x                           ; 9C4F 55 9E                    U.
-        sta     $8F                             ; 9C51 85 8F                    ..
-        .byte   $92                             ; 9C53 92                       .
-        bpl     L9C76                           ; 9C54 10 20                    . 
-        .byte   $0D                             ; 9C56 0D                       .
-        .byte   $03                             ; 9C57 03                       .
-L9C58:  .byte   $1F                             ; 9C58 1F                       .
-        bmi     L9C95                           ; 9C59 30 3A                    0:
-        rol     $4B41,x                         ; 9C5B 3E 41 4B                 >AK
-        .byte   $52                             ; 9C5E 52                       R
-        brk                                     ; 9C5F 00                       .
-        brk                                     ; 9C60 00                       .
-        brk                                     ; 9C61 00                       .
-        ror     a                               ; 9C62 6A                       j
-        .byte   $74                             ; 9C63 74                       t
-        adc     L0000                           ; 9C64 65 00                    e.
-        brk                                     ; 9C66 00                       .
-        brk                                     ; 9C67 00                       .
-        brk                                     ; 9C68 00                       .
-        brk                                     ; 9C69 00                       .
-        brk                                     ; 9C6A 00                       .
-        brk                                     ; 9C6B 00                       .
-        brk                                     ; 9C6C 00                       .
-        brk                                     ; 9C6D 00                       .
-        brk                                     ; 9C6E 00                       .
-        brk                                     ; 9C6F 00                       .
-        brk                                     ; 9C70 00                       .
-        ora     $07                             ; 9C71 05 07                    ..
-        .byte   $72                             ; 9C73 72                       r
-        .byte   $73                             ; 9C74 73                       s
-        sei                                     ; 9C75 78                       x
-L9C76:  .byte   $74                             ; 9C76 74                       t
-        adc     $76,x                           ; 9C77 75 76                    uv
-        .byte   $77                             ; 9C79 77                       w
-        adc     $7B7A,y                         ; 9C7A 79 7A 7B                 yz{
-        .byte   $7C                             ; 9C7D 7C                       |
-        adc     $7F7E,x                         ; 9C7E 7D 7E 7F                 }~.
-        .byte   $80                             ; 9C81 80                       .
-spawn_hp_tbl:  .byte   $02                             ; 9C82 02                       .
-        ora     ($01,x)                         ; 9C83 01 01                    ..
-        ora     ($03,x)                         ; 9C85 01 03                    ..
-        .byte   $02                             ; 9C87 02                       .
-        asl     $01                             ; 9C88 06 01                    ..
-        .byte   $04                             ; 9C8A 04                       .
-        ora     (L0000,x)                       ; 9C8B 01 00                    ..
-        .byte   $03                             ; 9C8D 03                       .
-        ora     a:$04                           ; 9C8E 0D 04 00                 ...
-        brk                                     ; 9C91 00                       .
-        brk                                     ; 9C92 00                       .
-        brk                                     ; 9C93 00                       .
-        .byte   $03                             ; 9C94 03                       .
-L9C95:  brk                                     ; 9C95 00                       .
-        .byte   $02                             ; 9C96 02                       .
-        .byte   $03                             ; 9C97 03                       .
-        .byte   $03                             ; 9C98 03                       .
-        .byte   $02                             ; 9C99 02                       .
-        .byte   $03                             ; 9C9A 03                       .
-        .byte   $03                             ; 9C9B 03                       .
-        .byte   $03                             ; 9C9C 03                       .
-        ora     $01                             ; 9C9D 05 01                    ..
-        .byte   $02                             ; 9C9F 02                       .
-        ora     $05                             ; 9CA0 05 05                    ..
-        brk                                     ; 9CA2 00                       .
-        brk                                     ; 9CA3 00                       .
-L9CA4:  brk                                     ; 9CA4 00                       .
-        brk                                     ; 9CA5 00                       .
-        brk                                     ; 9CA6 00                       .
-        brk                                     ; 9CA7 00                       .
-        brk                                     ; 9CA8 00                       .
-        brk                                     ; 9CA9 00                       .
-        .byte   $02                             ; 9CAA 02                       .
-        ora     ($04,x)                         ; 9CAB 01 04                    ..
-        .byte   $03                             ; 9CAD 03                       .
-        .byte   $03                             ; 9CAE 03                       .
-        ora     ($01,x)                         ; 9CAF 01 01                    ..
-        ora     ($01,x)                         ; 9CB1 01 01                    ..
-        ora     ($01,x)                         ; 9CB3 01 01                    ..
-        ora     ($01,x)                         ; 9CB5 01 01                    ..
-        .byte   $03                             ; 9CB7 03                       .
-        .byte   $02                             ; 9CB8 02                       .
-        ora     ($05,x)                         ; 9CB9 01 05                    ..
-        asl     $01                             ; 9CBB 06 01                    ..
-        .byte   $02                             ; 9CBD 02                       .
-        ora     ($01,x)                         ; 9CBE 01 01                    ..
-        ora     ($02,x)                         ; 9CC0 01 02                    ..
-        brk                                     ; 9CC2 00                       .
-        brk                                     ; 9CC3 00                       .
-        brk                                     ; 9CC4 00                       .
-        brk                                     ; 9CC5 00                       .
-        brk                                     ; 9CC6 00                       .
-        brk                                     ; 9CC7 00                       .
-        brk                                     ; 9CC8 00                       .
-        brk                                     ; 9CC9 00                       .
-        brk                                     ; 9CCA 00                       .
-        brk                                     ; 9CCB 00                       .
-        brk                                     ; 9CCC 00                       .
-        brk                                     ; 9CCD 00                       .
-        .byte   $03                             ; 9CCE 03                       .
-        brk                                     ; 9CCF 00                       .
-        brk                                     ; 9CD0 00                       .
-        brk                                     ; 9CD1 00                       .
-        .byte   $14                             ; 9CD2 14                       .
-        brk                                     ; 9CD3 00                       .
-        brk                                     ; 9CD4 00                       .
-        brk                                     ; 9CD5 00                       .
-        brk                                     ; 9CD6 00                       .
-        brk                                     ; 9CD7 00                       .
-        brk                                     ; 9CD8 00                       .
-        brk                                     ; 9CD9 00                       .
-        brk                                     ; 9CDA 00                       .
-        brk                                     ; 9CDB 00                       .
-        brk                                     ; 9CDC 00                       .
-        brk                                     ; 9CDD 00                       .
-        brk                                     ; 9CDE 00                       .
-        brk                                     ; 9CDF 00                       .
-        brk                                     ; 9CE0 00                       .
-        brk                                     ; 9CE1 00                       .
-        ora     ($01,x)                         ; 9CE2 01 01                    ..
-        brk                                     ; 9CE4 00                       .
-        brk                                     ; 9CE5 00                       .
-        brk                                     ; 9CE6 00                       .
-        brk                                     ; 9CE7 00                       .
-        brk                                     ; 9CE8 00                       .
-        brk                                     ; 9CE9 00                       .
-        brk                                     ; 9CEA 00                       .
-        brk                                     ; 9CEB 00                       .
-        brk                                     ; 9CEC 00                       .
-        brk                                     ; 9CED 00                       .
-        brk                                     ; 9CEE 00                       .
-        brk                                     ; 9CEF 00                       .
-        brk                                     ; 9CF0 00                       .
-        brk                                     ; 9CF1 00                       .
-        brk                                     ; 9CF2 00                       .
-        brk                                     ; 9CF3 00                       .
-        brk                                     ; 9CF4 00                       .
-        brk                                     ; 9CF5 00                       .
-        brk                                     ; 9CF6 00                       .
-        brk                                     ; 9CF7 00                       .
-        brk                                     ; 9CF8 00                       .
-        brk                                     ; 9CF9 00                       .
-        brk                                     ; 9CFA 00                       .
-        brk                                     ; 9CFB 00                       .
-        brk                                     ; 9CFC 00                       .
-        brk                                     ; 9CFD 00                       .
-        brk                                     ; 9CFE 00                       .
-        brk                                     ; 9CFF 00                       .
-        brk                                     ; 9D00 00                       .
-        ora     (L0000,x)                       ; 9D01 01 00                    ..
-        brk                                     ; 9D03 00                       .
-        brk                                     ; 9D04 00                       .
-        brk                                     ; 9D05 00                       .
-        brk                                     ; 9D06 00                       .
-        brk                                     ; 9D07 00                       .
-        brk                                     ; 9D08 00                       .
-        brk                                     ; 9D09 00                       .
-        brk                                     ; 9D0A 00                       .
-        brk                                     ; 9D0B 00                       .
-        brk                                     ; 9D0C 00                       .
-        brk                                     ; 9D0D 00                       .
-        brk                                     ; 9D0E 00                       .
-        brk                                     ; 9D0F 00                       .
-        brk                                     ; 9D10 00                       .
-        brk                                     ; 9D11 00                       .
-spawn_speed_tbl:  ora     ($02,x)                         ; 9D12 01 02                    ..
-        .byte   $04                             ; 9D14 04                       .
-        brk                                     ; 9D15 00                       .
-        .byte   $03                             ; 9D16 03                       .
-        .byte   $03                             ; 9D17 03                       .
-        .byte   $03                             ; 9D18 03                       .
-        .byte   $02                             ; 9D19 02                       .
-        brk                                     ; 9D1A 00                       .
-        ora     $04                             ; 9D1B 05 04                    ..
-        brk                                     ; 9D1D 00                       .
-        brk                                     ; 9D1E 00                       .
-        brk                                     ; 9D1F 00                       .
-        brk                                     ; 9D20 00                       .
-        brk                                     ; 9D21 00                       .
-        brk                                     ; 9D22 00                       .
-        ora     L0000                           ; 9D23 05 00                    ..
-        brk                                     ; 9D25 00                       .
-        brk                                     ; 9D26 00                       .
-        ora     L0000                           ; 9D27 05 00                    ..
-        brk                                     ; 9D29 00                       .
-        brk                                     ; 9D2A 00                       .
-        brk                                     ; 9D2B 00                       .
-        brk                                     ; 9D2C 00                       .
-        brk                                     ; 9D2D 00                       .
-        .byte   $03                             ; 9D2E 03                       .
-        brk                                     ; 9D2F 00                       .
-        ora     $05                             ; 9D30 05 05                    ..
-        brk                                     ; 9D32 00                       .
-        brk                                     ; 9D33 00                       .
-        brk                                     ; 9D34 00                       .
-        brk                                     ; 9D35 00                       .
-        brk                                     ; 9D36 00                       .
-        brk                                     ; 9D37 00                       .
-        brk                                     ; 9D38 00                       .
-        brk                                     ; 9D39 00                       .
-        asl     L0000                           ; 9D3A 06 00                    ..
-        ora     L0000                           ; 9D3C 05 00                    ..
-        brk                                     ; 9D3E 00                       .
-        ora     L0000                           ; 9D3F 05 00                    ..
-        brk                                     ; 9D41 00                       .
-        ora     $05                             ; 9D42 05 05                    ..
-        .byte   $03                             ; 9D44 03                       .
-        ora     L0000                           ; 9D45 05 00                    ..
-        brk                                     ; 9D47 00                       .
-        brk                                     ; 9D48 00                       .
-        .byte   $03                             ; 9D49 03                       .
-        brk                                     ; 9D4A 00                       .
-        brk                                     ; 9D4B 00                       .
-        brk                                     ; 9D4C 00                       .
-        brk                                     ; 9D4D 00                       .
-        brk                                     ; 9D4E 00                       .
-        ora     L0000                           ; 9D4F 05 00                    ..
-        brk                                     ; 9D51 00                       .
-        brk                                     ; 9D52 00                       .
-        brk                                     ; 9D53 00                       .
-        brk                                     ; 9D54 00                       .
-        brk                                     ; 9D55 00                       .
-        brk                                     ; 9D56 00                       .
-        brk                                     ; 9D57 00                       .
-        brk                                     ; 9D58 00                       .
-        brk                                     ; 9D59 00                       .
-        brk                                     ; 9D5A 00                       .
-        brk                                     ; 9D5B 00                       .
-        brk                                     ; 9D5C 00                       .
-        brk                                     ; 9D5D 00                       .
-        brk                                     ; 9D5E 00                       .
-        brk                                     ; 9D5F 00                       .
-        brk                                     ; 9D60 00                       .
-        brk                                     ; 9D61 00                       .
-        brk                                     ; 9D62 00                       .
-        brk                                     ; 9D63 00                       .
-        brk                                     ; 9D64 00                       .
-        brk                                     ; 9D65 00                       .
-        brk                                     ; 9D66 00                       .
-        brk                                     ; 9D67 00                       .
-        brk                                     ; 9D68 00                       .
-        brk                                     ; 9D69 00                       .
-        brk                                     ; 9D6A 00                       .
-        brk                                     ; 9D6B 00                       .
-        brk                                     ; 9D6C 00                       .
-        brk                                     ; 9D6D 00                       .
-        brk                                     ; 9D6E 00                       .
-        .byte   $07                             ; 9D6F 07                       .
-        brk                                     ; 9D70 00                       .
-        brk                                     ; 9D71 00                       .
-        brk                                     ; 9D72 00                       .
-        brk                                     ; 9D73 00                       .
-        brk                                     ; 9D74 00                       .
-        brk                                     ; 9D75 00                       .
-        brk                                     ; 9D76 00                       .
-        brk                                     ; 9D77 00                       .
-        brk                                     ; 9D78 00                       .
-        brk                                     ; 9D79 00                       .
-        brk                                     ; 9D7A 00                       .
-        brk                                     ; 9D7B 00                       .
-        brk                                     ; 9D7C 00                       .
-        brk                                     ; 9D7D 00                       .
-        ora     L0000                           ; 9D7E 05 00                    ..
-        brk                                     ; 9D80 00                       .
-        brk                                     ; 9D81 00                       .
-        brk                                     ; 9D82 00                       .
-        brk                                     ; 9D83 00                       .
-        brk                                     ; 9D84 00                       .
-        brk                                     ; 9D85 00                       .
-        brk                                     ; 9D86 00                       .
-        brk                                     ; 9D87 00                       .
-        brk                                     ; 9D88 00                       .
-        brk                                     ; 9D89 00                       .
-        brk                                     ; 9D8A 00                       .
-        brk                                     ; 9D8B 00                       .
-        brk                                     ; 9D8C 00                       .
-        brk                                     ; 9D8D 00                       .
-        brk                                     ; 9D8E 00                       .
-        brk                                     ; 9D8F 00                       .
-        brk                                     ; 9D90 00                       .
-        ora     L0000                           ; 9D91 05 00                    ..
-        brk                                     ; 9D93 00                       .
-        brk                                     ; 9D94 00                       .
-        brk                                     ; 9D95 00                       .
-        brk                                     ; 9D96 00                       .
-        brk                                     ; 9D97 00                       .
-        brk                                     ; 9D98 00                       .
-        brk                                     ; 9D99 00                       .
-        brk                                     ; 9D9A 00                       .
-        brk                                     ; 9D9B 00                       .
-        brk                                     ; 9D9C 00                       .
-        brk                                     ; 9D9D 00                       .
-        brk                                     ; 9D9E 00                       .
-        brk                                     ; 9D9F 00                       .
-        brk                                     ; 9DA0 00                       .
-        brk                                     ; 9DA1 00                       .
-spawn_xvel_sub_tbl:  brk                                     ; 9DA2 00                       .
-        cpy     a:$33                           ; 9DA3 CC 33 00                 .3.
-        .byte   $80                             ; 9DA6 80                       .
-        .byte   $80                             ; 9DA7 80                       .
-        brk                                     ; 9DA8 00                       .
-        brk                                     ; 9DA9 00                       .
-spawn_xvel_px_tbl:  ora     (L0000,x)                       ; 9DAA 01 00                    ..
-        ora     ($02,x)                         ; 9DAC 01 02                    ..
-        ora     (L0000,x)                       ; 9DAE 01 00                    ..
-        .byte   $04                             ; 9DB0 04                       .
-        .byte   $03                             ; 9DB1 03                       .
-spawn_cmd_slot:  .byte   $82                             ; 9DB2 82                       .
-        .byte   $83                             ; 9DB3 83                       .
-        .byte   $12                             ; 9DB4 12                       .
-        .byte   $14                             ; 9DB5 14                       .
-        .byte   $0C                             ; 9DB6 0C                       .
-        php                                     ; 9DB7 08                       .
-        .byte   $04                             ; 9DB8 04                       .
-        .byte   $04                             ; 9DB9 04                       .
-        .byte   $02                             ; 9DBA 02                       .
-        .byte   $02                             ; 9DBB 02                       .
-        .byte   $0C                             ; 9DBC 0C                       .
-        .byte   $03                             ; 9DBD 03                       .
-        sty     $16                             ; 9DBE 84 16                    ..
-        .byte   $04                             ; 9DC0 04                       .
-        .byte   $04                             ; 9DC1 04                       .
-        .byte   $80                             ; 9DC2 80                       .
-        sta     ($08,x)                         ; 9DC3 81 08                    ..
-        sta     $18                             ; 9DC5 85 18                    ..
-        .byte   $0C                             ; 9DC7 0C                       .
-        php                                     ; 9DC8 08                       .
-        brk                                     ; 9DC9 00                       .
-        brk                                     ; 9DCA 00                       .
-        brk                                     ; 9DCB 00                       .
-        brk                                     ; 9DCC 00                       .
-        brk                                     ; 9DCD 00                       .
-        .byte   $0C                             ; 9DCE 0C                       .
-        brk                                     ; 9DCF 00                       .
-        brk                                     ; 9DD0 00                       .
-        .byte   $0C                             ; 9DD1 0C                       .
-        php                                     ; 9DD2 08                       .
-        .byte   $0C                             ; 9DD3 0C                       .
-        ora     (L0000,x)                       ; 9DD4 01 00                    ..
-        brk                                     ; 9DD6 00                       .
-        brk                                     ; 9DD7 00                       .
-        brk                                     ; 9DD8 00                       .
-        brk                                     ; 9DD9 00                       .
-        brk                                     ; 9DDA 00                       .
-        php                                     ; 9DDB 08                       .
-        .byte   $0C                             ; 9DDC 0C                       .
-        .byte   $03                             ; 9DDD 03                       .
-        brk                                     ; 9DDE 00                       .
-        .byte   $04                             ; 9DDF 04                       .
-        brk                                     ; 9DE0 00                       .
-        .byte   $10                             ; 9DE1 10                       .
-spawn_cmd_prog:  brk                                     ; 9DE2 00                       .
-        brk                                     ; 9DE3 00                       .
-        brk                                     ; 9DE4 00                       .
-        brk                                     ; 9DE5 00                       .
-        brk                                     ; 9DE6 00                       .
-        ora     ($02,x)                         ; 9DE7 01 02                    ..
-        .byte   $03                             ; 9DE9 03                       .
-        .byte   $89                             ; 9DEA 89                       .
-        bcc     L9DF1                           ; 9DEB 90 04                    ..
-        .byte   $83                             ; 9DED 83                       .
-        brk                                     ; 9DEE 00                       .
-        brk                                     ; 9DEF 00                       .
-        .byte   $06                             ; 9DF0 06                       .
-L9DF1:  .byte   $07                             ; 9DF1 07                       .
-        brk                                     ; 9DF2 00                       .
-        brk                                     ; 9DF3 00                       .
-        ora     L0000                           ; 9DF4 05 00                    ..
-        brk                                     ; 9DF6 00                       .
-        php                                     ; 9DF7 08                       .
-        bpl     L9DFA                           ; 9DF8 10 00                    ..
-L9DFA:  brk                                     ; 9DFA 00                       .
-        brk                                     ; 9DFB 00                       .
-        brk                                     ; 9DFC 00                       .
-        brk                                     ; 9DFD 00                       .
-        asl     a:L0000                         ; 9DFE 0E 00 00                 ...
-        php                                     ; 9E01 08                       .
-        ora     #$0C                            ; 9E02 09 0C                    ..
-        sta     a:$0F,x                         ; 9E04 9D 0F 00                 ...
-        brk                                     ; 9E07 00                       .
-        brk                                     ; 9E08 00                       .
-        brk                                     ; 9E09 00                       .
-        brk                                     ; 9E0A 00                       .
-        asl     a                               ; 9E0B 0A                       .
-        .byte   $0B                             ; 9E0C 0B                       .
-        sta     (L0000),y                       ; 9E0D 91 00                    ..
-        brk                                     ; 9E0F 00                       .
-        brk                                     ; 9E10 00                       .
-        brk                                     ; 9E11 00                       .
-L9E12:  brk                                     ; 9E12 00                       .
-L9E13:  .byte   $30                             ; 9E13 30                       0
-L9E14:  .byte   $23                             ; 9E14 23                       #
-L9E15:  .byte   $03                             ; 9E15 03                       .
-        brk                                     ; 9E16 00                       .
-        bmi     L9E43                           ; 9E17 30 2A                    0*
-        asl     a                               ; 9E19 0A                       .
-        brk                                     ; 9E1A 00                       .
-        ora     $0609,y                         ; 9E1B 19 09 06                 ...
-L9E1E:  brk                                     ; 9E1E 00                       .
-        .byte   $1C                             ; 9E1F 1C                       .
-        .byte   $0C                             ; 9E20 0C                       .
-        ora     L0000                           ; 9E21 05 00                    ..
-        bmi     L9E48                           ; 9E23 30 23                    0#
-        .byte   $03                             ; 9E25 03                       .
-        brk                                     ; 9E26 00                       .
-        and     $1827,y                         ; 9E27 39 27 18                 9'.
-        asl     $20                             ; 9E2A 06 20                    . 
-        .byte   $27                             ; 9E2C 27                       '
-        clc                                     ; 9E2D 18                       .
-        php                                     ; 9E2E 08                       .
-        jsr     L211C                           ; 9E2F 20 1C 21                  .!
-        brk                                     ; 9E32 00                       .
-        bit     $14                             ; 9E33 24 14                    $.
-        .byte   $03                             ; 9E35 03                       .
-        brk                                     ; 9E36 00                       .
-        php                                     ; 9E37 08                       .
-        php                                     ; 9E38 08                       .
-        ora     #$00                            ; 9E39 09 00                    ..
-        bpl     L9E59                           ; 9E3B 10 1C                    ..
-        .byte   $0C                             ; 9E3D 0C                       .
-        brk                                     ; 9E3E 00                       .
-        bpl     L9E41                           ; 9E3F 10 00                    ..
-L9E41:  php                                     ; 9E41 08                       .
-        brk                                     ; 9E42 00                       .
-L9E43:  .byte   $3C                             ; 9E43 3C                       <
-        bit     a:$1C                           ; 9E44 2C 1C 00                 ,..
-        .byte   $24                             ; 9E47 24                       $
-L9E48:  .byte   $14                             ; 9E48 14                       .
-        .byte   $03                             ; 9E49 03                       .
-        brk                                     ; 9E4A 00                       .
-        .byte   $31                             ; 9E4B 31                       1
-L9E4C:  and     ($11,x)                         ; 9E4C 21 11                    !.
-        brk                                     ; 9E4E 00                       .
-        bmi     L9E78                           ; 9E4F 30 27                    0'
-        .byte   $17                             ; 9E51 17                       .
-        brk                                     ; 9E52 00                       .
-        jsr     L1626                           ; 9E53 20 26 16                  &.
-L9E56:  brk                                     ; 9E56 00                       .
-L9E57:  brk                                     ; 9E57 00                       .
-        .byte   $90                             ; 9E58 90                       .
-L9E59:  .byte   $92                             ; 9E59 92                       .
-        bcc     L9E4C                           ; 9E5A 90 F0                    ..
-        sty     $86                             ; 9E5C 84 86                    ..
-        sty     $7A                             ; 9E5E 84 7A                    .z
-        brk                                     ; 9E60 00                       .
-        brk                                     ; 9E61 00                       .
-        brk                                     ; 9E62 00                       .
-        brk                                     ; 9E63 00                       .
-        brk                                     ; 9E64 00                       .
-        brk                                     ; 9E65 00                       .
-        dey                                     ; 9E66 88                       .
-        txa                                     ; 9E67 8A                       .
-L9E68:  ldy     $A6                             ; 9E68 A4 A6                    ..
-        bcs     L9E1E                           ; 9E6A B0 B2                    ..
-        ldy     $B6,x                           ; 9E6C B4 B6                    ..
-        bcc     L9E68                           ; 9E6E 90 F8                    ..
-        brk                                     ; 9E70 00                       .
-        brk                                     ; 9E71 00                       .
-        brk                                     ; 9E72 00                       .
-        brk                                     ; 9E73 00                       .
-        brk                                     ; 9E74 00                       .
-        brk                                     ; 9E75 00                       .
-        brk                                     ; 9E76 00                       .
-        brk                                     ; 9E77 00                       .
-L9E78:  brk                                     ; 9E78 00                       .
-        brk                                     ; 9E79 00                       .
-        brk                                     ; 9E7A 00                       .
-        brk                                     ; 9E7B 00                       .
-        brk                                     ; 9E7C 00                       .
-        brk                                     ; 9E7D 00                       .
-        brk                                     ; 9E7E 00                       .
-        brk                                     ; 9E7F 00                       .
-        brk                                     ; 9E80 00                       .
-        brk                                     ; 9E81 00                       .
-        brk                                     ; 9E82 00                       .
-        brk                                     ; 9E83 00                       .
-        brk                                     ; 9E84 00                       .
-        brk                                     ; 9E85 00                       .
-        brk                                     ; 9E86 00                       .
-        brk                                     ; 9E87 00                       .
-        brk                                     ; 9E88 00                       .
-        rti                                     ; 9E89 40                       @
-
-; ----------------------------------------------------------------------------
-        .byte   $80                             ; 9E8A 80                       .
-        brk                                     ; 9E8B 00                       .
-        brk                                     ; 9E8C 00                       .
-        brk                                     ; 9E8D 00                       .
-        brk                                     ; 9E8E 00                       .
-        bpl     L9E91                           ; 9E8F 10 00                    ..
-L9E91:  brk                                     ; 9E91 00                       .
-        brk                                     ; 9E92 00                       .
-        brk                                     ; 9E93 00                       .
-        brk                                     ; 9E94 00                       .
-        brk                                     ; 9E95 00                       .
-        brk                                     ; 9E96 00                       .
-        brk                                     ; 9E97 00                       .
-        brk                                     ; 9E98 00                       .
-        brk                                     ; 9E99 00                       .
-        brk                                     ; 9E9A 00                       .
-        brk                                     ; 9E9B 00                       .
-        brk                                     ; 9E9C 00                       .
-        brk                                     ; 9E9D 00                       .
-        brk                                     ; 9E9E 00                       .
-        brk                                     ; 9E9F 00                       .
-        brk                                     ; 9EA0 00                       .
-        brk                                     ; 9EA1 00                       .
-        brk                                     ; 9EA2 00                       .
-        brk                                     ; 9EA3 00                       .
-        brk                                     ; 9EA4 00                       .
-        brk                                     ; 9EA5 00                       .
-        brk                                     ; 9EA6 00                       .
-        brk                                     ; 9EA7 00                       .
-        brk                                     ; 9EA8 00                       .
-        brk                                     ; 9EA9 00                       .
-        brk                                     ; 9EAA 00                       .
-        brk                                     ; 9EAB 00                       .
-        brk                                     ; 9EAC 00                       .
-        brk                                     ; 9EAD 00                       .
-        brk                                     ; 9EAE 00                       .
-        brk                                     ; 9EAF 00                       .
-        brk                                     ; 9EB0 00                       .
-        brk                                     ; 9EB1 00                       .
-        brk                                     ; 9EB2 00                       .
-        brk                                     ; 9EB3 00                       .
-        brk                                     ; 9EB4 00                       .
-        brk                                     ; 9EB5 00                       .
-        brk                                     ; 9EB6 00                       .
-        brk                                     ; 9EB7 00                       .
-        brk                                     ; 9EB8 00                       .
-        brk                                     ; 9EB9 00                       .
-        brk                                     ; 9EBA 00                       .
-        brk                                     ; 9EBB 00                       .
-        brk                                     ; 9EBC 00                       .
-        brk                                     ; 9EBD 00                       .
-        brk                                     ; 9EBE 00                       .
-        brk                                     ; 9EBF 00                       .
-        brk                                     ; 9EC0 00                       .
-        brk                                     ; 9EC1 00                       .
-        brk                                     ; 9EC2 00                       .
-        brk                                     ; 9EC3 00                       .
-        brk                                     ; 9EC4 00                       .
-        brk                                     ; 9EC5 00                       .
-        brk                                     ; 9EC6 00                       .
-        brk                                     ; 9EC7 00                       .
-        brk                                     ; 9EC8 00                       .
-        brk                                     ; 9EC9 00                       .
-        brk                                     ; 9ECA 00                       .
-        brk                                     ; 9ECB 00                       .
-        brk                                     ; 9ECC 00                       .
-        brk                                     ; 9ECD 00                       .
-        brk                                     ; 9ECE 00                       .
-        brk                                     ; 9ECF 00                       .
-        brk                                     ; 9ED0 00                       .
-        brk                                     ; 9ED1 00                       .
-        brk                                     ; 9ED2 00                       .
-        brk                                     ; 9ED3 00                       .
-        brk                                     ; 9ED4 00                       .
-        brk                                     ; 9ED5 00                       .
-        brk                                     ; 9ED6 00                       .
-        brk                                     ; 9ED7 00                       .
-        brk                                     ; 9ED8 00                       .
-        brk                                     ; 9ED9 00                       .
-        brk                                     ; 9EDA 00                       .
-        brk                                     ; 9EDB 00                       .
-        php                                     ; 9EDC 08                       .
-        brk                                     ; 9EDD 00                       .
-        brk                                     ; 9EDE 00                       .
-        brk                                     ; 9EDF 00                       .
-        brk                                     ; 9EE0 00                       .
-        brk                                     ; 9EE1 00                       .
-        brk                                     ; 9EE2 00                       .
-        brk                                     ; 9EE3 00                       .
-        php                                     ; 9EE4 08                       .
-        brk                                     ; 9EE5 00                       .
-        brk                                     ; 9EE6 00                       .
-        brk                                     ; 9EE7 00                       .
-        brk                                     ; 9EE8 00                       .
-        brk                                     ; 9EE9 00                       .
-        brk                                     ; 9EEA 00                       .
-        brk                                     ; 9EEB 00                       .
-        ora     (L0000,x)                       ; 9EEC 01 00                    ..
-        brk                                     ; 9EEE 00                       .
-        brk                                     ; 9EEF 00                       .
-        jsr     L0000                           ; 9EF0 20 00 00                  ..
-        brk                                     ; 9EF3 00                       .
-        brk                                     ; 9EF4 00                       .
-        brk                                     ; 9EF5 00                       .
-        brk                                     ; 9EF6 00                       .
-        brk                                     ; 9EF7 00                       .
-        brk                                     ; 9EF8 00                       .
-        brk                                     ; 9EF9 00                       .
-        brk                                     ; 9EFA 00                       .
-        brk                                     ; 9EFB 00                       .
-        brk                                     ; 9EFC 00                       .
-        brk                                     ; 9EFD 00                       .
-        brk                                     ; 9EFE 00                       .
-        brk                                     ; 9EFF 00                       .
-        brk                                     ; 9F00 00                       .
-        brk                                     ; 9F01 00                       .
-        brk                                     ; 9F02 00                       .
-        brk                                     ; 9F03 00                       .
-        brk                                     ; 9F04 00                       .
-        brk                                     ; 9F05 00                       .
-        brk                                     ; 9F06 00                       .
-        brk                                     ; 9F07 00                       .
-        brk                                     ; 9F08 00                       .
-        brk                                     ; 9F09 00                       .
-        brk                                     ; 9F0A 00                       .
-        brk                                     ; 9F0B 00                       .
-        brk                                     ; 9F0C 00                       .
-        brk                                     ; 9F0D 00                       .
-        brk                                     ; 9F0E 00                       .
-        brk                                     ; 9F0F 00                       .
-        brk                                     ; 9F10 00                       .
-        brk                                     ; 9F11 00                       .
-        brk                                     ; 9F12 00                       .
-        brk                                     ; 9F13 00                       .
-        brk                                     ; 9F14 00                       .
-        brk                                     ; 9F15 00                       .
-        brk                                     ; 9F16 00                       .
-        brk                                     ; 9F17 00                       .
-        brk                                     ; 9F18 00                       .
-        brk                                     ; 9F19 00                       .
-        brk                                     ; 9F1A 00                       .
-        brk                                     ; 9F1B 00                       .
-        brk                                     ; 9F1C 00                       .
-        brk                                     ; 9F1D 00                       .
-        brk                                     ; 9F1E 00                       .
-        brk                                     ; 9F1F 00                       .
-        brk                                     ; 9F20 00                       .
-        brk                                     ; 9F21 00                       .
-        brk                                     ; 9F22 00                       .
-        brk                                     ; 9F23 00                       .
-        brk                                     ; 9F24 00                       .
-        bpl     L9F27                           ; 9F25 10 00                    ..
-L9F27:  brk                                     ; 9F27 00                       .
-        brk                                     ; 9F28 00                       .
-        brk                                     ; 9F29 00                       .
-        brk                                     ; 9F2A 00                       .
-        brk                                     ; 9F2B 00                       .
-        brk                                     ; 9F2C 00                       .
-        brk                                     ; 9F2D 00                       .
-        brk                                     ; 9F2E 00                       .
-        brk                                     ; 9F2F 00                       .
-        brk                                     ; 9F30 00                       .
-        brk                                     ; 9F31 00                       .
-        brk                                     ; 9F32 00                       .
-        brk                                     ; 9F33 00                       .
-        brk                                     ; 9F34 00                       .
-        brk                                     ; 9F35 00                       .
-        brk                                     ; 9F36 00                       .
-        brk                                     ; 9F37 00                       .
-        brk                                     ; 9F38 00                       .
-        brk                                     ; 9F39 00                       .
-        brk                                     ; 9F3A 00                       .
-        brk                                     ; 9F3B 00                       .
-        brk                                     ; 9F3C 00                       .
-        brk                                     ; 9F3D 00                       .
-        brk                                     ; 9F3E 00                       .
-        brk                                     ; 9F3F 00                       .
-        brk                                     ; 9F40 00                       .
-        brk                                     ; 9F41 00                       .
-        brk                                     ; 9F42 00                       .
-        brk                                     ; 9F43 00                       .
-        brk                                     ; 9F44 00                       .
-        brk                                     ; 9F45 00                       .
-        brk                                     ; 9F46 00                       .
-        brk                                     ; 9F47 00                       .
-        brk                                     ; 9F48 00                       .
-        brk                                     ; 9F49 00                       .
-        brk                                     ; 9F4A 00                       .
-        brk                                     ; 9F4B 00                       .
-        brk                                     ; 9F4C 00                       .
-        brk                                     ; 9F4D 00                       .
-        brk                                     ; 9F4E 00                       .
-        brk                                     ; 9F4F 00                       .
-        brk                                     ; 9F50 00                       .
-        brk                                     ; 9F51 00                       .
-        brk                                     ; 9F52 00                       .
-        brk                                     ; 9F53 00                       .
-        brk                                     ; 9F54 00                       .
-        brk                                     ; 9F55 00                       .
-        brk                                     ; 9F56 00                       .
-        brk                                     ; 9F57 00                       .
-        brk                                     ; 9F58 00                       .
-        brk                                     ; 9F59 00                       .
-        brk                                     ; 9F5A 00                       .
-        brk                                     ; 9F5B 00                       .
-        brk                                     ; 9F5C 00                       .
-        brk                                     ; 9F5D 00                       .
-        brk                                     ; 9F5E 00                       .
-        brk                                     ; 9F5F 00                       .
-        brk                                     ; 9F60 00                       .
-        brk                                     ; 9F61 00                       .
-        brk                                     ; 9F62 00                       .
-        brk                                     ; 9F63 00                       .
-        brk                                     ; 9F64 00                       .
-        brk                                     ; 9F65 00                       .
-        brk                                     ; 9F66 00                       .
-        brk                                     ; 9F67 00                       .
-        brk                                     ; 9F68 00                       .
-        brk                                     ; 9F69 00                       .
-        brk                                     ; 9F6A 00                       .
-        brk                                     ; 9F6B 00                       .
-        brk                                     ; 9F6C 00                       .
-        brk                                     ; 9F6D 00                       .
-        brk                                     ; 9F6E 00                       .
-        brk                                     ; 9F6F 00                       .
-        brk                                     ; 9F70 00                       .
-        brk                                     ; 9F71 00                       .
-        brk                                     ; 9F72 00                       .
-        brk                                     ; 9F73 00                       .
-        brk                                     ; 9F74 00                       .
-        brk                                     ; 9F75 00                       .
-        brk                                     ; 9F76 00                       .
-        brk                                     ; 9F77 00                       .
-        brk                                     ; 9F78 00                       .
-        brk                                     ; 9F79 00                       .
-        brk                                     ; 9F7A 00                       .
-        brk                                     ; 9F7B 00                       .
-        brk                                     ; 9F7C 00                       .
-        brk                                     ; 9F7D 00                       .
-        brk                                     ; 9F7E 00                       .
-        brk                                     ; 9F7F 00                       .
-        brk                                     ; 9F80 00                       .
-        brk                                     ; 9F81 00                       .
-        brk                                     ; 9F82 00                       .
-        brk                                     ; 9F83 00                       .
-        brk                                     ; 9F84 00                       .
-        brk                                     ; 9F85 00                       .
-        brk                                     ; 9F86 00                       .
-        brk                                     ; 9F87 00                       .
-        brk                                     ; 9F88 00                       .
-        brk                                     ; 9F89 00                       .
-        brk                                     ; 9F8A 00                       .
-        brk                                     ; 9F8B 00                       .
-        brk                                     ; 9F8C 00                       .
-        brk                                     ; 9F8D 00                       .
-        brk                                     ; 9F8E 00                       .
-        brk                                     ; 9F8F 00                       .
-        brk                                     ; 9F90 00                       .
-        brk                                     ; 9F91 00                       .
-        brk                                     ; 9F92 00                       .
-        brk                                     ; 9F93 00                       .
-        brk                                     ; 9F94 00                       .
-        brk                                     ; 9F95 00                       .
-        brk                                     ; 9F96 00                       .
-        brk                                     ; 9F97 00                       .
-        brk                                     ; 9F98 00                       .
-        brk                                     ; 9F99 00                       .
-        brk                                     ; 9F9A 00                       .
-        brk                                     ; 9F9B 00                       .
-        brk                                     ; 9F9C 00                       .
-        brk                                     ; 9F9D 00                       .
-        brk                                     ; 9F9E 00                       .
-        brk                                     ; 9F9F 00                       .
-        brk                                     ; 9FA0 00                       .
-        brk                                     ; 9FA1 00                       .
-        brk                                     ; 9FA2 00                       .
-        brk                                     ; 9FA3 00                       .
-        brk                                     ; 9FA4 00                       .
-        brk                                     ; 9FA5 00                       .
-        brk                                     ; 9FA6 00                       .
-        brk                                     ; 9FA7 00                       .
-        brk                                     ; 9FA8 00                       .
-        brk                                     ; 9FA9 00                       .
-        brk                                     ; 9FAA 00                       .
-        brk                                     ; 9FAB 00                       .
-        brk                                     ; 9FAC 00                       .
-        brk                                     ; 9FAD 00                       .
-        brk                                     ; 9FAE 00                       .
-        brk                                     ; 9FAF 00                       .
-        brk                                     ; 9FB0 00                       .
-        brk                                     ; 9FB1 00                       .
-        brk                                     ; 9FB2 00                       .
-        brk                                     ; 9FB3 00                       .
-        brk                                     ; 9FB4 00                       .
-        brk                                     ; 9FB5 00                       .
-        brk                                     ; 9FB6 00                       .
-        brk                                     ; 9FB7 00                       .
-        brk                                     ; 9FB8 00                       .
-        brk                                     ; 9FB9 00                       .
-        brk                                     ; 9FBA 00                       .
-        brk                                     ; 9FBB 00                       .
-        brk                                     ; 9FBC 00                       .
-        brk                                     ; 9FBD 00                       .
-        brk                                     ; 9FBE 00                       .
-        brk                                     ; 9FBF 00                       .
-        brk                                     ; 9FC0 00                       .
-        brk                                     ; 9FC1 00                       .
-        brk                                     ; 9FC2 00                       .
-        brk                                     ; 9FC3 00                       .
-        brk                                     ; 9FC4 00                       .
-        brk                                     ; 9FC5 00                       .
-        .byte   $80                             ; 9FC6 80                       .
-        brk                                     ; 9FC7 00                       .
-        brk                                     ; 9FC8 00                       .
-        brk                                     ; 9FC9 00                       .
-        brk                                     ; 9FCA 00                       .
-        brk                                     ; 9FCB 00                       .
-        brk                                     ; 9FCC 00                       .
-        brk                                     ; 9FCD 00                       .
-        brk                                     ; 9FCE 00                       .
-        brk                                     ; 9FCF 00                       .
-        brk                                     ; 9FD0 00                       .
-        brk                                     ; 9FD1 00                       .
-        brk                                     ; 9FD2 00                       .
-        brk                                     ; 9FD3 00                       .
-        brk                                     ; 9FD4 00                       .
-        brk                                     ; 9FD5 00                       .
-        brk                                     ; 9FD6 00                       .
-        brk                                     ; 9FD7 00                       .
-        brk                                     ; 9FD8 00                       .
-        brk                                     ; 9FD9 00                       .
-        brk                                     ; 9FDA 00                       .
-        brk                                     ; 9FDB 00                       .
-        brk                                     ; 9FDC 00                       .
-        brk                                     ; 9FDD 00                       .
-        brk                                     ; 9FDE 00                       .
-        brk                                     ; 9FDF 00                       .
-        brk                                     ; 9FE0 00                       .
-        brk                                     ; 9FE1 00                       .
-        brk                                     ; 9FE2 00                       .
-        brk                                     ; 9FE3 00                       .
-        brk                                     ; 9FE4 00                       .
-        brk                                     ; 9FE5 00                       .
-        .byte   $80                             ; 9FE6 80                       .
-        brk                                     ; 9FE7 00                       .
-        brk                                     ; 9FE8 00                       .
-        brk                                     ; 9FE9 00                       .
-        brk                                     ; 9FEA 00                       .
-        brk                                     ; 9FEB 00                       .
-        brk                                     ; 9FEC 00                       .
-        brk                                     ; 9FED 00                       .
-        brk                                     ; 9FEE 00                       .
-        brk                                     ; 9FEF 00                       .
-        brk                                     ; 9FF0 00                       .
-        brk                                     ; 9FF1 00                       .
-        brk                                     ; 9FF2 00                       .
-        brk                                     ; 9FF3 00                       .
-        brk                                     ; 9FF4 00                       .
-        brk                                     ; 9FF5 00                       .
-        brk                                     ; 9FF6 00                       .
-        brk                                     ; 9FF7 00                       .
-        brk                                     ; 9FF8 00                       .
-        brk                                     ; 9FF9 00                       .
-        brk                                     ; 9FFA 00                       .
-        brk                                     ; 9FFB 00                       .
-        brk                                     ; 9FFC 00                       .
-        brk                                     ; 9FFD 00                       .
-        ora     $FF                             ; 9FFE 05 FF                    ..
+; -----------------------------------------------------------------------------
+; Per-code enemy parameter tables (indexed by spawn code $00-$8F). Flags
+; bit 7 clear = face the player at spawn (entity_facing_to_flags).
+; -----------------------------------------------------------------------------
+spawn_flags_tbl: .byte   $08,$00,$00,$00,$00,$00,$00,$00,$00,$00,$84,$00,$08,$00,$88,$C8 ; 9A42  codes $00-$0F
+        .byte   $84,$04,$80,$80,$00,$00,$00,$00,$00,$00,$40,$00,$40,$00,$08,$08 ; 9A52  codes $10-$1F
+        .byte   $89,$89,$89,$89,$89,$89,$89,$89,$A4,$00,$00,$00,$04,$A8,$88,$A8 ; 9A62  codes $20-$2F
+        .byte   $88,$00,$80,$80,$80,$00,$00,$00,$00,$00,$00,$00,$88,$A8,$88,$00 ; 9A72  codes $30-$3F
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$02,$88,$00,$A0,$08 ; 9A82  codes $40-$4F
+        .byte   $00,$00,$02,$02,$02,$02,$00,$00,$00,$04,$04,$06,$04,$04,$04,$04 ; 9A92  codes $50-$5F
+        .byte   $00,$00,$04,$04,$14,$04,$04,$04,$04,$04,$04,$04,$04,$00,$00,$00 ; 9AA2  codes $60-$6F
+        .byte   $00,$00,$10,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$A8 ; 9AB2  codes $70-$7F
+        .byte   $84,$80,$84,$80,$80,$80,$80,$80,$80,$80,$80,$80,$80,$80,$80,$80 ; 9AC2  codes $80-$8F
+spawn_type_tbl: .byte   $10,$12,$13,$15,$16,$17,$18,$19,$1B,$1D,$26,$1F,$20,$21,$23,$23 ; 9AD2  codes $00-$0F
+        .byte   $24,$38,$28,$27,$2B,$31,$33,$35,$2A,$36,$36,$59,$63,$64,$9C,$9C ; 9AE2  codes $10-$1F
+        .byte   $2E,$2E,$2E,$2E,$2E,$2E,$2E,$2E,$35,$9E,$3A,$3B,$3E,$3D,$3D,$3D ; 9AF2  codes $20-$2F
+        .byte   $3D,$50,$53,$54,$56,$BD,$66,$5A,$5C,$5D,$5F,$60,$3D,$3D,$3D,$66 ; 9B02  codes $30-$3F
+        .byte   $04,$05,$06,$07,$06,$07,$08,$09,$0A,$0B,$0E,$0F,$40,$41,$42,$43 ; 9B12  codes $40-$4F
+        .byte   $44,$47,$48,$48,$48,$49,$4A,$4B,$4C,$4F,$71,$7A,$7C,$A0,$A2,$A5 ; 9B22  codes $50-$5F
+        .byte   $67,$68,$B3,$B3,$B3,$B3,$B3,$B3,$B3,$B3,$B3,$B3,$B3,$00,$00,$00 ; 9B32  codes $60-$6F
+        .byte   $AF,$B0,$B9,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$3D ; 9B42  codes $70-$7F
+        .byte   $22,$B6,$B6,$B6,$B6,$B6,$B6,$B6,$B6,$B6,$B6,$B6,$B6,$B6,$B6,$B6 ; 9B52  codes $80-$8F
+spawn_shape_tbl: .byte   $80,$C0,$C0,$C0,$CB,$D1,$92,$D2,$93,$89,$96,$C0,$EE,$D7,$01,$01 ; 9B62  codes $00-$0F
+        .byte   $00,$00,$D0,$00,$CC,$C8,$CC,$CD,$88,$F0,$F0,$A4,$C1,$C8,$AF,$AF ; 9B72  codes $10-$1F
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$CD,$91,$C0,$C8,$CD,$C1,$C1,$C1 ; 9B82  codes $20-$2F
+        .byte   $C1,$81,$C0,$CC,$90,$CC,$D1,$A2,$C1,$D7,$CE,$CA,$C1,$C1,$C1,$D1 ; 9B92  codes $30-$3F
+        .byte   $00,$00,$04,$04,$02,$02,$03,$00,$02,$02,$00,$03,$A8,$00,$00,$D9 ; 9BA2  codes $40-$4F
+        .byte   $A7,$00,$1D,$1E,$1F,$03,$00,$00,$00,$89,$E1,$A1,$A9,$89,$00,$AB ; 9BB2  codes $50-$5F
+        .byte   $C0,$C1,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$C0,$00,$00 ; 9BC2  codes $60-$6F
+        .byte   $06,$06,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$C1 ; 9BD2  codes $70-$7F
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 9BE2  codes $80-$8F
+spawn_subtype_tbl: .byte   $48,$2F,$27,$90,$49,$2E,$23,$31,$43,$26,$22,$35,$39,$3C,$4C,$4C ; 9BF2  codes $00-$0F
+        .byte   $4F,$4B,$53,$59,$56,$01,$60,$50,$4D,$0A,$0A,$61,$1D,$96,$89,$89 ; 9C02  codes $10-$1F
+        .byte   $52,$52,$52,$52,$52,$52,$52,$52,$50,$99,$67,$6C,$6F,$06,$06,$06 ; 9C12  codes $20-$2F
+        .byte   $06,$72,$74,$77,$79,$90,$1C,$7E,$6B,$AE,$93,$89,$05,$05,$05,$86 ; 9C22  codes $30-$3F
+        .byte   $00,$00,$00,$00,$62,$00,$00,$00,$00,$62,$00,$00,$83,$00,$10,$62 ; 9C32  codes $40-$4F
+        .byte   $62,$00,$62,$62,$62,$62,$B6,$00,$00,$C3,$BF,$62,$BA,$55,$9E,$85 ; 9C42  codes $50-$5F
+        .byte   $8F,$92,$10,$20,$0D,$03,$1F,$30,$3A,$3E,$41,$4B,$52,$00,$00,$00 ; 9C52  codes $60-$6F
+        .byte   $6A,$74,$65,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$05 ; 9C62  codes $70-$7F
+        .byte   $07,$72,$73,$78,$74,$75,$76,$77,$79,$7A,$7B,$7C,$7D,$7E,$7F,$80 ; 9C72  codes $80-$8F
+spawn_hp_tbl:   .byte   $02,$01,$01,$01,$03,$02,$06,$01,$04,$01,$00,$03,$0D,$04,$00,$00 ; 9C82  codes $00-$0F
+        .byte   $00,$00,$03,$00,$02,$03,$03,$02,$03,$03,$03,$05,$01,$02,$05,$05 ; 9C92  codes $10-$1F
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$02,$01,$04,$03,$03,$01,$01,$01 ; 9CA2  codes $20-$2F
+        .byte   $01,$01,$01,$01,$01,$03,$02,$01,$05,$06,$01,$02,$01,$01,$01,$02 ; 9CB2  codes $30-$3F
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$03,$00,$00,$00 ; 9CC2  codes $40-$4F
+        .byte   $14,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 9CD2  codes $50-$5F
+        .byte   $01,$01,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 9CE2  codes $60-$6F
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$01 ; 9CF2  codes $70-$7F
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 9D02  codes $80-$8F
+; speed row index into the xvel tables below
+spawn_speed_tbl: .byte   $01,$02,$04,$00,$03,$03,$03,$02,$00,$05,$04,$00,$00,$00,$00,$00 ; 9D12  codes $00-$0F
+        .byte   $00,$05,$00,$00,$00,$05,$00,$00,$00,$00,$00,$00,$03,$00,$05,$05 ; 9D22  codes $10-$1F
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$06,$00,$05,$00,$00,$05,$00,$00 ; 9D32  codes $20-$2F
+        .byte   $05,$05,$03,$05,$00,$00,$00,$03,$00,$00,$00,$00,$00,$05,$00,$00 ; 9D42  codes $30-$3F
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 9D52  codes $40-$4F
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$07,$00,$00 ; 9D62  codes $50-$5F
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$05,$00,$00,$00 ; 9D72  codes $60-$6F
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$05 ; 9D82  codes $70-$7F
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 9D92  codes $80-$8F
+spawn_xvel_sub_tbl: .byte   $00,$CC,$33,$00,$80,$80,$00,$00             ; 9DA2
+spawn_xvel_px_tbl: .byte   $01,$00,$01,$02,$01,$00,$04,$03              ; 9DAA
+; -----------------------------------------------------------------------------
+; Spawn commands (codes >= $C0, & $3F). Slot < 0: start the background
+; CHR-anim program (prog -> $05D0). Slot < $10: palette command in PAL_BUF
+; row/cycle slot. Slot >= $10: BG CHR bank pair index (spawn_chr_pairs).
+; -----------------------------------------------------------------------------
+spawn_cmd_slot: .byte   $82,$83,$12,$14,$0C,$08,$04,$04,$02,$02,$0C,$03,$84,$16,$04,$04 ; 9DB2
+        .byte   $80,$81,$08,$85,$18,$0C,$08,$00,$00,$00,$00,$00,$0C,$00,$00,$0C ; 9DC2
+        .byte   $08,$0C,$01,$00,$00,$00,$00,$00,$00,$08,$0C,$03,$00,$04,$00,$10 ; 9DD2
+; neg = palette-cycle program ($05F0+slot); pos = spawn_pal_rec index
+spawn_cmd_prog: .byte   $00,$00,$00,$00,$00,$01,$02,$03,$89,$90,$04,$83,$00,$00,$06,$07 ; 9DE2
+        .byte   $00,$00,$05,$00,$00,$08,$10,$00,$00,$00,$00,$00,$0E,$00,$00,$08 ; 9DF2
+        .byte   $09,$0C,$9D,$0F,$00,$00,$00,$00,$00,$0A,$0B,$91,$00,$00,$00,$00 ; 9E02
+; static palette records: ctl byte (0 = colors only, >0 = also load
+; spawn_chr_pairs[ctl], <0 = also set backdrop to ctl & $3F) + 3 colors
+spawn_pal_ctl:  .byte   $00                     ; 9E12
+spawn_pal_c1:   .byte   $30                     ; 9E13
+spawn_pal_c2:   .byte   $23                     ; 9E14
+spawn_pal_c3:   .byte   $03                     ; 9E15
+        .byte   $00,$30,$2A,$0A                                         ; 9E16
+        .byte   $00,$19,$09,$06                                         ; 9E1A
+        .byte   $00,$1C,$0C,$05                                         ; 9E1E
+        .byte   $00,$30,$23,$03                                         ; 9E22
+        .byte   $00,$39,$27,$18                                         ; 9E26
+        .byte   $06,$20,$27,$18                                         ; 9E2A
+        .byte   $08,$20,$1C,$21                                         ; 9E2E
+        .byte   $00,$24,$14,$03                                         ; 9E32
+        .byte   $00,$08,$08,$09                                         ; 9E36
+        .byte   $00,$10,$1C,$0C                                         ; 9E3A
+        .byte   $00,$10,$00,$08                                         ; 9E3E
+        .byte   $00,$3C,$2C,$1C                                         ; 9E42
+        .byte   $00,$24,$14,$03                                         ; 9E46
+        .byte   $00,$31,$21,$11                                         ; 9E4A
+        .byte   $00,$30,$27,$17                                         ; 9E4E
+        .byte   $00,$20,$26,$16                                         ; 9E52
+; background CHR bank pairs -> MMC3 R0/R1 ($EA/$EB), indexed by command
+; slot ($10+); remainder of the bank is padding
+spawn_chr_pairs: .byte  $00                     ; 9E56
+        .byte   $00                             ; 9E57
+        .byte   $90,$92,$90,$F0,$84,$86,$84,$7A,$00,$00,$00,$00,$00,$00,$88,$8A ; 9E58
+        .byte   $A4,$A6,$B0,$B2,$B4,$B6,$90,$F8,$00,$00,$00,$00,$00,$00,$00,$00 ; 9E68
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 9E78
+        .byte   $00,$40,$80,$00,$00,$00,$00,$10,$00,$00,$00,$00,$00,$00,$00,$00 ; 9E88
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 9E98
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 9EA8
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 9EB8
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 9EC8
+        .byte   $00,$00,$00,$00,$08,$00,$00,$00,$00,$00,$00,$00,$08,$00,$00,$00 ; 9ED8
+        .byte   $00,$00,$00,$00,$01,$00,$00,$00,$20,$00,$00,$00,$00,$00,$00,$00 ; 9EE8
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 9EF8
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 9F08
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$10,$00,$00 ; 9F18
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 9F28
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 9F38
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 9F48
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 9F58
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 9F68
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 9F78
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 9F88
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 9F98
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 9FA8
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$80,$00 ; 9FB8
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 9FC8
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$80,$00 ; 9FD8
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 9FE8
+        .byte   $00,$00,$00,$00,$00,$00,$05,$FF                         ; 9FF8
