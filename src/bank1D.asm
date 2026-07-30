@@ -1888,7 +1888,8 @@ LADC4:  sei                                     ; ADC4 78                       
         .byte   $74                             ; ADC9 74                       t
         ror     $78,x                           ; ADCA 76 78                    vx
 ; =============================================================================
-; BEHAVIOR type $57 — tossed pickup (thrown by type $22): falls with
+; BEHAVIOR type $57 — tossed pickup (thrown by type $22; converted
+; type $B7 random drops enter here too): falls with
 ; gravity (speed idx from $0468), slides horizontally (idx $2A) until a
 ; wall stops it (dir cleared), then falls through into the shared
 ; pickup-grant code below — taking it latches flag $5D so the carrier
@@ -1908,7 +1909,15 @@ LADDE:  ldy     #$2A                            ; ADDE A0 2A                    
         lda     #$00                            ; ADE8 A9 00                    ..
         sta     $0420,x                         ; ADEA 9D 20 04                 . .
 ; =============================================================================
-; BEHAVIOR types $B6/$C3 — (interior not yet annotated)
+; BEHAVIOR types $B6/$C3 — pickup grant (shared tail; types $57 and $B7
+; drops fall through here): sub_type $73 evaporates unless $BE == $80;
+; on player contact (game modes 0-5) — type $B6 placed pickups first
+; set their no-respawn bit (LF297), type $57 latches carrier flag $5D —
+; then the per-sub_type tables at LAEB8/LAEC7/LAED6/LAEE5 (+sub_type)
+; supply the effect id (-> $5A), pickup sound, and a handler pointer
+; jumped to after the entity is wiped; an uncollected $B7 drop ticks
+; $0480 down, self-stuns to flicker for its last $3C frames, and
+; vanishes at zero
 ; =============================================================================
 LADED:  lda     $0558,x                         ; ADED BD 58 05                 .X.
         cmp     #$73                            ; ADF0 C9 73                    .s
@@ -1963,7 +1972,12 @@ LAE58:  rts                                     ; AE58 60                       
 ; ----------------------------------------------------------------------------
 ; =============================================================================
 ; BEHAVIOR types $B7/$B8 — enemy death explosion (damage engine
-; spawns type $B8 on kill)
+; spawns type $B8 on kill); at anim phase 4, unless drops are
+; suppressed ($2F bit 7), it rolls the frame-rng ($E6/$E7 mash, div8)
+; against the LAF1B thresholds: a miss wipes the entity, a hit turns
+; it into a type $B7 falling drop — sub_type from LAF20, fall-speed
+; idx LAF25 -> $0468, $FF-frame lifetime — entering at $ADCC to drop
+; and slide like a type $57 pickup
 ; =============================================================================
         lda     $0540,x                         ; AE59 BD 40 05                 .@.
         cmp     #$04                            ; AE5C C9 04                    ..
@@ -2385,7 +2399,10 @@ LB118:  rts                                     ; B118 60                       
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR types $C6/$C7/$C8 — (interior not yet annotated)
+; BEHAVIOR types $C6/$C7/$C8 — delayed-fall debris: sits frozen (anim
+; sub-frame pinned) for $0468 frames, then toggles its vflip bit and
+; drops under gravity, wiping itself once it leaves the screen
+; vertically
 ; =============================================================================
         lda     #$00                            ; B119 A9 00                    ..
         sta     $0570,x                         ; B11B 9D 70 05                 .p.
@@ -3290,7 +3307,11 @@ LB82F:  bpl     LB821                           ; B82F 10 F0                    
 LB831:  brk                                     ; B831 00                       .
         .byte   $FF                             ; B832 FF                       .
 ; =============================================================================
-; BEHAVIOR type $03 — (interior not yet annotated)
+; BEHAVIOR type $03 — screen-crossing drifter: adds its velocity to the
+; full 24-bit position on both axes, with screen-carry deltas taken
+; from $0468 (x) and $0480 (y) — so it can sail across screen
+; boundaries; wipes itself when derendered (flags bit 7 clear) or when
+; its y screen leaves zero
 ; =============================================================================
         lda     $0528,x                         ; B833 BD 28 05                 .(.
         bpl     LB872                           ; B836 10 3A                    .:
@@ -3320,7 +3341,17 @@ LB875:  rts                                     ; B875 60                       
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $49 — (interior not yet annotated)
+; BEHAVIOR type $49 — collapse camera director (scripted vertical fall):
+; arms a scroll handshake ($1E/$29/$23) and clears the event bitmap
+; $05DC-$05DF, then once $1E clears it enables vscroll ($46) and the
+; status IRQ split ($24/$25, $99/$9B); each externally-set bit of
+; $05DC+ (indexed by step counter $0468) advances through the 3-byte
+; records at LB9C0 — byte 1 packs the camera target ($F0 -> $FA, $0F ->
+; $FB) — shaking the screen ($FC toggled for $2D frames) and then
+; free-falling the camera (gravity on its own yvel) until it reaches
+; the target; record 14 also clears the destroyed-block bitmap $0680;
+; at step $1D the end state waits for the split to rise past $18 and
+; hands the room over (IRQ mode 3, camera/mirroring reset)
 ; =============================================================================
         lda     #$80                            ; B876 A9 80                    ..
         sta     $1E                             ; B878 85 1E                    ..
@@ -3603,7 +3634,13 @@ LBA75:  .byte   $03                             ; BA75 03                       
         .byte   $03                             ; BA7B 03                       .
         .byte   $03                             ; BA7C 03                       .
 ; =============================================================================
-; BEHAVIOR type $4C — (interior not yet annotated)
+; BEHAVIOR type $4C — disappearing-block sequencer (yoku blocks): after
+; a $3C-frame lead-in, spawns waves of type $01 sub_type $B9 blocks
+; (sound $39, flags $02 = solid platform) at positions from the 3-byte
+; records at LBAF6/LBAF7/LBAF8 (x, y, continuation: 1 = next block in
+; the same wave, 0 = wave done, $FF = restart the loop from the saved
+; offset); one wave every $3C frames, with the pattern's start offset
+; chosen by parameter $0348 via the LBAE3 table
 ; =============================================================================
         inc     $0468,x                         ; BA7D FE 68 04                 .h.
         lda     $0468,x                         ; BA80 BD 68 04                 .h.
@@ -3714,7 +3751,8 @@ LBAF8:  ora     ($98,x)                         ; BAF8 01 98                    
         clv                                     ; BB39 B8                       .
         .byte   $FF                             ; BB3A FF                       .
 ; =============================================================================
-; BEHAVIOR type $B1 — (interior not yet annotated)
+; BEHAVIOR type $B1 — attachment node: pins itself to the entity in
+; slot $0468, copying its x and sitting $0480 px below its y each frame
 ; =============================================================================
         ldy     $0468,x                         ; BB3B BC 68 04                 .h.
         lda     $0378,y                         ; BB3E B9 78 03                 .x.
