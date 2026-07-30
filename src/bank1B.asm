@@ -7,8 +7,18 @@
 .segment "BANK1B"
 
 ; =============================================================================
-; BANK $1B (mapped at $8000) — raw da65 disassembly, annotation in progress
-; SKELETON — raw ROM bytes, not yet classified as code or data.
+; BANK $1B (mapped at $8000) — player engine: the state machine ($8000,
+; 36 states via the $8045/$8069 tables), weapon fire dispatch ($9571),
+; spawn engine ($988A) and per-stage enemy spawn tables.
+;
+; Player states (one header block per handler below):
+;   $00 ground        $01 air           $02 slide          $03 ladder
+;   $04 jetski ride   $05 nop           $06 hurt           $07 dead
+;   $08 teleport-in   $09 carried off   $0A re-enter top   $0B carried path
+;   $0C nop           $0D jetski mount  $0E jetski dock    $0F victory orbs
+;   $10 teleport-out  $11 walk-to-mark  $12 cutscene pose  $13 drop-in+restore
+;   $14 castle clear  $15 warp depart   $16 warp arrive    $17 rematch won
+;   $18 boss defeated $19 stand frozen  $1A/$1B nop        $1C-$23 ending
 ; =============================================================================
 L0000           := $0000
 L0010           := $0010
@@ -102,7 +112,7 @@ player_st_ground:
 ; ----------------------------------------------------------------------------
 L809B:  lda     $16                             ; 809B A5 16                    ..
         ldy     $AF                             ; 809D A4 AF                    ..
-        and     L9067,y                         ; 809F 39 67 90                 9g.
+        and     slide_input_mask,y                         ; 809F 39 67 90                 9g.
         bne     L80C2                           ; 80A2 D0 1E                    ..
 L80A4:  lda     $AF                             ; 80A4 A5 AF                    ..
         bne     L80B5                           ; 80A6 D0 0D                    ..
@@ -167,7 +177,7 @@ L811C:  jsr     entity_set_subtype                           ; 811C 20 98 EA    
         ldy     $AF                             ; 811F A4 AF                    ..
         lda     $0378                           ; 8121 AD 78 03                 .x.
         clc                                     ; 8124 18                       .
-        adc     L8EF1,y                         ; 8125 79 F1 8E                 y..
+        adc     ynudge_tbl,y                         ; 8125 79 F1 8E                 y..
         sta     $0378                           ; 8128 8D 78 03                 .x.
         lda     #$00                            ; 812B A9 00                    ..
         sta     $34                             ; 812D 85 34                    .4
@@ -186,14 +196,14 @@ L8147:  jmp     L82C8                           ; 8147 4C C8 82                 
 ; ----------------------------------------------------------------------------
 L814A:  ldy     $AF                             ; 814A A4 AF                    ..
         lda     $16                             ; 814C A5 16                    ..
-        and     L8EF7,y                         ; 814E 39 F7 8E                 9..
+        and     climb_down_mask,y                         ; 814E 39 F7 8E                 9..
         beq     L8186                           ; 8151 F0 33                    .3
         lda     $49                             ; 8153 A5 49                    .I
         cmp     #$40                            ; 8155 C9 40                    .@
         bne     L8186                           ; 8157 D0 2D                    .-
         lda     $11                             ; 8159 A5 11                    ..
         and     #$F0                            ; 815B 29 F0                    ).
-        ora     L8EF9,y                         ; 815D 19 F9 8E                 ...
+        ora     ladder_grab_yofs,y                         ; 815D 19 F9 8E                 ...
         sta     $0378                           ; 8160 8D 78 03                 .x.
         lda     $0330                           ; 8163 AD 30 03                 .0.
         and     #$F0                            ; 8166 29 F0                    ).
@@ -348,6 +358,13 @@ L8283:  lda     $16                             ; 8283 A5 16                    
 L8298:  rts                                     ; 8298 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; state $02 — SLIDE ($8299; entered from ground with A+Down, timer $35=$1A)
+; A press (Down released) probes headroom (L9845) and pops into a jump.
+; Head blocked (probe bit $10) extends the slide past the timer; L/R can
+; reverse direction. Expiry restores stand/walk with a slide_yvel y-kick.
+; =============================================================================
+player_st_slide:
         ldy     #$04                            ; 8299 A0 04                    ..
         jsr     entity_gravity_collide                           ; 829B 20 B7 E7                  ..
         jsr     L964C                           ; 829E 20 4C 96                  L.
@@ -402,7 +419,7 @@ L82F2:  lda     #$02                            ; 82F2 A9 02                    
         ldy     $AF                             ; 8300 A4 AF                    ..
         lda     $0378                           ; 8302 AD 78 03                 .x.
         sec                                     ; 8305 38                       8
-        sbc     L8EF1,y                         ; 8306 F9 F1 8E                 ...
+        sbc     ynudge_tbl,y                         ; 8306 F9 F1 8E                 ...
         sta     $0378                           ; 8309 8D 78 03                 .x.
 L830C:  lda     #$00                            ; 830C A9 00                    ..
         sta     $30                             ; 830E 85 30                    .0
@@ -413,9 +430,9 @@ L830C:  lda     #$00                            ; 830C A9 00                    
         lda     #$04                            ; 831A A9 04                    ..
         jsr     entity_set_subtype                           ; 831C 20 98 EA                  ..
         ldy     $AF                             ; 831F A4 AF                    ..
-        lda     L8EF3,y                         ; 8321 B9 F3 8E                 ...
+        lda     slide_yvel_sub,y                         ; 8321 B9 F3 8E                 ...
         sta     $03D8                           ; 8324 8D D8 03                 ...
-        lda     L8EF5,y                         ; 8327 B9 F5 8E                 ...
+        lda     slide_yvel_px,y                         ; 8327 B9 F5 8E                 ...
         sta     $03F0                           ; 832A 8D F0 03                 ...
 L832D:  lda     $9D                             ; 832D A5 9D                    ..
         and     #$07                            ; 832F 29 07                    ).
@@ -429,6 +446,13 @@ L832D:  lda     $9D                             ; 832D A5 9D                    
 L833F:  rts                                     ; 833F 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; state $03 — LADDER CLIMB ($8340; from ground via Up/Down over a ladder)
+; Up/Down moves (entity_vert_dispatch); fires first via L906B with the
+; climb-shoot pose. Reaching the ladder end aligns x to the rung center
+; (poses $0A climb / $14 top-exit); A with no vertical input lets go.
+; =============================================================================
+player_st_ladder:
         jsr     L906B                           ; 8340 20 6B 90                  k.
         lda     $34                             ; 8343 A5 34                    .4
         bne     L833F                           ; 8345 D0 F8                    ..
@@ -445,7 +469,7 @@ L8354:  sta     $0420                           ; 8354 8D 20 04                 
         bcc     L836C                           ; 835E 90 0C                    ..
         ldy     $AF                             ; 8360 A4 AF                    ..
         lda     $0420                           ; 8362 AD 20 04                 . .
-        and     L8EF7,y                         ; 8365 39 F7 8E                 9..
+        and     climb_down_mask,y                         ; 8365 39 F7 8E                 9..
         bne     L83C8                           ; 8368 D0 5E                    .^
         beq     L83B7                           ; 836A F0 4B                    .K
 L836C:  lda     #$02                            ; 836C A9 02                    ..
@@ -507,6 +531,13 @@ L83C8:  lda     #$00                            ; 83C8 A9 00                    
 L83DE:  rts                                     ; 83DE 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; state $04 — JET-SKI RIDE (Wave Man stage; from state $0D at ride screen
+; $0E) — ride poses $1D (surface)/$1E (air): A hops (+5 yvel, cut on
+; release), Right/Left picks jetski_thrust ($01.4C fwd / $01.00 back).
+; At x_screen $40 hands off to state $0E for the dock approach.
+; =============================================================================
+player_st_jetski:
         ldy     #$00                            ; 83DF A0 00                    ..
         jsr     entity_gravity_collide                           ; 83E1 20 B7 E7                  ..
         php                                     ; 83E4 08                       .
@@ -540,9 +571,9 @@ L841C:  lda     $16                             ; 841C A5 16                    
         sta     $0420                           ; 8422 8D 20 04                 . .
         and     #$02                            ; 8425 29 02                    ).
         tay                                     ; 8427 A8                       .
-        lda     L8F43,y                         ; 8428 B9 43 8F                 .C.
+        lda     jetski_thrust_sub,y                         ; 8428 B9 43 8F                 .C.
         sta     $03A8                           ; 842B 8D A8 03                 ...
-        lda     L8F44,y                         ; 842E B9 44 8F                 .D.
+        lda     jetski_thrust_px,y                         ; 842E B9 44 8F                 .D.
         sta     $03C0                           ; 8431 8D C0 03                 ...
         jsr     entity_facing_dispatch                           ; 8434 20 65 EA                  e.
         lda     $0528                           ; 8437 AD 28 05                 .(.
@@ -564,9 +595,19 @@ L8442:  jsr     L90E3                           ; 8442 20 E3 90                 
 L845D:  rts                                     ; 845D 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- state $05 — no-op ---
         rts                                     ; 845E 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; state $06 — HURT / KNOCKBACK ($845F; the damage engine $1C:82F4 sets it
+; with the knockback dir in ent_angle, prior state saved in ent_var6)
+; Drifts back at $00.80/frame ($00.40 steering into it); a slot-5 grab
+; actor (sub_type $12) tracks the player x. At anim phase 9: $3C hit-stun
+; i-frames, then restores the ent_var6 state (2 = slide resume, pose $10;
+; ride = pose $1D).
+; =============================================================================
+player_st_hurt:
         ldy     $04B0                           ; 845F AC B0 04                 ...
         jsr     entity_gravity_collide                           ; 8462 20 B7 E7                  ..
         lda     #$80                            ; 8465 A9 80                    ..
@@ -634,7 +675,7 @@ L84BF:  pla                                     ; 84BF 68                       
 L84E9:  ldy     $AF                             ; 84E9 A4 AF                    ..
         lda     $0378                           ; 84EB AD 78 03                 .x.
         clc                                     ; 84EE 18                       .
-        adc     L8EF1,y                         ; 84EF 79 F1 8E                 y..
+        adc     ynudge_tbl,y                         ; 84EF 79 F1 8E                 y..
         sta     $0378                           ; 84F2 8D 78 03                 .x.
         lda     #$80                            ; 84F5 A9 80                    ..
         sta     $03A8                           ; 84F7 8D A8 03                 ...
@@ -647,7 +688,13 @@ L84E9:  ldy     $AF                             ; 84E9 A4 AF                    
 L8508:  rts                                     ; 8508 60                       `
 
 ; ----------------------------------------------------------------------------
-L8509:  lda     $0468                           ; 8509 AD 68 04                 .h.
+; =============================================================================
+; state $07 — DEAD ($8509; set with a $012C-frame timer in ent_param/
+; ent_var5 by the damage engine $1C:8351 and the fall-death check $E025)
+; On expiry spawns the game-over/flow task ($DDE8) and kills the gameplay
+; tasks. player_exit_to_flow is shared by states $14/$23.
+; =============================================================================
+player_st_dead:  lda     $0468                           ; 8509 AD 68 04                 .h.
         sec                                     ; 850C 38                       8
         sbc     #$01                            ; 850D E9 01                    ..
         sta     $0468                           ; 850F 8D 68 04                 .h.
@@ -655,7 +702,7 @@ L8509:  lda     $0468                           ; 8509 AD 68 04                 
         sbc     #$00                            ; 8515 E9 00                    ..
         sta     $0480                           ; 8517 8D 80 04                 ...
         bcs     L8538                           ; 851A B0 1C                    ..
-L851C:  lda     #$DD                            ; 851C A9 DD                    ..
+player_exit_to_flow:  lda     #$DD                            ; 851C A9 DD                    ..
         sta     $94                             ; 851E 85 94                    ..
         lda     #$E8                            ; 8520 A9 E8                    ..
         sta     $93                             ; 8522 85 93                    ..
@@ -672,6 +719,13 @@ L851C:  lda     #$DD                            ; 851C A9 DD                    
 L8538:  rts                                     ; 8538 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; state $08 — TELEPORT-IN ($8539; set by the stage-start task at $DE5C)
+; Beam (sub_type $13) descends 8 px/f after the flash anim; below y=$70
+; probes ground; landing plays the materialize anim then state $00.
+; Boss-rush stage (bank $0E) screen 3 lands at the hub slot x=$50.
+; =============================================================================
+player_st_teleport_in:
         lda     #$00                            ; 8539 A9 00                    ..
         sta     $52                             ; 853B 85 52                    .R
         sta     $55                             ; 853D 85 55                    .U
@@ -741,6 +795,13 @@ L85CE:  lda     $0378                           ; 85CE AD 78 03                 
         rts                                     ; 85D3 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; state $09 — CARRIED OFF-SCREEN ($85D4; set by final-stage code $0A:A683
+; when a press actor pins the player, position slaved to it) — hurt pose,
+; y motion only; past y=$E0 fades out and advances to state $0A to
+; re-enter from the top of the screen.
+; =============================================================================
+player_st_carried_off:
         lda     #$07                            ; 85D4 A9 07                    ..
         cmp     $0558                           ; 85D6 CD 58 05                 .X.
         beq     L85E4                           ; 85D9 F0 09                    ..
@@ -765,8 +826,13 @@ L85E4:  jsr     entity_process_y_vel                           ; 85E4 20 68 E9  
 L8605:  rts                                     ; 8605 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; state $0A — RE-ENTER FROM TOP ($8606) — reloads the player sprite
+; palette (reenter_palette), CHR $F0, fades in at x=$30/y=$00, state $00.
+; =============================================================================
+player_st_reenter_top:
         ldy     #$0F                            ; 8606 A0 0F                    ..
-L8608:  lda     L8EFB,y                         ; 8608 B9 FB 8E                 ...
+L8608:  lda     reenter_palette,y                         ; 8608 B9 FB 8E                 ...
         sta     $0620,y                         ; 860B 99 20 06                 . .
         dey                                     ; 860E 88                       .
         bpl     L8608                           ; 860F 10 F7                    ..
@@ -785,6 +851,12 @@ L8608:  lda     L8EFB,y                         ; 8608 B9 FB 8E                 
         rts                                     ; 862D 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; state $0B — SCRIPTED CARRY ($862E; set by $0A:A6A9) — hurt pose, towed
+; along the carry_path waypoint script (screen/x/y/dir records, sound $1F
+; per turn); the $FF terminator releases the player with a leap, state $00.
+; =============================================================================
+player_st_carried_path:
         lda     #$07                            ; 862E A9 07                    ..
         cmp     $0558                           ; 8630 CD 58 05                 .X.
         beq     L863E                           ; 8633 F0 09                    ..
@@ -795,16 +867,16 @@ L8608:  lda     L8EFB,y                         ; 8608 B9 FB 8E                 
 L863E:  jsr     entity_facing_dispatch                           ; 863E 20 65 EA                  e.
         jsr     entity_vert_dispatch_raw                           ; 8641 20 86 EA                  ..
         ldy     $0468                           ; 8644 AC 68 04                 .h.
-        lda     L8F0B,y                         ; 8647 B9 0B 8F                 ...
+        lda     carry_path_scr,y                         ; 8647 B9 0B 8F                 ...
         cmp     $0348                           ; 864A CD 48 03                 .H.
         bne     L8694                           ; 864D D0 45                    .E
-        lda     L8F0C,y                         ; 864F B9 0C 8F                 ...
+        lda     carry_path_x,y                         ; 864F B9 0C 8F                 ...
         cmp     $0330                           ; 8652 CD 30 03                 .0.
         bne     L8694                           ; 8655 D0 3D                    .=
-        lda     L8F0D,y                         ; 8657 B9 0D 8F                 ...
+        lda     carry_path_y,y                         ; 8657 B9 0D 8F                 ...
         cmp     $0378                           ; 865A CD 78 03                 .x.
         bne     L8694                           ; 865D D0 35                    .5
-        lda     L8F0E,y                         ; 865F B9 0E 8F                 ...
+        lda     carry_path_dir,y                         ; 865F B9 0E 8F                 ...
         bmi     L8674                           ; 8662 30 10                    0.
         sta     $0420                           ; 8664 8D 20 04                 . .
         iny                                     ; 8667 C8                       .
@@ -833,9 +905,16 @@ L8674:  lda     $0528                           ; 8674 AD 28 05                 
 L8694:  rts                                     ; 8694 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- state $0C — no-op ---
         rts                                     ; 8695 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; state $0D — JET-SKI MOUNT (set by Wave Man stage code $05:A4B7)
+; Walks in (pose 4/7), hops at x>=$A0 onto the bike; once riding (pose
+; $1D) waits for x_screen $0E then switches to ride state $04.
+; =============================================================================
+player_st_jetski_mount:
         lda     $0558                           ; 8696 AD 58 05                 .X.
         cmp     #$1D                            ; 8699 C9 1D                    ..
         beq     L86CF                           ; 869B F0 32                    .2
@@ -875,6 +954,13 @@ L86CF:  lda     #$00                            ; 86CF A9 00                    
 L86E2:  rts                                     ; 86E2 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; state $0E — JET-SKI DOCK ($86E3; from ride state $04 at x_screen $40)
+; Ride physics continue (gravity table $17 while mounted); at x>=$4C on
+; the dock screen clamps x and spawns the dock actor (type $1E, falling);
+; screen $41 dismounts to state $00 with a $01.4C walk-off.
+; =============================================================================
+player_st_jetski_dismount:
         ldy     #$00                            ; 86E3 A0 00                    ..
         lda     $0558                           ; 86E5 AD 58 05                 .X.
         cmp     #$1D                            ; 86E8 C9 1D                    ..
@@ -927,6 +1013,13 @@ L8743:  lda     $0348                           ; 8743 AD 48 03                 
 L8758:  rts                                     ; 8758 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; state $0F — VICTORY: WEAPON ORBS ($8759; from state $18 on robot-master
+; stages) — walks to x=$80, leaps; at y=$78 spawns the converging orb ring
+; (type $4D, orb_spawn records, groups of 4, jingle $4B); when ent_var5
+; wraps to $80, state $10 teleport-out.
+; =============================================================================
+player_st_victory_orbs:
         ldy     #$00                            ; 8759 A0 00                    ..
         jsr     entity_gravity_collide                           ; 875B 20 B7 E7                  ..
         bcc     L8794                           ; 875E 90 34                    .4
@@ -980,11 +1073,11 @@ L87B6:  jsr     find_free_slot_y                           ; 87B6 20 6F F1      
         lda     $0480                           ; 87C7 AD 80 04                 ...
         and     #$1F                            ; 87CA 29 1F                    ).
         tax                                     ; 87CC AA                       .
-        lda     L8F5F,x                         ; 87CD BD 5F 8F                 ._.
+        lda     orb_spawn_x,x                         ; 87CD BD 5F 8F                 ._.
         sta     $0330,y                         ; 87D0 99 30 03                 .0.
-        lda     L8F60,x                         ; 87D3 BD 60 8F                 .`.
+        lda     orb_spawn_y,x                         ; 87D3 BD 60 8F                 .`.
         sta     $0378,y                         ; 87D6 99 78 03                 .x.
-        lda     L8F61,x                         ; 87D9 BD 61 8F                 .a.
+        lda     orb_spawn_phase,x                         ; 87D9 BD 61 8F                 .a.
         sta     $0480,y                         ; 87DC 99 80 04                 ...
         lda     #$08                            ; 87DF A9 08                    ..
         sta     $0498,y                         ; 87E1 99 98 04                 ...
@@ -1004,9 +1097,15 @@ L8801:  dec     $0468                           ; 8801 CE 68 04                 
         rts                                     ; 8806 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; state $10 — TELEPORT OUT ($8807) — grounded: beam-up pose (sub_type $13),
+; sound $35, clears gravity flip; when the flash anim ends rises; once
+; y_screen goes nonzero runs the dead-state exit path (timer + flow task).
+; =============================================================================
+player_st_teleport_out:
         lda     $0390                           ; 8807 AD 90 03                 ...
         beq     L880F                           ; 880A F0 03                    ..
-        jmp     L8509                           ; 880C 4C 09 85                 L..
+        jmp     player_st_dead                           ; 880C 4C 09 85                 L..
 
 ; ----------------------------------------------------------------------------
 L880F:  lda     $0558                           ; 880F AD 58 05                 .X.
@@ -1046,6 +1145,12 @@ L8846:  lda     $0540                           ; 8846 AD 40 05                 
 L8863:  rts                                     ; 8863 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; state $11 — WALK TO MARK ($8864; boss-rush arrival, $03:A047 saves the
+; health target in ent_param for state $13) — after the ent_var5 delay
+; walks to x=$84, stands, then state $12.
+; =============================================================================
+player_st_walk_to_mark:
         lda     $0480                           ; 8864 AD 80 04                 ...
         beq     L886E                           ; 8867 F0 05                    ..
         dec     $0480                           ; 8869 CE 80 04                 ...
@@ -1070,6 +1175,11 @@ L8881:  jsr     LE8DE                           ; 8881 20 DE E8                 
 L8897:  rts                                     ; 8897 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; state $12 — CUTSCENE POSE ($8898) — sub_type $0D: walk left to x=$5C
+; (flags |= $20) then stand; sub_type $11: stand once anim phase 9 hits.
+; =============================================================================
+player_st_cutscene_pose:
         lda     $0558                           ; 8898 AD 58 05                 .X.
         cmp     #$11                            ; 889B C9 11                    ..
         beq     L88C2                           ; 889D F0 23                    .#
@@ -1095,6 +1205,14 @@ L88C2:  lda     $0540                           ; 88C2 AD 40 05                 
 L88C9:  rts                                     ; 88C9 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; state $13 — DROP-IN + RESTORE ($88CA; set by boss-rush code $03:A418
+; with a down-left drift) — lands at x=$40, wipes actors; refills health
+; to the target saved in ent_param (tick $26); then plays the hatch_rec
+; list (tile rewrite + hatch actor + chime $2B, one per 4th frame) and
+; returns to state $00.
+; =============================================================================
+player_st_dropin_restore:
         ldy     #$00                            ; 88CA A0 00                    ..
         jsr     entity_gravity_collide                           ; 88CC 20 B7 E7                  ..
         bcs     L88E2                           ; 88CF B0 11                    ..
@@ -1141,20 +1259,20 @@ L8919:  lda     $0480                           ; 8919 AD 80 04                 
         adc     L0000                           ; 8920 65 00                    e.
         tay                                     ; 8922 A8                       .
         ldx     $43                             ; 8923 A6 43                    .C
-        lda     L8F7F,y                         ; 8925 B9 7F 8F                 ...
+        lda     hatch_rec_nt0,y                         ; 8925 B9 7F 8F                 ...
         sta     $06C0,x                         ; 8928 9D C0 06                 ...
-        lda     L8F80,y                         ; 892B B9 80 8F                 ...
+        lda     hatch_rec_nt1,y                         ; 892B B9 80 8F                 ...
         sta     $06C1,x                         ; 892E 9D C1 06                 ...
         sta     $22                             ; 8931 85 22                    ."
-        lda     L8F81,y                         ; 8933 B9 81 8F                 ...
+        lda     hatch_rec_nt2,y                         ; 8933 B9 81 8F                 ...
         sta     $06C2,x                         ; 8936 9D C2 06                 ...
         sta     L0010                           ; 8939 85 10                    ..
-        lda     L8F82,y                         ; 893B B9 82 8F                 ...
+        lda     hatch_rec_nt3,y                         ; 893B B9 82 8F                 ...
         sta     $06C3,x                         ; 893E 9D C3 06                 ...
         sta     $11                             ; 8941 85 11                    ..
-        lda     L8F83,y                         ; 8943 B9 83 8F                 ...
+        lda     hatch_rec_y,y                         ; 8943 B9 83 8F                 ...
         sta     $02                             ; 8946 85 02                    ..
-        lda     L8F84,y                         ; 8948 B9 84 8F                 ...
+        lda     hatch_rec_x,y                         ; 8948 B9 84 8F                 ...
         sta     $03                             ; 894B 85 03                    ..
         inx                                     ; 894D E8                       .
         inx                                     ; 894E E8                       .
@@ -1188,6 +1306,12 @@ L8919:  lda     $0480                           ; 8919 AD 80 04                 
 L898A:  rts                                     ; 898A 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; state $14 — CASTLE CLEAR ($898B; from state $18 on stage bank $0B) —
+; converges on x=$38, stands, then state $10 + the $DDE8 flow task
+; (stage exit without the orb ceremony).
+; =============================================================================
+player_st_castle_clear:
         ldy     #$00                            ; 898B A0 00                    ..
         jsr     entity_gravity_collide                           ; 898D 20 B7 E7                  ..
         lda     #$07                            ; 8990 A9 07                    ..
@@ -1237,6 +1361,13 @@ L89D3:  lda     #$10                            ; 89D3 A9 10                    
         jmp     task_exit                           ; 89F0 4C 0B FF                 L..
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; state $15 — WARP DEPART ($89F3; set by $03:A44E when the player steps on
+; a boss-rush teleporter; $6A = pad index *4) — beams up (pose $13), then
+; loads warp_dest (scroll screen/section/x/landing y), rebuilds the room
+; (LD460), state $16.
+; =============================================================================
+player_st_warp_depart:
         lda     $0540                           ; 89F3 AD 40 05                 .@.
         bne     L8A38                           ; 89F6 D0 40                    .@
         lda     #$13                            ; 89F8 A9 13                    ..
@@ -1251,13 +1382,13 @@ L89D3:  lda     #$10                            ; 89D3 A9 10                    
         and     #$EF                            ; 8A0E 29 EF                    ).
         sta     $0528                           ; 8A10 8D 28 05                 .(.
         ldy     $6A                             ; 8A13 A4 6A                    .j
-        lda     L8FBB,y                         ; 8A15 B9 BB 8F                 ...
+        lda     warp_dest_scr,y                         ; 8A15 B9 BB 8F                 ...
         sta     $F9                             ; 8A18 85 F9                    ..
-        lda     L8FBC,y                         ; 8A1A B9 BC 8F                 ...
+        lda     warp_dest_sect,y                         ; 8A1A B9 BC 8F                 ...
         sta     $29                             ; 8A1D 85 29                    .)
-        lda     L8FBD,y                         ; 8A1F B9 BD 8F                 ...
+        lda     warp_dest_x,y                         ; 8A1F B9 BD 8F                 ...
         sta     $0330                           ; 8A22 8D 30 03                 .0.
-        lda     L8FBE,y                         ; 8A25 B9 BE 8F                 ...
+        lda     warp_dest_y,y                         ; 8A25 B9 BE 8F                 ...
         sta     $0468                           ; 8A28 8D 68 04                 .h.
         lda     #$00                            ; 8A2B A9 00                    ..
         sta     $0378                           ; 8A2D 8D 78 03                 .x.
@@ -1267,6 +1398,11 @@ L8A33:  ldx     #$00                            ; 8A33 A2 00                    
 L8A38:  rts                                     ; 8A38 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; state $16 — WARP ARRIVE ($8A39) — beam descends to the warp_dest landing
+; y held in ent_param; materialize anim then sub_type 1, state $00.
+; =============================================================================
+player_st_warp_arrive:
         jsr     LEA03                           ; 8A39 20 03 EA                  ..
         jsr     entity_move_down_collide                           ; 8A3C 20 2A E9                  *.
         lda     $0468                           ; 8A3F AD 68 04                 .h.
@@ -1284,6 +1420,13 @@ L8A38:  rts                                     ; 8A38 60                       
 L8A5D:  rts                                     ; 8A5D 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; state $17 — REMATCH WON ($8A5E; set by $03:A4C9 after a rematch boss
+; falls) — refills health to full ($9C, tick $26), beams up (sound $35);
+; at the screen top warps back to the hub pad (warp_return by pad index),
+; rebuilds the room (LD460), descends and materializes to state $00.
+; =============================================================================
+player_st_rematch_won:
         lda     $0558                           ; 8A5E AD 58 05                 .X.
         cmp     #$13                            ; 8A61 C9 13                    ..
         beq     L8A9A                           ; 8A63 F0 35                    .5
@@ -1324,9 +1467,9 @@ L8A9A:  lda     $F9                             ; 8A9A A5 F9                    
         and     #$07                            ; 8AB5 29 07                    ).
         asl     a                               ; 8AB7 0A                       .
         tay                                     ; 8AB8 A8                       .
-        lda     L8FE3,y                         ; 8AB9 B9 E3 8F                 ...
+        lda     warp_return_x,y                         ; 8AB9 B9 E3 8F                 ...
         sta     $0330                           ; 8ABC 8D 30 03                 .0.
-        lda     L8FE4,y                         ; 8ABF B9 E4 8F                 ...
+        lda     warp_return_y,y                         ; 8ABF B9 E4 8F                 ...
         sta     $0378                           ; 8AC2 8D 78 03                 .x.
         lda     #$00                            ; 8AC5 A9 00                    ..
         sta     $0390                           ; 8AC7 8D 90 03                 ...
@@ -1347,6 +1490,13 @@ L8AD8:  lda     $0540                           ; 8AD8 AD 40 05                 
 L8AE3:  rts                                     ; 8AE3 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; state $18 — BOSS DEFEATED ($8AE4; set by stage boss-death code, e.g.
+; $0A:A0EE) — wipes slots 1-4, plays the victory jingle ($11), sets the
+; boss-beaten bit ($6E bitmap via $F2B2); robot-master stages -> state $0F
+; (orbs), stage bank $0B -> state $14, other castle stages -> state $10.
+; =============================================================================
+player_st_boss_defeated:
         ldy     #$04                            ; 8AE4 A0 04                    ..
 L8AE6:  jsr     entity_wipe_y                           ; 8AE6 20 FE F2                  ..
         dey                                     ; 8AE9 88                       .
@@ -1403,6 +1553,11 @@ L8B45:  lda     #$14                            ; 8B45 A9 14                    
         rts                                     ; 8B49 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; state $19 — STAND FROZEN ($8B4A) — parks the player (sub_type 1, flags
+; $20) while scripted refills/cutscenes run ($1C:84AD, $0A:A2F3).
+; =============================================================================
+player_st_frozen:
         lda     #$01                            ; 8B4A A9 01                    ..
         cmp     $0558                           ; 8B4C CD 58 05                 .X.
         beq     L8B5A                           ; 8B4F F0 09                    ..
@@ -1416,9 +1571,16 @@ L8B5A:  lda     $0528                           ; 8B5A AD 28 05                 
         rts                                     ; 8B62 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- states $1A/$1B — no-op ---
         rts                                     ; 8B63 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; state $1C — ENDING: ARRIVAL ($8B64; set by final-stage code $0A:A26E) —
+; walks to x=$2C; when ent_param expires jumps to section $26, loads the
+; ending palette, cues song $4A and enters state $1D.
+; =============================================================================
+player_st_end_arrive:
         ldy     #$00                            ; 8B64 A0 00                    ..
         jsr     entity_gravity_collide                           ; 8B66 20 B7 E7                  ..
         lda     #$07                            ; 8B69 A9 07                    ..
@@ -1470,7 +1632,7 @@ L8BBA:  lda     $99                             ; 8BBA A5 99                    
         sta     $2E                             ; 8BD3 85 2E                    ..
         sta     $2F                             ; 8BD5 85 2F                    ./
         ldy     #$0F                            ; 8BD7 A0 0F                    ..
-L8BD9:  lda     L8FF3,y                         ; 8BD9 B9 F3 8F                 ...
+L8BD9:  lda     ending_palette,y                         ; 8BD9 B9 F3 8F                 ...
         sta     $0600,y                         ; 8BDC 99 00 06                 ...
         sta     $0620,y                         ; 8BDF 99 20 06                 . .
         dey                                     ; 8BE2 88                       .
@@ -1490,6 +1652,12 @@ L8BD9:  lda     L8FF3,y                         ; 8BD9 B9 F3 8F                 
 L8C02:  rts                                     ; 8C02 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; state $1D — ENDING: TO THE CLIFF ($8C03) — walks right; at screen $0A
+; x=$80 stands (song $15); after the beat leaps off the edge (xvel $02.6A,
+; yvel $06.A4) into state $1E.
+; =============================================================================
+player_st_end_cliff:
         lda     $0558                           ; 8C03 AD 58 05                 .X.
         cmp     #$01                            ; 8C06 C9 01                    ..
         beq     L8C2D                           ; 8C08 F0 23                    .#
@@ -1525,6 +1693,13 @@ L8C2D:  dec     $0468                           ; 8C2D CE 68 04                 
         jsr     entity_set_subtype                           ; 8C51 20 98 EA                  ..
         lda     #$00                            ; 8C54 A9 00                    ..
         sta     $05F3                           ; 8C56 8D F3 05                 ...
+; =============================================================================
+; state $1E — ENDING: LEAP WITH ESCORT ($8C59; fall-through from the state
+; $1D setup) — mid-air arc, turning to face left past the apex; the
+; spawn-linked escort actor tracks y/x-$14 alongside; BG palettes step
+; darker every 8 frames. Landing: stand, song $4A, $78-frame pause, $1F.
+; =============================================================================
+player_st_end_leap:
         ldy     #$00                            ; 8C59 A0 00                    ..
         jsr     entity_gravity_collide                           ; 8C5B 20 B7 E7                  ..
         bcs     L8C7B                           ; 8C5E B0 1B                    ..
@@ -1601,6 +1776,12 @@ L8CED:  sta     $060C,y                         ; 8CED 99 0C 06                 
 L8D03:  rts                                     ; 8D03 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; state $1F — ENDING: VISTA ($8D04) — gazes out (pose $1F); every 16
+; frames lights a star (actor $2F at vista_star positions, 12 total),
+; then programs the credits IRQ split (latch $BF, mode 5) and state $20.
+; =============================================================================
+player_st_end_vista:
         lda     #$1F                            ; 8D04 A9 1F                    ..
         cmp     $0558                           ; 8D06 CD 58 05                 .X.
         beq     L8D1B                           ; 8D09 F0 10                    ..
@@ -1624,9 +1805,9 @@ L8D1B:  lda     $0468                           ; 8D1B AD 68 04                 
         lda     #$00                            ; 8D34 A9 00                    ..
         sta     $0408,y                         ; 8D36 99 08 04                 ...
         ldx     $0480                           ; 8D39 AE 80 04                 ...
-        lda     L9007,x                         ; 8D3C BD 07 90                 ...
+        lda     vista_star_y,x                         ; 8D3C BD 07 90                 ...
         sta     $0378,y                         ; 8D3F 99 78 03                 .x.
-        lda     L9008,x                         ; 8D42 BD 08 90                 ...
+        lda     vista_star_x,x                         ; 8D42 BD 08 90                 ...
         sta     $0330,y                         ; 8D45 99 30 03                 .0.
         inc     $0480                           ; 8D48 EE 80 04                 ...
         inc     $0480                           ; 8D4B EE 80 04                 ...
@@ -1653,6 +1834,12 @@ L8D78:  ldx     #$00                            ; 8D78 A2 00                    
         rts                                     ; 8D7A 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; state $20 — ENDING: SKY PAN ($8D7B) — accelerating upward camera scroll
+; (16-bit adder into scroll_y, nametable flip on borrow); pose $C4. When
+; the escort actor despawns: state $21, song $4A.
+; =============================================================================
+player_st_end_ascent:
         lda     $0468                           ; 8D7B AD 68 04                 .h.
         clc                                     ; 8D7E 18                       .
         adc     #$40                            ; 8D7F 69 40                    i@
@@ -1705,6 +1892,12 @@ L8DD1:  ldy     $04F8                           ; 8DD1 AC F8 04                 
 L8DED:  rts                                     ; 8DED 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; state $21 — ENDING: CAST REVEAL ($8DEE) — camera eases back down; every
+; 8 frames plays a cast_rec (tile rewrite + cast actor type $C1 + chime
+; $2B), 12 records; then pose 4, walk-off $01.4C, state $22.
+; =============================================================================
+player_st_end_reveal:
         lda     $0498                           ; 8DEE AD 98 04                 ...
         clc                                     ; 8DF1 18                       .
         adc     #$40                            ; 8DF2 69 40                    i@
@@ -1722,20 +1915,20 @@ L8E05:  dec     $0468                           ; 8E05 CE 68 04                 
         sta     $0468                           ; 8E0C 8D 68 04                 .h.
         ldy     $0480                           ; 8E0F AC 80 04                 ...
         ldx     $43                             ; 8E12 A6 43                    .C
-        lda     L901F,y                         ; 8E14 B9 1F 90                 ...
+        lda     cast_rec_nt0,y                         ; 8E14 B9 1F 90                 ...
         sta     $06C0,x                         ; 8E17 9D C0 06                 ...
-        lda     L9020,y                         ; 8E1A B9 20 90                 . .
+        lda     cast_rec_nt1,y                         ; 8E1A B9 20 90                 . .
         sta     $06C1,x                         ; 8E1D 9D C1 06                 ...
         sta     $22                             ; 8E20 85 22                    ."
-        lda     L9021,y                         ; 8E22 B9 21 90                 .!.
+        lda     cast_rec_nt2,y                         ; 8E22 B9 21 90                 .!.
         sta     $06C2,x                         ; 8E25 9D C2 06                 ...
         sta     L0010                           ; 8E28 85 10                    ..
-        lda     L9022,y                         ; 8E2A B9 22 90                 .".
+        lda     cast_rec_nt3,y                         ; 8E2A B9 22 90                 .".
         sta     $06C3,x                         ; 8E2D 9D C3 06                 ...
         sta     $11                             ; 8E30 85 11                    ..
-        lda     L9023,y                         ; 8E32 B9 23 90                 .#.
+        lda     cast_rec_y,y                         ; 8E32 B9 23 90                 .#.
         sta     $02                             ; 8E35 85 02                    ..
-        lda     L9024,y                         ; 8E37 B9 24 90                 .$.
+        lda     cast_rec_x,y                         ; 8E37 B9 24 90                 .$.
         sta     $03                             ; 8E3A 85 03                    ..
         inx                                     ; 8E3C E8                       .
         inx                                     ; 8E3D E8                       .
@@ -1781,6 +1974,12 @@ L8E8D:  sta     $03A8                           ; 8E8D 8D A8 03                 
 L8E95:  rts                                     ; 8E95 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; state $22 — ENDING: WALK OFF ($8E96) — walks right (wide-range flag)
+; until x_screen $0B; when the escort actor despawns, state $23 with a
+; $3C-frame pause.
+; =============================================================================
+player_st_end_walk:
         ldy     #$00                            ; 8E96 A0 00                    ..
         jsr     entity_gravity_collide                           ; 8E98 20 B7 E7                  ..
         lda     #$04                            ; 8E9B A9 04                    ..
@@ -1807,318 +2006,173 @@ L8EBB:  ldy     $0510                           ; 8EBB AC 10 05                 
 L8ECF:  rts                                     ; 8ECF 60                       `
 
 ; ----------------------------------------------------------------------------
-        .byte   $AD                             ; 8ED0 AD                       .
-        pla                                     ; 8ED1 68                       h
-L8ED2:  .byte   $04                             ; 8ED2 04                       .
-        beq     L8EDA                           ; 8ED3 F0 05                    ..
-        dec     $0468                           ; 8ED5 CE 68 04                 .h.
-        bne     L8ECF                           ; 8ED8 D0 F5                    ..
-L8EDA:  lda     $FA                             ; 8EDA A5 FA                    ..
-        sec                                     ; 8EDC 38                       8
-        sbc     #$08                            ; 8EDD E9 08                    ..
-        sta     $FA                             ; 8EDF 85 FA                    ..
-        lda     #$50                            ; 8EE1 A9 50                    .P
-        cmp     $FA                             ; 8EE3 C5 FA                    ..
-        bcc     L8ECF                           ; 8EE5 90 E8                    ..
-        sta     $FA                             ; 8EE7 85 FA                    ..
-        .byte   $CE                             ; 8EE9 CE                       .
-L8EEA:  .byte   $80                             ; 8EEA 80                       .
-        .byte   $04                             ; 8EEB 04                       .
-        bne     L8ECF                           ; 8EEC D0 E1                    ..
-L8EEE:  jmp     L851C                           ; 8EEE 4C 1C 85                 L..
+; =============================================================================
+; state $23 — ENDING: FADE OUT ($8ED0) — after the pause pans the camera up
+; to $50, then hands off to the flow task (credits / THE END).
+; =============================================================================
+player_st_end_fade:
+        lda     $0468                           ; 8ED0 AD 68 04
+        beq     L8EDA                           ; 8ED3 F0 05
+        dec     $0468                           ; 8ED5 CE 68 04
+        bne     L8ECF                           ; 8ED8 D0 F5
+L8EDA:  lda     $FA                             ; 8EDA A5 FA
+        sec                                     ; 8EDC 38
+        sbc     #$08                            ; 8EDD E9 08
+        sta     $FA                             ; 8EDF 85 FA
+        lda     #$50                            ; 8EE1 A9 50
+        cmp     $FA                             ; 8EE3 C5 FA
+        bcc     L8ECF                           ; 8EE5 90 E8
+        sta     $FA                             ; 8EE7 85 FA
+        dec     $0480                           ; 8EE9 CE 80 04
+        bne     L8ECF                           ; 8EEC D0 E1
+        jmp     player_exit_to_flow             ; 8EEE 4C 1C 85
 
-; ----------------------------------------------------------------------------
-L8EF1:  .byte   $02                             ; 8EF1 02                       .
-        .byte   $FE                             ; 8EF2 FE                       .
-L8EF3:  cpy     #$40                            ; 8EF3 C0 40                    .@
-L8EF5:  .byte   $FF                             ; 8EF5 FF                       .
-        brk                                     ; 8EF6 00                       .
-L8EF7:  .byte   $04                             ; 8EF7 04                       .
-        php                                     ; 8EF8 08                       .
-L8EF9:  brk                                     ; 8EF9 00                       .
-        .byte   $0F                             ; 8EFA 0F                       .
-L8EFB:  .byte   $0F                             ; 8EFB 0F                       .
-        jsr     L0111                           ; 8EFC 20 11 01                  ..
-        .byte   $0F                             ; 8EFF 0F                       .
-        jsr     L0010                           ; 8F00 20 10 00                  ..
-        .byte   $0F                             ; 8F03 0F                       .
-        and     ($19,x)                         ; 8F04 21 19                    !.
-        ora     #$0F                            ; 8F06 09 0F                    ..
-        jsr     L1727                           ; 8F08 20 27 17                  '.
-L8F0B:  .byte   $03                             ; 8F0B 03                       .
-L8F0C:  .byte   $B0                             ; 8F0C B0                       .
-L8F0D:  .byte   $90                             ; 8F0D 90                       .
-L8F0E:  .byte   $04                             ; 8F0E 04                       .
-        .byte   $04                             ; 8F0F 04                       .
-        bcs     L8F42                           ; 8F10 B0 30                    .0
-        .byte   $02                             ; 8F12 02                       .
-        .byte   $04                             ; 8F13 04                       .
-        bmi     L8F46                           ; 8F14 30 30                    00
-        .byte   $04                             ; 8F16 04                       .
-        .byte   $04                             ; 8F17 04                       .
-        bmi     L8F6A                           ; 8F18 30 50                    0P
-        ora     ($04,x)                         ; 8F1A 01 04                    ..
-        bvc     L8F6E                           ; 8F1C 50 50                    PP
-        .byte   $04                             ; 8F1E 04                       .
-        .byte   $04                             ; 8F1F 04                       .
-        bvc     L8F92                           ; 8F20 50 70                    Pp
-        ora     ($04,x)                         ; 8F22 01 04                    ..
-        bvs     L8F96                           ; 8F24 70 70                    pp
-        .byte   $04                             ; 8F26 04                       .
-        .byte   $04                             ; 8F27 04                       .
-        bvs     L8ED2                           ; 8F28 70 A8                    p.
-        .byte   $FF                             ; 8F2A FF                       .
-        .byte   $03                             ; 8F2B 03                       .
-        bne     L8F9E                           ; 8F2C D0 70                    .p
-        .byte   $04                             ; 8F2E 04                       .
-        .byte   $04                             ; 8F2F 04                       .
-        bne     L8FA2                           ; 8F30 D0 70                    .p
-        .byte   $02                             ; 8F32 02                       .
-        .byte   $04                             ; 8F33 04                       .
-        bcs     L8FA6                           ; 8F34 B0 70                    .p
-        .byte   $04                             ; 8F36 04                       .
-        .byte   $04                             ; 8F37 04                       .
-        bcs     L8EEA                           ; 8F38 B0 B0                    ..
-        ora     ($04,x)                         ; 8F3A 01 04                    ..
-        bne     L8EEE                           ; 8F3C D0 B0                    ..
-        .byte   $04                             ; 8F3E 04                       .
-        ora     $D0                             ; 8F3F 05 D0                    ..
-        sec                                     ; 8F41 38                       8
-L8F42:  .byte   $FF                             ; 8F42 FF                       .
-L8F43:  .byte   $4C                             ; 8F43 4C                       L
-L8F44:  ora     (L0000,x)                       ; 8F44 01 00                    ..
-L8F46:  .byte   $01                             ; 8F46 01                       .
-L8F47:  .byte   $0F                             ; 8F47 0F                       .
-        .byte   $0F                             ; 8F48 0F                       .
-        ora     $15                             ; 8F49 05 15                    ..
-        and     $0F                             ; 8F4B 25 0F                    %.
-        .byte   $2C                             ; 8F4D 2C                       ,
-        .byte   $11                             ; 8F4E 11                       .
-L8F4F:  bit     $2C2C                           ; 8F4F 2C 2C 2C                 ,,,
-        bit     $2C2C                           ; 8F52 2C 2C 2C                 ,,,
-        ora     ($0F),y                         ; 8F55 11 0F                    ..
-L8F57:  ora     ($11),y                         ; 8F57 11 11                    ..
-        ora     ($11),y                         ; 8F59 11 11                    ..
-        ora     ($11),y                         ; 8F5B 11 11                    ..
-        .byte   $0F                             ; 8F5D 0F                       .
-        .byte   $2C                             ; 8F5E 2C                       ,
-L8F5F:  .byte   $80                             ; 8F5F 80                       .
-L8F60:  php                                     ; 8F60 08                       .
-L8F61:  .byte   $0C                             ; 8F61 0C                       .
-        brk                                     ; 8F62 00                       .
-        bpl     L8FDD                           ; 8F63 10 78                    .x
-        php                                     ; 8F65 08                       .
-        brk                                     ; 8F66 00                       .
-        .byte   $80                             ; 8F67 80                       .
-        inx                                     ; 8F68 E8                       .
-        .byte   $04                             ; 8F69 04                       .
-L8F6A:  brk                                     ; 8F6A 00                       .
-        beq     L8FE5                           ; 8F6B F0 78                    .x
-        brk                                     ; 8F6D 00                       .
-L8F6E:  brk                                     ; 8F6E 00                       .
-        sec                                     ; 8F6F 38                       8
-        plp                                     ; 8F70 28                       (
-        asl     a                               ; 8F71 0A                       .
-        brk                                     ; 8F72 00                       .
-        sec                                     ; 8F73 38                       8
-        iny                                     ; 8F74 C8                       .
-        asl     L0000                           ; 8F75 06 00                    ..
-        iny                                     ; 8F77 C8                       .
-        iny                                     ; 8F78 C8                       .
-        .byte   $02                             ; 8F79 02                       .
-        brk                                     ; 8F7A 00                       .
-        iny                                     ; 8F7B C8                       .
-        plp                                     ; 8F7C 28                       (
-        .byte   $FE                             ; 8F7D FE                       .
-        brk                                     ; 8F7E 00                       .
-L8F7F:  .byte   $03                             ; 8F7F 03                       .
-L8F80:  rol     a                               ; 8F80 2A                       *
-L8F81:  .byte   $02                             ; 8F81 02                       .
-L8F82:  .byte   $65                             ; 8F82 65                       e
-L8F83:  clv                                     ; 8F83 B8                       .
-L8F84:  pha                                     ; 8F84 48                       H
-        .byte   $03                             ; 8F85 03                       .
-        and     #$03                            ; 8F86 29 03                    ).
-        adc     $B8                             ; 8F88 65 B8                    e.
-        sec                                     ; 8F8A 38                       8
-        .byte   $03                             ; 8F8B 03                       .
-        and     #$02                            ; 8F8C 29 02                    ).
-        adc     $B8                             ; 8F8E 65 B8                    e.
-        plp                                     ; 8F90 28                       (
-        .byte   $03                             ; 8F91 03                       .
-L8F92:  plp                                     ; 8F92 28                       (
-        .byte   $03                             ; 8F93 03                       .
-        adc     $B8                             ; 8F94 65 B8                    e.
-L8F96:  clc                                     ; 8F96 18                       .
-        .byte   $03                             ; 8F97 03                       .
-        rol     a                               ; 8F98 2A                       *
-        brk                                     ; 8F99 00                       .
-        .byte   $82                             ; 8F9A 82                       .
-        tay                                     ; 8F9B A8                       .
-        pha                                     ; 8F9C 48                       H
-        .byte   $03                             ; 8F9D 03                       .
-L8F9E:  and     #$01                            ; 8F9E 29 01                    ).
-        .byte   $82                             ; 8FA0 82                       .
-        tay                                     ; 8FA1 A8                       .
-L8FA2:  sec                                     ; 8FA2 38                       8
-        .byte   $03                             ; 8FA3 03                       .
-        and     #$00                            ; 8FA4 29 00                    ).
-L8FA6:  .byte   $82                             ; 8FA6 82                       .
-        tay                                     ; 8FA7 A8                       .
-        plp                                     ; 8FA8 28                       (
-        .byte   $03                             ; 8FA9 03                       .
-        plp                                     ; 8FAA 28                       (
-        ora     ($82,x)                         ; 8FAB 01 82                    ..
-        tay                                     ; 8FAD A8                       .
-        clc                                     ; 8FAE 18                       .
-        .byte   $03                             ; 8FAF 03                       .
-        and     ($02,x)                         ; 8FB0 21 02                    !.
-        .byte   $65                             ; 8FB2 65                       e
-L8FB3:  tya                                     ; 8FB3 98                       .
-        plp                                     ; 8FB4 28                       (
-        .byte   $03                             ; 8FB5 03                       .
-        .byte   $20                             ; 8FB6 20                        
-L8FB7:  .byte   $03                             ; 8FB7 03                       .
-        adc     $98                             ; 8FB8 65 98                    e.
-        clc                                     ; 8FBA 18                       .
-L8FBB:  .byte   $03                             ; 8FBB 03                       .
-L8FBC:  .byte   $01                             ; 8FBC 01                       .
-L8FBD:  .byte   $80                             ; 8FBD 80                       .
-L8FBE:  .byte   $34                             ; 8FBE 34                       4
-        php                                     ; 8FBF 08                       .
-        .byte   $04                             ; 8FC0 04                       .
-        jsr     L09B4                           ; 8FC1 20 B4 09                  ..
-        .byte   $04                             ; 8FC4 04                       .
-        jsr     L0AB4                           ; 8FC5 20 B4 0A                  ..
-        .byte   $04                             ; 8FC8 04                       .
-        jsr     L0BB4                           ; 8FC9 20 B4 0B                  ..
-        .byte   $04                             ; 8FCC 04                       .
-        jsr     L0CB4                           ; 8FCD 20 B4 0C                  ..
-        .byte   $04                             ; 8FD0 04                       .
-        jsr     L0DB4                           ; 8FD1 20 B4 0D                  ..
-        .byte   $04                             ; 8FD4 04                       .
-        .byte   $20                             ; 8FD5 20                        
-        .byte   $B4                             ; 8FD6 B4                       .
-L8FD7:  asl     $2004                           ; 8FD7 0E 04 20                 .. 
-        .byte   $B4                             ; 8FDA B4                       .
-L8FDB:  .byte   $0F                             ; 8FDB 0F                       .
-        .byte   $04                             ; 8FDC 04                       .
-L8FDD:  jsr     L04B4                           ; 8FDD 20 B4 04                  ..
-        .byte   $02                             ; 8FE0 02                       .
-        .byte   $20                             ; 8FE1 20                        
-        .byte   $B4                             ; 8FE2 B4                       .
-L8FE3:  .byte   $20                             ; 8FE3 20                        
-L8FE4:  .byte   $34                             ; 8FE4 34                       4
-L8FE5:  jsr     L2074                           ; 8FE5 20 74 20                  t 
-        ldy     $80,x                           ; 8FE8 B4 80                    ..
-        .byte   $74                             ; 8FEA 74                       t
-        .byte   $80                             ; 8FEB 80                       .
-        ldy     $E0,x                           ; 8FEC B4 E0                    ..
-        .byte   $34                             ; 8FEE 34                       4
-        cpx     #$74                            ; 8FEF E0 74                    .t
-        cpx     #$B4                            ; 8FF1 E0 B4                    ..
-L8FF3:  .byte   $0F                             ; 8FF3 0F                       .
-        bmi     L9006                           ; 8FF4 30 10                    0.
-        php                                     ; 8FF6 08                       .
-        .byte   $0F                             ; 8FF7 0F                       .
-        .byte   $2B                             ; 8FF8 2B                       +
-        .byte   $1B                             ; 8FF9 1B                       .
-        .byte   $0B                             ; 8FFA 0B                       .
-        .byte   $0F                             ; 8FFB 0F                       .
-        bmi     L902A                           ; 8FFC 30 2C                    0,
-        brk                                     ; 8FFE 00                       .
-        .byte   $0F                             ; 8FFF 0F                       .
-        .byte   $27                             ; 9000 27                       '
-        rol     $06                             ; 9001 26 06                    &.
-        brk                                     ; 9003 00                       .
-        brk                                     ; 9004 00                       .
-        brk                                     ; 9005 00                       .
-L9006:  txs                                     ; 9006 9A                       .
-L9007:  .byte   $30                             ; 9007 30                       0
-L9008:  sec                                     ; 9008 38                       8
-        rts                                     ; 9009 60                       `
-
-; ----------------------------------------------------------------------------
-        tya                                     ; 900A 98                       .
-        bcc     L9075                           ; 900B 90 68                    .h
-        bmi     L8FD7                           ; 900D 30 C8                    0.
-        rts                                     ; 900F 60                       `
-
-; ----------------------------------------------------------------------------
-        sec                                     ; 9010 38                       8
-        bcc     L8FDB                           ; 9011 90 C8                    ..
-        bmi     L907D                           ; 9013 30 68                    0h
-        rts                                     ; 9015 60                       `
-
-; ----------------------------------------------------------------------------
-        iny                                     ; 9016 C8                       .
-        bcc     L9051                           ; 9017 90 38                    .8
-        bmi     L8FB3                           ; 9019 30 98                    0.
-        rts                                     ; 901B 60                       `
-
-; ----------------------------------------------------------------------------
-        pla                                     ; 901C 68                       h
-        bcc     L8FB7                           ; 901D 90 98                    ..
-L901F:  asl     a                               ; 901F 0A                       .
-L9020:  .byte   $0D                             ; 9020 0D                       .
-L9021:  brk                                     ; 9021 00                       .
-L9022:  brk                                     ; 9022 00                       .
-L9023:  plp                                     ; 9023 28                       (
-L9024:  tay                                     ; 9024 A8                       .
-        asl     a                               ; 9025 0A                       .
-        ora     $02                             ; 9026 05 02                    ..
-        .byte   $80                             ; 9028 80                       .
-        clc                                     ; 9029 18                       .
-L902A:  tay                                     ; 902A A8                       .
-        asl     a                               ; 902B 0A                       .
-        ora     a:$01                           ; 902C 0D 01 00                 ...
-        plp                                     ; 902F 28                       (
-        clv                                     ; 9030 B8                       .
-        asl     a                               ; 9031 0A                       .
-        ora     $03                             ; 9032 05 03                    ..
-        sta     ($18,x)                         ; 9034 81 18                    ..
-        clv                                     ; 9036 B8                       .
-        asl     a                               ; 9037 0A                       .
-        asl     a:L0000                         ; 9038 0E 00 00                 ...
-        plp                                     ; 903B 28                       (
-        iny                                     ; 903C C8                       .
-        asl     a                               ; 903D 0A                       .
-        asl     $02                             ; 903E 06 02                    ..
-        .byte   $82                             ; 9040 82                       .
-        clc                                     ; 9041 18                       .
-        iny                                     ; 9042 C8                       .
-        asl     a                               ; 9043 0A                       .
-        asl     a:$01                           ; 9044 0E 01 00                 ...
-        plp                                     ; 9047 28                       (
-        cld                                     ; 9048 D8                       .
-        asl     a                               ; 9049 0A                       .
-        asl     $03                             ; 904A 06 03                    ..
-        .byte   $83                             ; 904C 83                       .
-        clc                                     ; 904D 18                       .
-        cld                                     ; 904E D8                       .
-        asl     a                               ; 904F 0A                       .
-        .byte   $0F                             ; 9050 0F                       .
-L9051:  brk                                     ; 9051 00                       .
-        brk                                     ; 9052 00                       .
-        plp                                     ; 9053 28                       (
-        inx                                     ; 9054 E8                       .
-        asl     a                               ; 9055 0A                       .
-        .byte   $07                             ; 9056 07                       .
-        .byte   $02                             ; 9057 02                       .
-        sty     $18                             ; 9058 84 18                    ..
-        inx                                     ; 905A E8                       .
-        asl     a                               ; 905B 0A                       .
-        .byte   $0F                             ; 905C 0F                       .
-        ora     (L0000,x)                       ; 905D 01 00                    ..
-        plp                                     ; 905F 28                       (
-        sed                                     ; 9060 F8                       .
-        asl     a                               ; 9061 0A                       .
-        .byte   $07                             ; 9062 07                       .
-        .byte   $03                             ; 9063 03                       .
-        .byte   $80                             ; 9064 80                       .
-        clc                                     ; 9065 18                       .
-        sed                                     ; 9066 F8                       .
-L9067:  .byte   $04                             ; 9067 04                       .
+; =============================================================================
+; Player state machine data
+; =============================================================================
+; ground-contact y nudge per gravity flip (+2 / -2)
+ynudge_tbl:
+        .byte   $02,$FE                         ; 8EF1
+; slide-end y kick per gravity flip: $FF.C0 / $00.40
+slide_yvel_sub:
+        .byte   $C0,$40                         ; 8EF3
+slide_yvel_px:
+        .byte   $FF,$00                         ; 8EF5
+; climb-toward-feet input mask per gravity flip (Down / Up)
+climb_down_mask:
+        .byte   $04,$08                         ; 8EF7
+; ladder-grab y alignment offset per gravity flip
+ladder_grab_yofs:
+        .byte   $00,$0F                         ; 8EF9
+; sprite palette loaded on re-entry from the top (state $0A)
+reenter_palette:
+        .byte   $0F,$20,$11,$01,$0F,$20,$10,$00 ; 8EFB
+        .byte   $0F,$21,$19,$09,$0F,$20,$27,$17 ; 8F03
+; carry_path: 4-byte waypoints (screen, x, y, dir; dir=$FF releases the
+; player). Two scripts: $8F0B and $8F2B (start index comes in ent_param).
+carry_path_scr: .byte   $03                     ; 8F0B
+carry_path_x:   .byte   $B0                     ; 8F0C
+carry_path_y:   .byte   $90                     ; 8F0D
+carry_path_dir: .byte   $04                     ; 8F0E
+        .byte   $04,$B0,$30,$02                 ; 8F0F
+        .byte   $04,$30,$30,$04                 ; 8F13
+        .byte   $04,$30,$50,$01                 ; 8F17
+        .byte   $04,$50,$50,$04                 ; 8F1B
+        .byte   $04,$50,$70,$01                 ; 8F1F
+        .byte   $04,$70,$70,$04                 ; 8F23
+        .byte   $04,$70,$A8,$FF                 ; 8F27
+        .byte   $03,$D0,$70,$04                 ; 8F2B
+        .byte   $04,$D0,$70,$02                 ; 8F2F
+        .byte   $04,$B0,$70,$04                 ; 8F33
+        .byte   $04,$B0,$B0,$01                 ; 8F37
+        .byte   $04,$D0,$B0,$04                 ; 8F3B
+        .byte   $05,$D0,$38,$FF                 ; 8F3F
+; jet-ski thrust (xvel sub/px): +0 = forward $01.4C, +2 = back $01.00
+jetski_thrust_sub: .byte $4C                    ; 8F43
+jetski_thrust_px:  .byte $01                    ; 8F44
+        .byte   $00,$01                         ; 8F45
+; buster charge-flash palette: sprite pal colors 1-3 per flash phase
+; (written to $0611-$0613 by the routine at $914C)
+charge_flash_col1:
+        .byte   $0F,$0F,$05,$15,$25,$0F,$2C,$11 ; 8F47
+charge_flash_col2:
+        .byte   $2C,$2C,$2C,$2C,$2C,$2C,$11,$0F ; 8F4F
+charge_flash_col3:
+        .byte   $11,$11,$11,$11,$11,$11,$0F,$2C ; 8F57
+; victory orb ring: 4-byte records (x, y, orbit phase, unused) — the 8
+; start points of the converging weapon-energy orbs (state $0F)
+orb_spawn_x:    .byte   $80                     ; 8F5F
+orb_spawn_y:    .byte   $08                     ; 8F60
+orb_spawn_phase: .byte  $0C                     ; 8F61
+        .byte   $00                             ; 8F62
+        .byte   $10,$78,$08,$00                 ; 8F63
+        .byte   $80,$E8,$04,$00                 ; 8F67
+        .byte   $F0,$78,$00,$00                 ; 8F6B
+        .byte   $38,$28,$0A,$00                 ; 8F6F
+        .byte   $38,$C8,$06,$00                 ; 8F73
+        .byte   $C8,$C8,$02,$00                 ; 8F77
+        .byte   $C8,$28,$FE,$00                 ; 8F7B
+; hatch reveal: 6-byte records (4-byte tile-rewrite record -> $06C0 buffer,
+; spawn y, spawn x); 10 records played by state $13 in the teleporter hub
+hatch_rec_nt0:  .byte   $03                     ; 8F7F
+hatch_rec_nt1:  .byte   $2A                     ; 8F80
+hatch_rec_nt2:  .byte   $02                     ; 8F81
+hatch_rec_nt3:  .byte   $65                     ; 8F82
+hatch_rec_y:    .byte   $B8                     ; 8F83
+hatch_rec_x:    .byte   $48                     ; 8F84
+        .byte   $03,$29,$03,$65,$B8,$38         ; 8F85
+        .byte   $03,$29,$02,$65,$B8,$28         ; 8F8B
+        .byte   $03,$28,$03,$65,$B8,$18         ; 8F91
+        .byte   $03,$2A,$00,$82,$A8,$48         ; 8F97
+        .byte   $03,$29,$01,$82,$A8,$38         ; 8F9D
+        .byte   $03,$29,$00,$82,$A8,$28         ; 8FA3
+        .byte   $03,$28,$01,$82,$A8,$18         ; 8FA9
+        .byte   $03,$21,$02,$65,$98,$28         ; 8FAF
+        .byte   $03,$20,$03,$65,$98,$18         ; 8FB5
+; warp destinations, indexed by pad index *4 ($6A): scroll screen, section,
+; x, landing y. Entry 0 = hub center; 1-8 = rematch rooms; 9 = exit shaft.
+warp_dest_scr:  .byte   $03                     ; 8FBB
+warp_dest_sect: .byte   $01                     ; 8FBC
+warp_dest_x:    .byte   $80                     ; 8FBD
+warp_dest_y:    .byte   $34                     ; 8FBE
+        .byte   $08,$04,$20,$B4                 ; 8FBF
+        .byte   $09,$04,$20,$B4                 ; 8FC3
+        .byte   $0A,$04,$20,$B4                 ; 8FC7
+        .byte   $0B,$04,$20,$B4                 ; 8FCB
+        .byte   $0C,$04,$20,$B4                 ; 8FCF
+        .byte   $0D,$04,$20,$B4                 ; 8FD3
+        .byte   $0E,$04,$20,$B4                 ; 8FD7
+        .byte   $0F,$04,$20,$B4                 ; 8FDB
+        .byte   $04,$02,$20,$B4                 ; 8FDF
+; hub pad positions (x, y) the player re-appears on after a rematch win
+warp_return_x:  .byte   $20                     ; 8FE3
+warp_return_y:  .byte   $34                     ; 8FE4
+        .byte   $20,$74                         ; 8FE5
+        .byte   $20,$B4                         ; 8FE7
+        .byte   $80,$74                         ; 8FE9
+        .byte   $80,$B4                         ; 8FEB
+        .byte   $E0,$34                         ; 8FED
+        .byte   $E0,$74                         ; 8FEF
+        .byte   $E0,$B4                         ; 8FF1
+; ending palette (loaded to BG $0600 and sprite $0620, state $1C)
+ending_palette:
+        .byte   $0F,$30,$10,$08,$0F,$2B,$1B,$0B ; 8FF3
+        .byte   $0F,$30,$2C,$00,$0F,$27,$26,$06 ; 8FFB
+        .byte   $00,$00,$00,$9A                 ; 9003  (unreferenced)
+; vista stars (y, x), 12 lit one by one in state $1F
+vista_star_y:   .byte   $30                     ; 9007
+vista_star_x:   .byte   $38                     ; 9008
+        .byte   $60,$98                         ; 9009
+        .byte   $90,$68                         ; 900B
+        .byte   $30,$C8                         ; 900D
+        .byte   $60,$38                         ; 900F
+        .byte   $90,$C8                         ; 9011
+        .byte   $30,$68                         ; 9013
+        .byte   $60,$C8                         ; 9015
+        .byte   $90,$38                         ; 9017
+        .byte   $30,$98                         ; 9019
+        .byte   $60,$68                         ; 901B
+        .byte   $90,$98                         ; 901D
+; cast reveal: 6-byte records like hatch_rec (tile rewrite + cast actor
+; type $C1, byte 3 doubles as the actor variant), 12 played by state $21
+cast_rec_nt0:   .byte   $0A                     ; 901F
+cast_rec_nt1:   .byte   $0D                     ; 9020
+cast_rec_nt2:   .byte   $00                     ; 9021
+cast_rec_nt3:   .byte   $00                     ; 9022
+cast_rec_y:     .byte   $28                     ; 9023
+cast_rec_x:     .byte   $A8                     ; 9024
+        .byte   $0A,$05,$02,$80,$18,$A8         ; 9025
+        .byte   $0A,$0D,$01,$00,$28,$B8         ; 902B
+        .byte   $0A,$05,$03,$81,$18,$B8         ; 9031
+        .byte   $0A,$0E,$00,$00,$28,$C8         ; 9037
+        .byte   $0A,$06,$02,$82,$18,$C8         ; 903D
+        .byte   $0A,$0E,$01,$00,$28,$D8         ; 9043
+        .byte   $0A,$06,$03,$83,$18,$D8         ; 9049
+        .byte   $0A,$0F,$00,$00,$28,$E8         ; 904F
+        .byte   $0A,$07,$02,$84,$18,$E8         ; 9055
+        .byte   $0A,$0F,$01,$00,$28,$F8         ; 905B
+        .byte   $0A,$07,$03,$80,$18,$F8         ; 9061
+slide_input_mask:  .byte   $04                             ; 9067 04                       .
         php                                     ; 9068 08                       .
 L9069:  php                                     ; 9069 08                       .
         .byte   $04                             ; 906A 04                       .
@@ -2254,13 +2308,13 @@ L9160:  lsr     a                               ; 9160 4A                       
         lsr     a                               ; 9167 4A                       J
         and     #$07                            ; 9168 29 07                    ).
 L916A:  tay                                     ; 916A A8                       .
-L916B:  lda     L8F47,y                         ; 916B B9 47 8F                 .G.
+L916B:  lda     charge_flash_col1,y                         ; 916B B9 47 8F                 .G.
         sta     $0611                           ; 916E 8D 11 06                 ...
         sta     $0631                           ; 9171 8D 31 06                 .1.
-        lda     L8F4F,y                         ; 9174 B9 4F 8F                 .O.
+        lda     charge_flash_col2,y                         ; 9174 B9 4F 8F                 .O.
         sta     $0612                           ; 9177 8D 12 06                 ...
         sta     $0632                           ; 917A 8D 32 06                 .2.
-        lda     L8F57,y                         ; 917D B9 57 8F                 .W.
+        lda     charge_flash_col3,y                         ; 917D B9 57 8F                 .W.
         sta     $0613                           ; 9180 8D 13 06                 ...
         sta     $0633                           ; 9183 8D 33 06                 .3.
         lda     #$FF                            ; 9186 A9 FF                    ..
