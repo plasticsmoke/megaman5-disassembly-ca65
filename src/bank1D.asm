@@ -302,7 +302,10 @@ LA1E2:  .byte   $02                             ; A1E2 02                       
 LA1E4:  cli                                     ; A1E4 58                       X
         pha                                     ; A1E5 48                       H
 ; =============================================================================
-; BEHAVIOR type $3D — (interior not yet annotated)
+; BEHAVIOR type $3D — ledge crawler: hugs whatever surface it sits on and
+; circumnavigates platforms — probes ahead each step, turning into walls,
+; climbing them, and wrapping around convex corners (y nudged +/-2 while
+; rounding); vflip state picks the initial facing (gravity-flip aware)
 ; =============================================================================
         lda     $03A8,x                         ; A1E6 BD A8 03                 ...
         sta     $03D8,x                         ; A1E9 9D D8 03                 ...
