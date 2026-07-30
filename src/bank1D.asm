@@ -1081,7 +1081,11 @@ LA7B9:  rts                                     ; A7B9 60                       
 LA7BA:  dex                                     ; A7BA CA                       .
 LA7BB:  .byte   $D1,$C0,$CC                     ; A7BB
 ; =============================================================================
-; BEHAVIOR type $26 — (interior not yet annotated)
+; BEHAVIOR type $26 — recycling dripper: waits inert at y=$30 for a
+; pseudo-random delay (LA82E[frame-rng $E6 & 3] frames), then falls; a
+; weapon hit (damage_engine with $00=0) or falling past y=$E8 resets it
+; to the top with a fresh delay — the kill is undone by restoring its
+; type/spawn index, so the drip respawns forever
 ; =============================================================================
         lda     $0468,x                         ; A7BE BD 68 04
         beq     LA7C8                           ; A7C1 F0 05                    ..
@@ -1137,7 +1141,13 @@ LA82E:  asl     a                               ; A82E 0A                       
         sei                                     ; A830 78                       x
         asl     a                               ; A831 0A                       .
 ; =============================================================================
-; BEHAVIOR type $1D — (interior not yet annotated)
+; BEHAVIOR type $1D — walking bomb: patrols under gravity, turning at
+; walls via anim $36 (flip at its midpoint, then restore the saved
+; sub_type/shape from LA908); when calm (sub_type $26) and the player is
+; within $50/$28 px it ignites (sound $3D): sub_type drops to $25, xvel
+; jumps to 2 px/frame, it sprays 3 type $55 sparks (sub_type $9D, speed
+; idx $40, quarter-fan ahead of its facing), pauses $3C frames, and
+; $F0 frames later expires into a type $2F/$42 puff (LA56C)
 ; =============================================================================
         lda     $0480,x                         ; A832 BD 80 04                 ...
         beq     LA83F                           ; A835 F0 08                    ..
@@ -1242,7 +1252,11 @@ LA907:  rts                                     ; A907 60                       
 ; ----------------------------------------------------------------------------
 LA908:  .byte   $80,$C0                         ; A908
 ; =============================================================================
-; BEHAVIOR type $63 — (interior not yet annotated)
+; BEHAVIOR type $63 — ceiling dropper: hangs frozen until the player is
+; within $30 px horizontally, then falls (sound $3B); on landing it
+; faces the player (sub_type $1F) and charges under gravity (speed idx
+; $1C) until it slams a wall, where it converts into stage-bank type
+; $8C sub_type $42 (impact burst)
 ; =============================================================================
         lda     $0558,x                         ; A90A BD 58 05
         cmp     #$1E                            ; A90D C9 1E
@@ -1284,7 +1298,11 @@ LA964:  rts                                     ; A964 60                       
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $66 — (interior not yet annotated)
+; BEHAVIOR type $66 — bobbing lunger: hovers in place, drifting 0.5
+; px/frame vertically and flipping direction every 8 frames (8
+; half-cycles, shape $D1); then locks onto the player and dashes at
+; speed idx $18 for $20 frames (shape $C0, anim phase 1) before
+; resetting to the bob
 ; =============================================================================
 LA965:  lda     #$80                            ; A965 A9 80                    ..
         sta     $03D8,x                         ; A967 9D D8 03                 ...
@@ -1338,7 +1356,12 @@ LA9DF:  rts                                     ; A9DF 60                       
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $59 — (interior not yet annotated)
+; BEHAVIOR type $59 — flyer nest: stationary, always facing the player;
+; shot-deflect comes from LAAB0[cur_weapon] (only Gravity Hold is
+; repelled); its hurtbox is probed $18 px above the origin (shape $C1,
+; manual damage_engine); keeps up to 2 type $62 homing flyers alive —
+; when fewer exist it plays spawn anim $62 and births one (1 HP, 1
+; px/frame, parent slot + screen recorded for the tether)
 ; =============================================================================
         ldy     $32                             ; A9E0 A4 32                    .2
         lda     $0408,x                         ; A9E2 BD 08 04                 ...
@@ -1455,7 +1478,11 @@ LAAB0:  brk                                     ; AAB0 00                       
         brk                                     ; AABB 00                       .
         brk                                     ; AABC 00                       .
 ; =============================================================================
-; BEHAVIOR type $62 — (interior not yet annotated)
+; BEHAVIOR type $62 — homing flyer (spawned by type $59 nest): every $0A
+; frames re-aims at the player (LED5B 16-dir angle, speed idx $20),
+; picking sprite flags/sub_type from LAAF3/LAB03 per angle; if its
+; parent slot is no longer a type $59 on the recorded screen it
+; self-destructs into a puff (LA54D)
 ; =============================================================================
         ldy     $0480,x                         ; AABD BC 80 04                 ...
         lda     $0300,y                         ; AAC0 B9 00 03                 ...
@@ -1508,7 +1535,8 @@ LAB03:  dey                                     ; AB03 88                       
         .byte   $64                             ; AB11 64                       d
         .byte   $64                             ; AB12 64                       d
 ; =============================================================================
-; BEHAVIOR type $67 — (interior not yet annotated)
+; BEHAVIOR type $67 — plain walker: gravity (idx $15) + walk (idx $16),
+; reversing at walls
 ; =============================================================================
         ldy     #$15                            ; AB13 A0 15                    ..
         jsr     entity_gravity_collide                           ; AB15 20 B7 E7                  ..
@@ -1521,7 +1549,8 @@ LAB24:  rts                                     ; AB24 60                       
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $68 — (interior not yet annotated)
+; BEHAVIOR type $68 — homing flyer: re-aims at the player every 16
+; frames (speed idx $38) and drifts on both axes between corrections
 ; =============================================================================
         lda     $0468,x                         ; AB25 BD 68 04                 .h.
         inc     $0468,x                         ; AB28 FE 68 04                 .h.
@@ -1537,7 +1566,11 @@ LAB3E:  rts                                     ; AB3E 60                       
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $27 — (interior not yet annotated)
+; BEHAVIOR type $27 — lurker trap: harmless and hidden until the player
+; stands within $20/$18 px; then rises out of the floor in shape-table
+; steps (LABFB/LABFF, then 4 px more at anim $91), holds a damaging
+; pose for 7 anim loops (sub_type $95), and sinks back (LAC03/LAC09,
+; final shape 0 = no hitbox), re-arming after $3C frames
 ; =============================================================================
         lda     #$00                            ; AB3F A9 00                    ..
         sta     $0570,x                         ; AB41 9D 70 05                 .p.
@@ -1638,7 +1671,12 @@ LAC09:  .byte   $A3                             ; AC09 A3                       
         brk                                     ; AC0D 00                       .
         brk                                     ; AC0E 00                       .
 ; =============================================================================
-; BEHAVIOR type $64 — (interior not yet annotated)
+; BEHAVIOR type $64 — retaliating turret: stationary, faces the player;
+; fires a 2 px/frame stage-bank type $9B shot every $78 frames, but
+; holds fire while its type $65 child lives; probes hits with an
+; enlarged shape $E6 — being struck triggers reaction anim $97, which
+; launches a type $65 at 4 px/frame (1 HP, slot remembered) before
+; settling back to sub_type $96
 ; =============================================================================
         jsr     entity_set_facing                           ; AC0F 20 16 EC                  ..
         jsr     entity_facing_to_flags                           ; AC12 20 30 EC                  0.
@@ -1723,7 +1761,12 @@ LACC1:  rts                                     ; ACC1 60                       
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $22 — (interior not yet annotated)
+; BEHAVIOR type $22 — item carrier: despawns on arrival if flag $5D is
+; already set (its gift was taken); otherwise patrols under gravity,
+; and when the player comes within $20 px it tosses a type $57 pickup
+; (1 px/f forward, 4 px/f up, random sub_type from LADC4 via frame-rng
+; $E7, spawn index inherited) then flees: after a $50-frame hold it
+; rises off the top of the screen and wipes itself
 ; =============================================================================
         lda     $0528,x                         ; ACC2 BD 28 05                 .(.
         and     #$FB                            ; ACC5 29 FB                    ).
@@ -1845,7 +1888,11 @@ LADC4:  sei                                     ; ADC4 78                       
         .byte   $74                             ; ADC9 74                       t
         ror     $78,x                           ; ADCA 76 78                    vx
 ; =============================================================================
-; BEHAVIOR type $57 — (interior not yet annotated)
+; BEHAVIOR type $57 — tossed pickup (thrown by type $22): falls with
+; gravity (speed idx from $0468), slides horizontally (idx $2A) until a
+; wall stops it (dir cleared), then falls through into the shared
+; pickup-grant code below — taking it latches flag $5D so the carrier
+; never regifts
 ; =============================================================================
         ldy     $0468,x                         ; ADCC BC 68 04                 .h.
         jsr     entity_gravity_collide                           ; ADCF 20 B7 E7                  ..
