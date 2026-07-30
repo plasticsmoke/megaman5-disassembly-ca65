@@ -19,6 +19,11 @@
 ;   $10 teleport-out  $11 walk-to-mark  $12 cutscene pose  $13 drop-in+restore
 ;   $14 castle clear  $15 warp depart   $16 warp arrive    $17 rematch won
 ;   $18 boss defeated $19 stand frozen  $1A/$1B nop        $1C-$23 ending
+;
+; Weapon fire handlers ($9571/$9581, id in $32):
+;   $0 P.Buster    $1 Water Wave  $2 Gyro Attack  $3 Crystal Eye
+;   $4 Napalm Bomb $5 Super Arrow $6 Power Stone  $7 Gravity Hold
+;   $8 Charge Kick $9 Star Crash  $A Rush Coil    $B Rush Jet   $C Beat
 ; =============================================================================
 L0000           := $0000
 L0010           := $0010
@@ -169,7 +174,7 @@ L80D9:  lda     $08                             ; 80D9 A5 08                    
         cpy     #$80                            ; 810C C0 80                    ..
         beq     L811C                           ; 810E F0 0C                    ..
         lda     #$01                            ; 8110 A9 01                    ..
-        jsr     L953D                           ; 8112 20 3D 95                  =.
+        jsr     weapon_deduct                           ; 8112 20 3D 95                  =.
         lda     #$23                            ; 8115 A9 23                    .#
         jsr     queue_sound                           ; 8117 20 5D EC                  ].
         lda     #$B0                            ; 811A A9 B0                    ..
@@ -291,7 +296,7 @@ L8201:  lda     #$01                            ; 8201 A9 01                    
         cmp     $0558                           ; 8206 CD 58 05                 .X.
         beq     L820E                           ; 8209 F0 03                    ..
 L820B:  jsr     entity_set_subtype                           ; 820B 20 98 EA                  ..
-L820E:  jsr     L906B                           ; 820E 20 6B 90                  k.
+L820E:  jsr     player_weapon_fire                           ; 820E 20 6B 90                  k.
         jsr     L95F8                           ; 8211 20 F8 95                  ..
 L8214:  rts                                     ; 8214 60                       `
 
@@ -352,7 +357,7 @@ L8283:  lda     $16                             ; 8283 A5 16                    
         sta     $31                             ; 828A 85 31                    .1
         ldy     #$00                            ; 828C A0 00                    ..
         jsr     entity_horiz_dispatch                           ; 828E 20 3F EA                  ?.
-        jsr     L906B                           ; 8291 20 6B 90                  k.
+        jsr     player_weapon_fire                           ; 8291 20 6B 90                  k.
         jsr     L95F8                           ; 8294 20 F8 95                  ..
         clc                                     ; 8297 18                       .
 L8298:  rts                                     ; 8298 60                       `
@@ -442,18 +447,18 @@ L832D:  lda     $9D                             ; 832D A5 9D                    
         and     #$F8                            ; 8337 29 F8                    ).
         clc                                     ; 8339 18                       .
         adc     L0000                           ; 833A 65 00                    e.
-        jsr     L914C                           ; 833C 20 4C 91                  L.
+        jsr     charge_flash_update                           ; 833C 20 4C 91                  L.
 L833F:  rts                                     ; 833F 60                       `
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
 ; state $03 — LADDER CLIMB ($8340; from ground via Up/Down over a ladder)
-; Up/Down moves (entity_vert_dispatch); fires first via L906B with the
+; Up/Down moves (entity_vert_dispatch); fires first via player_weapon_fire with the
 ; climb-shoot pose. Reaching the ladder end aligns x to the rung center
 ; (poses $0A climb / $14 top-exit); A with no vertical input lets go.
 ; =============================================================================
 player_st_ladder:
-        jsr     L906B                           ; 8340 20 6B 90                  k.
+        jsr     player_weapon_fire                           ; 8340 20 6B 90                  k.
         lda     $34                             ; 8343 A5 34                    .4
         bne     L833F                           ; 8345 D0 F8                    ..
         lda     $16                             ; 8347 A5 16                    ..
@@ -580,7 +585,7 @@ L841C:  lda     $16                             ; 841C A5 16                    
         ora     #$20                            ; 843A 09 20                    . 
         sta     $0528                           ; 843C 8D 28 05                 .(.
         jsr     L9859                           ; 843F 20 59 98                  Y.
-L8442:  jsr     L90E3                           ; 8442 20 E3 90                  ..
+L8442:  jsr     fire_buster                           ; 8442 20 E3 90                  ..
         plp                                     ; 8445 28                       (
         bcc     L845D                           ; 8446 90 15                    ..
         lda     $0348                           ; 8448 AD 48 03                 .H.
@@ -2176,14 +2181,16 @@ slide_input_mask:  .byte   $04                             ; 9067 04            
         php                                     ; 9068 08                       .
 L9069:  php                                     ; 9069 08                       .
         .byte   $04                             ; 906A 04                       .
-L906B:  lda     $0390                           ; 906B AD 90 03                 ...
+player_weapon_fire:  lda     $0390                           ; 906B AD 90 03                 ...
         bne     L90E2                           ; 906E D0 72                    .r
 ; -----------------------------------------------------------------------------
-; WEAPON FIRE DISPATCH — ~$1B:9070
-; Y = current weapon ($32). Weapon energy at $B0,y ($B0 = player HP /
-; buster; $B1+ = weapon meters). If energy != weapon_empty_tbl[y],
-; dispatch through weapon_fire_lo/hi[y]. Buster shots use entity
-; slots 1-3 (sub-types $A8/$A9); the special-weapon shot uses slot 4.
+; PLAYER WEAPON FIRE — $1B:906B (called by states that allow shooting)
+; Skipped while the player is off-screen ($0390). Y = weapon id ($32):
+; meter at $B0,y ($B0 = player HP for the buster; $9C full, $80 empty)
+; is checked against weapon_empty_tbl, then control dispatches through
+; weapon_fire_lo/hi — see the weapon id map in the bank header. Weapon
+; shots live in slots 1-3; Rush parks in slot 4.
+; -----------------------------------------------------------------------------
 ; -----------------------------------------------------------------------------
         ldy     $32                             ; 9070 A4 32                    .2
         lda     $B0,y                           ; 9072 B9 B0 00                 ...
@@ -2196,17 +2203,25 @@ L907D:  sta     L0000                           ; 907D 85 00                    
         jmp     (L0000)                         ; 9084 6C 00 00                 l..
 
 ; ----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; fire_rush — weapons $0A/$0B (Rush Coil / Rush Jet). B press: if Rush is
+; already out (slot 4 busy) falls through to fire_buster (you keep shooting
+; while he's deployed); meter $80 = empty. Summons rush_type_tbl type
+; ($02 coil / $45 jet) into slot 4, teleporting down from the sky
+; (preset $4E, yvel 8, Rush CHR bank $46 -> R2).
+; -----------------------------------------------------------------------------
+fire_rush:
         lda     $14                             ; 9087 A5 14                    ..
         and     #$40                            ; 9089 29 40                    )@
         beq     L90E2                           ; 908B F0 55                    .U
         lda     $0304                           ; 908D AD 04 03                 ...
-        bne     L90E3                           ; 9090 D0 51                    .Q
+        bne     fire_buster                           ; 9090 D0 51                    .Q
         ldy     $32                             ; 9092 A4 32                    .2
         lda     $B0,y                           ; 9094 B9 B0 00                 ...
         cmp     #$80                            ; 9097 C9 80                    ..
-        beq     L90E3                           ; 9099 F0 48                    .H
+        beq     fire_buster                           ; 9099 F0 48                    .H
         ldy     #$04                            ; 909B A0 04                    ..
-        jsr     L9554                           ; 909D 20 54 95                  T.
+        jsr     shot_set_facing                           ; 909D 20 54 95                  T.
         lda     #$36                            ; 90A0 A9 36                    .6
         sta     L0010                           ; 90A2 85 10                    ..
         lda     $0528                           ; 90A4 AD 28 05                 .(.
@@ -2230,16 +2245,23 @@ L90B2:  ldy     #$04                            ; 90B2 A0 04                    
         lda     #$00                            ; 90CF A9 00                    ..
         sta     $037C                           ; 90D1 8D 7C 03                 .|.
         ldy     $32                             ; 90D4 A4 32                    .2
-        lda     L959C,y                         ; 90D6 B9 9C 95                 ...
+        lda     rush_type_tbl,y                         ; 90D6 B9 9C 95                 ...
         sta     $0304                           ; 90D9 8D 04 03                 ...
-        lda     L959E,y                         ; 90DC B9 9E 95                 ...
+        lda     rush_shape_tbl,y                         ; 90DC B9 9E 95                 ...
         sta     $040C                           ; 90DF 8D 0C 04                 ...
 L90E2:  rts                                     ; 90E2 60                       `
 
 ; ----------------------------------------------------------------------------
-L90E3:  lda     $14                             ; 90E3 A5 14                    ..
+; -----------------------------------------------------------------------------
+; fire_buster — weapon $00 (and unused ids $D-$F; deployed items fall
+; through here). B press: blocked while type $45 (Rush Jet) sits in slot 1
+; (vestigial? the MM5 summon parks Rush in slot 4) or while a charged shot
+; (sub_type $A8/$A9) is in flight; else fires from a free slot 1-3.
+; B held/released: buster_charge_ctl.
+; -----------------------------------------------------------------------------
+fire_buster:  lda     $14                             ; 90E3 A5 14                    ..
         and     #$40                            ; 90E5 29 40                    )@
-        beq     L9110                           ; 90E7 F0 27                    .'
+        beq     buster_charge_ctl                           ; 90E7 F0 27                    .'
         lda     $0301                           ; 90E9 AD 01 03                 ...
         cmp     #$45                            ; 90EC C9 45                    .E
         beq     L910F                           ; 90EE F0 1F                    ..
@@ -2255,20 +2277,23 @@ L9102:  dey                                     ; 9102 88                       
         bne     L90F2                           ; 9103 D0 ED                    ..
         ldy     #$03                            ; 9105 A0 03                    ..
 L9107:  lda     $0300,y                         ; 9107 B9 00 03                 ...
-        beq     L918B                           ; 910A F0 7F                    ..
+        beq     buster_shoot                           ; 910A F0 7F                    ..
         dey                                     ; 910C 88                       .
         bne     L9107                           ; 910D D0 F8                    ..
 L910F:  rts                                     ; 910F 60                       `
 
 ; ----------------------------------------------------------------------------
-L9110:  lda     $32                             ; 9110 A5 32                    .2
+; --- buster_charge_ctl — B not newly pressed (buster only, not on the
+; jet-ski): B held ticks the charge; on release, $38 >= $10 fires
+; buster_shoot with the tier picked from buster_tier_threshold. ---
+buster_charge_ctl:  lda     $32                             ; 9110 A5 32                    .2
         bne     L910F                           ; 9112 D0 FB                    ..
         lda     $30                             ; 9114 A5 30                    .0
         cmp     #$04                            ; 9116 C9 04                    ..
         beq     L910F                           ; 9118 F0 F5                    ..
         lda     $16                             ; 911A A5 16                    ..
         and     #$40                            ; 911C 29 40                    )@
-        bne     L913D                           ; 911E D0 1D                    ..
+        bne     buster_charge_tick                           ; 911E D0 1D                    ..
         lda     $38                             ; 9120 A5 38                    .8
         cmp     #$10                            ; 9122 C9 10                    ..
         bcc     L910F                           ; 9124 90 E9                    ..
@@ -2279,17 +2304,19 @@ L9110:  lda     $32                             ; 9110 A5 32                    
         ora     $0303                           ; 9130 0D 03 03                 ...
         bne     L9139                           ; 9133 D0 04                    ..
         ldy     #$01                            ; 9135 A0 01                    ..
-        bne     L918B                           ; 9137 D0 52                    .R
+        bne     buster_shoot                           ; 9137 D0 52                    .R
 L9139:  lda     #$00                            ; 9139 A9 00                    ..
         sta     $38                             ; 913B 85 38                    .8
-L913D:  lda     $38                             ; 913D A5 38                    .8
+; --- buster_charge_tick — $38 charge counter: hum ($22) at $20, wraps
+; $56 -> $50, then charge_flash_update cycles the suit palette. ---
+buster_charge_tick:  lda     $38                             ; 913D A5 38                    .8
         cmp     #$20                            ; 913F C9 20                    . 
         bne     L9148                           ; 9141 D0 05                    ..
         lda     #$22                            ; 9143 A9 22                    ."
         jsr     queue_sound                           ; 9145 20 5D EC                  ].
 L9148:  inc     $38                             ; 9148 E6 38                    .8
         lda     $38                             ; 914A A5 38                    .8
-L914C:  cmp     #$56                            ; 914C C9 56                    .V
+charge_flash_update:  cmp     #$56                            ; 914C C9 56                    .V
         bne     L9154                           ; 914E D0 04                    ..
         lda     #$50                            ; 9150 A9 50                    .P
         sta     $38                             ; 9152 85 38                    .8
@@ -2303,12 +2330,12 @@ L9154:  cmp     #$50                            ; 9154 C9 50                    
 L9160:  lsr     a                               ; 9160 4A                       J
         lsr     a                               ; 9161 4A                       J
         ldy     #$00                            ; 9162 A0 00                    ..
-        bcc     L916B                           ; 9164 90 05                    ..
+        bcc     charge_flash_apply                           ; 9164 90 05                    ..
         lsr     a                               ; 9166 4A                       J
         lsr     a                               ; 9167 4A                       J
         and     #$07                            ; 9168 29 07                    ).
 L916A:  tay                                     ; 916A A8                       .
-L916B:  lda     charge_flash_col1,y                         ; 916B B9 47 8F                 .G.
+charge_flash_apply:  lda     charge_flash_col1,y                         ; 916B B9 47 8F                 .G.
         sta     $0611                           ; 916E 8D 11 06                 ...
         sta     $0631                           ; 9171 8D 31 06                 .1.
         lda     charge_flash_col2,y                         ; 9174 B9 4F 8F                 .O.
@@ -2322,7 +2349,12 @@ L916B:  lda     charge_flash_col1,y                         ; 916B B9 47 8F     
         rts                                     ; 918A 60                       `
 
 ; ----------------------------------------------------------------------------
-L918B:  lda     $30                             ; 918B A5 30                    .0
+; --- buster_shoot — X = charge tier (0/1/2 via buster_tier_threshold).
+; On a ladder, L/R input re-faces first; sets the shoot pose (+1 sub_type,
+; $33=$10 timer); spawns the type $70 shot with tier preset/velocity/sound;
+; $5B = tier for the damage engine. Jet-ski state: fixed $07.33 xvel and
+; +6 y muzzle offset. ---
+buster_shoot:  lda     $30                             ; 918B A5 30                    .0
         cmp     #$03                            ; 918D C9 03                    ..
         bne     L919F                           ; 918F D0 0E                    ..
         lda     $16                             ; 9191 A5 16                    ..
@@ -2349,29 +2381,29 @@ L91B4:  lda     #$02                            ; 91B4 A9 02                    
         lda     #$01                            ; 91C0 A9 01                    ..
         sta     $0420,y                         ; 91C2 99 20 04                 . .
 L91C5:  lda     $38                             ; 91C5 A5 38                    .8
-        cmp     L9591,x                         ; 91C7 DD 91 95                 ...
+        cmp     buster_tier_threshold,x                         ; 91C7 DD 91 95                 ...
         bcc     L91D1                           ; 91CA 90 05                    ..
         inx                                     ; 91CC E8                       .
         cpx     #$02                            ; 91CD E0 02                    ..
         bne     L91C5                           ; 91CF D0 F4                    ..
 L91D1:  lda     $0420,y                         ; 91D1 B9 20 04                 . .
         and     #$01                            ; 91D4 29 01                    ).
-        ora     L9597,x                         ; 91D6 1D 97 95                 ...
+        ora     buster_tier_pose,x                         ; 91D6 1D 97 95                 ...
         sta     L0010                           ; 91D9 85 10                    ..
-        lda     L959A,x                         ; 91DB BD 9A 95                 ...
+        lda     buster_tier_xvel_sub,x                         ; 91DB BD 9A 95                 ...
         sta     $03A8,y                         ; 91DE 99 A8 03                 ...
-        lda     L959D,x                         ; 91E1 BD 9D 95                 ...
+        lda     buster_tier_xvel_px,x                         ; 91E1 BD 9D 95                 ...
         sta     $03C0,y                         ; 91E4 99 C0 03                 ...
         lda     $32                             ; 91E7 A5 32                    .2
         cmp     #$01                            ; 91E9 C9 01                    ..
         beq     L91F2                           ; 91EB F0 05                    ..
-        lda     L95A0,x                         ; 91ED BD A0 95                 ...
+        lda     buster_tier_charge,x                         ; 91ED BD A0 95                 ...
         sta     $5B                             ; 91F0 85 5B                    .[
-L91F2:  lda     L95A3,x                         ; 91F2 BD A3 95                 ...
+L91F2:  lda     buster_tier_sound,x                         ; 91F2 BD A3 95                 ...
         jsr     queue_sound                           ; 91F5 20 5D EC                  ].
         lda     #$00                            ; 91F8 A9 00                    ..
         sta     $0408,y                         ; 91FA 99 08 04                 ...
-        lda     L9594,x                         ; 91FD BD 94 95                 ...
+        lda     buster_tier_preset,x                         ; 91FD BD 94 95                 ...
         ldx     #$00                            ; 9200 A2 00                    ..
         jsr     entity_speed_preset                           ; 9202 20 F5 EA                  ..
         lda     #$00                            ; 9205 A9 00                    ..
@@ -2394,12 +2426,19 @@ L91F2:  lda     L95A3,x                         ; 91F2 BD A3 95                 
 L922D:  lda     $38                             ; 922D A5 38                    .8
         beq     L9236                           ; 922F F0 05                    ..
         ldy     #$00                            ; 9231 A0 00                    ..
-        jsr     L916B                           ; 9233 20 6B 91                  k.
+        jsr     charge_flash_apply                           ; 9233 20 6B 91                  k.
 L9236:  lda     #$00                            ; 9236 A9 00                    ..
         sta     $38                             ; 9238 85 38                    .8
         rts                                     ; 923A 60                       `
 
 ; ----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; fire_gyro_crystal — weapons $02 (Gyro Attack) / $03 (Crystal Eye).
+; B press; slots 1-3 all empty (one shot out at a time). Spawns wpn23_type
+; ($74 gyro / $73 crystal) in slot 1 with the wpn23 preset/xvel/sound;
+; Crystal Eye is wall-snapped. Cost 1; shoot pose + $33 flash timer.
+; -----------------------------------------------------------------------------
+fire_gyro_crystal:
         lda     $14                             ; 923B A5 14                    ..
         and     #$40                            ; 923D 29 40                    )@
         beq     L92AE                           ; 923F F0 6D                    .m
@@ -2408,7 +2447,7 @@ L9236:  lda     #$00                            ; 9236 A9 00                    
         ora     $0303                           ; 9247 0D 03 03                 ...
         bne     L92AE                           ; 924A D0 62                    .b
         ldy     #$01                            ; 924C A0 01                    ..
-        jsr     L9554                           ; 924E 20 54 95                  T.
+        jsr     shot_set_facing                           ; 924E 20 54 95                  T.
         lda     #$36                            ; 9251 A9 36                    .6
         sta     L0010                           ; 9253 85 10                    ..
         lda     $0528                           ; 9255 AD 28 05                 .(.
@@ -2418,28 +2457,28 @@ L9236:  lda     #$00                            ; 9236 A9 00                    
         lda     #$01                            ; 925E A9 01                    ..
         sta     $0421                           ; 9260 8D 21 04                 .!.
 L9263:  ldy     $32                             ; 9263 A4 32                    .2
-        lda     L95A8,y                         ; 9265 B9 A8 95                 ...
+        lda     wpn23_type_tbl,y                         ; 9265 B9 A8 95                 ...
         sta     $0301                           ; 9268 8D 01 03                 ...
         lda     #$00                            ; 926B A9 00                    ..
         sta     $03A9                           ; 926D 8D A9 03                 ...
         sta     $03D9                           ; 9270 8D D9 03                 ...
         sta     $0409                           ; 9273 8D 09 04                 ...
-        lda     L95AE,y                         ; 9276 B9 AE 95                 ...
+        lda     wpn23_xvel_tbl,y                         ; 9276 B9 AE 95                 ...
         sta     $03C1                           ; 9279 8D C1 03                 ...
         sta     $03F1                           ; 927C 8D F1 03                 ...
-        lda     L95B1,y                         ; 927F B9 B1 95                 ...
+        lda     wpn23_sound_tbl,y                         ; 927F B9 B1 95                 ...
         jsr     queue_sound                           ; 9282 20 5D EC                  ].
-        lda     L95AB,y                         ; 9285 B9 AB 95                 ...
+        lda     wpn23_preset_tbl,y                         ; 9285 B9 AB 95                 ...
         ldy     #$01                            ; 9288 A0 01                    ..
         jsr     entity_speed_preset                           ; 928A 20 F5 EA                  ..
         lda     #$01                            ; 928D A9 01                    ..
-        jsr     L953D                           ; 928F 20 3D 95                  =.
+        jsr     weapon_deduct                           ; 928F 20 3D 95                  =.
         lda     $32                             ; 9292 A5 32                    .2
         sta     $5B                             ; 9294 85 5B                    .[
         cmp     #$03                            ; 9296 C9 03                    ..
         bne     L929F                           ; 9298 D0 05                    ..
         ldy     #$01                            ; 929A A0 01                    ..
-        jsr     L951C                           ; 929C 20 1C 95                  ..
+        jsr     shot_snap_to_wall                           ; 929C 20 1C 95                  ..
 L929F:  lda     #$10                            ; 929F A9 10                    ..
         sta     $33                             ; 92A1 85 33                    .3
         lda     $34                             ; 92A3 A5 34                    .4
@@ -2450,6 +2489,14 @@ L929F:  lda     #$10                            ; 929F A9 10                    
 L92AE:  rts                                     ; 92AE 60                       `
 
 ; ----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; fire_water_wave — weapon $01. B press; slots 1-3 must be free. Fires only
+; grounded (probe below) or riding a water line (water_line_tbl[stage] in
+; vscroll rooms); blocked with a wall in the muzzle. Spawns 3 wave segments
+; (type $75, preset $B2, phases 0/3/6) that crawl the ground; cost 2,
+; sound $40.
+; -----------------------------------------------------------------------------
+fire_water_wave:
         lda     $14                             ; 92AF A5 14                    ..
         and     #$40                            ; 92B1 29 40                    )@
         beq     L92AE                           ; 92B3 F0 F9                    ..
@@ -2458,7 +2505,7 @@ L92AE:  rts                                     ; 92AE 60                       
         ora     $0303                           ; 92BB 0D 03 03                 ...
         bne     L92AE                           ; 92BE D0 EE                    ..
         ldy     #$01                            ; 92C0 A0 01                    ..
-        jsr     L9554                           ; 92C2 20 54 95                  T.
+        jsr     shot_set_facing                           ; 92C2 20 54 95                  T.
         lda     $0421                           ; 92C5 AD 21 04                 .!.
         lsr     a                               ; 92C8 4A                       J
         ora     #$20                            ; 92C9 09 20                    . 
@@ -2473,7 +2520,7 @@ L92AE:  rts                                     ; 92AE 60                       
         lda     $46                             ; 92DB A5 46                    .F
         beq     L92AE                           ; 92DD F0 CF                    ..
         ldy     $26                             ; 92DF A4 26                    .&
-        lda     L95E8,y                         ; 92E1 B9 E8 95                 ...
+        lda     water_line_tbl,y                         ; 92E1 B9 E8 95                 ...
         cmp     $0378                           ; 92E4 CD 78 03                 .x.
         bne     L92AE                           ; 92E7 D0 C5                    ..
 L92E9:  ldy     #$03                            ; 92E9 A0 03                    ..
@@ -2492,9 +2539,9 @@ L92EB:  lda     $0421                           ; 92EB AD 21 04                 
         sta     $03C0,y                         ; 9308 99 C0 03                 ...
         lda     #$13                            ; 930B A9 13                    ..
         sta     $0468,y                         ; 930D 99 68 04                 .h.
-        lda     L95E1,y                         ; 9310 B9 E1 95                 ...
+        lda     wave_phase_tbl,y                         ; 9310 B9 E1 95                 ...
         sta     $0498,y                         ; 9313 99 98 04                 ...
-        lda     L95E4,y                         ; 9316 B9 E4 95                 ...
+        lda     wave_flag_tbl,y                         ; 9316 B9 E4 95                 ...
         ora     $0528,y                         ; 9319 19 28 05                 .(.
         and     #$DF                            ; 931C 29 DF                    ).
         sta     $0528,y                         ; 931E 99 28 05                 .(.
@@ -2506,7 +2553,7 @@ L92EB:  lda     $0421                           ; 92EB AD 21 04                 
         lda     $32                             ; 932D A5 32                    .2
         sta     $5B                             ; 932F 85 5B                    .[
         lda     #$02                            ; 9331 A9 02                    ..
-        jsr     L953D                           ; 9333 20 3D 95                  =.
+        jsr     weapon_deduct                           ; 9333 20 3D 95                  =.
         lda     #$40                            ; 9336 A9 40                    .@
         jsr     queue_sound                           ; 9338 20 5D EC                  ].
         jmp     L929F                           ; 933B 4C 9F 92                 L..
@@ -2515,6 +2562,13 @@ L92EB:  lda     $0421                           ; 92EB AD 21 04                 
 L933E:  rts                                     ; 933E 60                       `
 
 ; ----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; fire_super_arrow — weapon $05. B press; any free slot 1-3. Spawns the
+; arrow (type $76, sub_type $36|facing, shape $1A — rideable) at rest; its
+; behavior accelerates it to 4 px/f and sticks it to walls. Wall-snapped
+; at birth; cost 2, sound $1A.
+; -----------------------------------------------------------------------------
+fire_super_arrow:
         lda     $14                             ; 933F A5 14                    ..
         and     #$40                            ; 9341 29 40                    )@
         beq     L933E                           ; 9343 F0 F9                    ..
@@ -2526,7 +2580,7 @@ L9347:  lda     $0300,y                         ; 9347 B9 00 03                 
         rts                                     ; 934F 60                       `
 
 ; ----------------------------------------------------------------------------
-L9350:  jsr     L9554                           ; 9350 20 54 95                  T.
+L9350:  jsr     shot_set_facing                           ; 9350 20 54 95                  T.
         lda     $0420,y                         ; 9353 B9 20 04                 . .
         and     #$01                            ; 9356 29 01                    ).
         ora     #$36                            ; 9358 09 36                    .6
@@ -2547,14 +2601,21 @@ L9350:  jsr     L9554                           ; 9350 20 54 95                 
         sta     $5B                             ; 937D 85 5B                    .[
         lda     #$1E                            ; 937F A9 1E                    ..
         sta     $0468,y                         ; 9381 99 68 04                 .h.
-        jsr     L951C                           ; 9384 20 1C 95                  ..
+        jsr     shot_snap_to_wall                           ; 9384 20 1C 95                  ..
         lda     #$02                            ; 9387 A9 02                    ..
-        jsr     L953D                           ; 9389 20 3D 95                  =.
+        jsr     weapon_deduct                           ; 9389 20 3D 95                  =.
         lda     #$1A                            ; 938C A9 1A                    ..
         jsr     queue_sound                           ; 938E 20 5D EC                  ].
         jmp     L929F                           ; 9391 4C 9F 92                 L..
 
 ; ----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; fire_napalm — weapon $04 (Napalm Bomb). B press; any free slot 1-3.
+; Spawns the bomb (type $72, preset $B1, 1 px/f) with a $78-frame fuse;
+; its behavior bounces it along the ground until it detonates (type $C2).
+; Wall-snapped at birth; cost 1, sound $1A.
+; -----------------------------------------------------------------------------
+fire_napalm:
         lda     $14                             ; 9394 A5 14                    ..
         and     #$40                            ; 9396 29 40                    )@
         beq     L93E6                           ; 9398 F0 4C                    .L
@@ -2566,7 +2627,7 @@ L939C:  lda     $0300,y                         ; 939C B9 00 03                 
         rts                                     ; 93A4 60                       `
 
 ; ----------------------------------------------------------------------------
-L93A5:  jsr     L9554                           ; 93A5 20 54 95                  T.
+L93A5:  jsr     shot_set_facing                           ; 93A5 20 54 95                  T.
         lda     $0420,y                         ; 93A8 B9 20 04                 . .
         and     #$01                            ; 93AB 29 01                    ).
         ora     #$36                            ; 93AD 09 36                    .6
@@ -2586,9 +2647,9 @@ L93A5:  jsr     L9554                           ; 93A5 20 54 95                 
         sta     $03A8,y                         ; 93CE 99 A8 03                 ...
         lda     #$01                            ; 93D1 A9 01                    ..
         sta     $03C0,y                         ; 93D3 99 C0 03                 ...
-        jsr     L951C                           ; 93D6 20 1C 95                  ..
+        jsr     shot_snap_to_wall                           ; 93D6 20 1C 95                  ..
         lda     #$01                            ; 93D9 A9 01                    ..
-        jsr     L953D                           ; 93DB 20 3D 95                  =.
+        jsr     weapon_deduct                           ; 93DB 20 3D 95                  =.
         lda     #$1A                            ; 93DE A9 1A                    ..
         jsr     queue_sound                           ; 93E0 20 5D EC                  ].
         jmp     L929F                           ; 93E3 4C 9F 92                 L..
@@ -2597,6 +2658,12 @@ L93A5:  jsr     L9554                           ; 93A5 20 54 95                 
 L93E6:  rts                                     ; 93E6 60                       `
 
 ; ----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; fire_star_crash — weapon $09. B press; slot 1 must be free. Forms the
+; star shield (type $77, sub_type $B3) centred on the player; orbit,
+; launch and metering live in its behavior ($1D:B60E).
+; -----------------------------------------------------------------------------
+fire_star_crash:
         lda     $14                             ; 93E7 A5 14                    ..
         and     #$40                            ; 93E9 29 40                    )@
         beq     L93E6                           ; 93EB F0 F9                    ..
@@ -2619,6 +2686,12 @@ L93E6:  rts                                     ; 93E6 60                       
 L9415:  rts                                     ; 9415 60                       `
 
 ; ----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; fire_power_stone — weapon $06. B press; slots 1-3 all free. Spawns 3
+; stones (type $78) at stone_*_tbl offsets around the player (right/left/
+; above) with spiral phases 2/6/$0C; cost 1, sound $43.
+; -----------------------------------------------------------------------------
+fire_power_stone:
         lda     $14                             ; 9416 A5 14                    ..
         and     #$40                            ; 9418 29 40                    )@
         beq     L9415                           ; 941A F0 F9                    ..
@@ -2635,19 +2708,19 @@ L942E:  lda     #$AF                            ; 942E A9 AF                    
         sta     $0408,y                         ; 9435 99 08 04                 ...
         lda     $0330,y                         ; 9438 B9 30 03                 .0.
         clc                                     ; 943B 18                       .
-        adc     L95B5,y                         ; 943C 79 B5 95                 y..
+        adc     stone_xofs_tbl,y                         ; 943C 79 B5 95                 y..
         sta     $0330,y                         ; 943F 99 30 03                 .0.
         lda     $0348,y                         ; 9442 B9 48 03                 .H.
-        adc     L95B8,y                         ; 9445 79 B8 95                 y..
+        adc     stone_xscr_tbl,y                         ; 9445 79 B8 95                 y..
         sta     $0348,y                         ; 9448 99 48 03                 .H.
         lda     $0378,y                         ; 944B B9 78 03                 .x.
         clc                                     ; 944E 18                       .
-        adc     L95BB,y                         ; 944F 79 BB 95                 y..
+        adc     stone_yofs_tbl,y                         ; 944F 79 BB 95                 y..
         sta     $0378,y                         ; 9452 99 78 03                 .x.
         lda     $0390,y                         ; 9455 B9 90 03                 ...
-        adc     L95BE,y                         ; 9458 79 BE 95                 y..
+        adc     stone_yscr_tbl,y                         ; 9458 79 BE 95                 y..
         sta     $0390,y                         ; 945B 99 90 03                 ...
-        lda     L95C1,y                         ; 945E B9 C1 95                 ...
+        lda     stone_phase_tbl,y                         ; 945E B9 C1 95                 ...
         sta     $0468,y                         ; 9461 99 68 04                 .h.
         lda     #$01                            ; 9464 A9 01                    ..
         sta     $0498,y                         ; 9466 99 98 04                 ...
@@ -2658,10 +2731,16 @@ L942E:  lda     #$AF                            ; 942E A9 AF                    
         dey                                     ; 9472 88                       .
         bne     L942E                           ; 9473 D0 B9                    ..
         lda     #$01                            ; 9475 A9 01                    ..
-        jsr     L953D                           ; 9477 20 3D 95                  =.
+        jsr     weapon_deduct                           ; 9477 20 3D 95                  =.
         rts                                     ; 947A 60                       `
 
 ; ----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; fire_gravity_hold — weapon $07. B press; slot 1 free. Spawns the screen
+; effect (type $C5, sub_type $62, vflip) at the top-centre of the camera
+; view and flashes sprite palette 0 white ($0610=$20); cost 4, sound $44.
+; -----------------------------------------------------------------------------
+fire_gravity_hold:
         lda     $14                             ; 947B A5 14                    ..
         and     #$40                            ; 947D 29 40                    )@
         beq     L94CF                           ; 947F F0 4E                    .N
@@ -2697,19 +2776,26 @@ L942E:  lda     #$AF                            ; 942E A9 AF                    
         lda     $32                             ; 94C6 A5 32                    .2
         sta     $5B                             ; 94C8 85 5B                    .[
         lda     #$04                            ; 94CA A9 04                    ..
-        jsr     L953D                           ; 94CC 20 3D 95                  =.
+        jsr     weapon_deduct                           ; 94CC 20 3D 95                  =.
 L94CF:  rts                                     ; 94CF 60                       `
 
 ; ----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; fire_beat — weapon $0C. B press; with the meter empty ($BC=$80) or Beat
+; already out (slot 1), falls through to fire_buster. Spawns Beat (type $79,
+; sub_type $9B) diving from the screen top (yvel $02.80, dir down, angle 8);
+; no meter cost at launch; sound $3E.
+; -----------------------------------------------------------------------------
+fire_beat:
         lda     $14                             ; 94D0 A5 14                    ..
         and     #$40                            ; 94D2 29 40                    )@
-        beq     L9553                           ; 94D4 F0 7D                    .}
+        beq     fire_none                           ; 94D4 F0 7D                    .}
         lda     $BC                             ; 94D6 A5 BC                    ..
         cmp     #$80                            ; 94D8 C9 80                    ..
         beq     L94E1                           ; 94DA F0 05                    ..
         lda     $0301                           ; 94DC AD 01 03                 ...
         beq     L94E4                           ; 94DF F0 03                    ..
-L94E1:  jmp     L90E3                           ; 94E1 4C E3 90                 L..
+L94E1:  jmp     fire_buster                           ; 94E1 4C E3 90                 L..
 
 ; ----------------------------------------------------------------------------
 L94E4:  lda     #$3E                            ; 94E4 A9 3E                    .>
@@ -2730,34 +2816,38 @@ L94E4:  lda     #$3E                            ; 94E4 A9 3E                    
         sta     $03D8,y                         ; 9509 99 D8 03                 ...
         lda     #$02                            ; 950C A9 02                    ..
         sta     $03F0,y                         ; 950E 99 F0 03                 ...
-        lda     #$08                            ; 9511 A9 08                    ..
-        .byte   $99                             ; 9513 99                       .
-        .byte   $B0                             ; 9514 B0                       .
-L9515:  .byte   $04                             ; 9515 04                       .
-        lda     #$04                            ; 9516 A9 04                    ..
-        sta     $0420,y                         ; 9518 99 20 04                 . .
-        rts                                     ; 951B 60                       `
+        lda     #$08                            ; 9511 A9 08
+        sta     $04B0,y                         ; 9513 99 B0 04
+        lda     #$04                            ; 9516 A9 04
+        sta     $0420,y                         ; 9518 99 20 04
+        rts                                     ; 951B 60
 
 ; ----------------------------------------------------------------------------
-L951C:  .byte   $84                             ; 951C 84                       .
-L951D:  .byte   $0F                             ; 951D 0F                       .
-        lda     $0420,y                         ; 951E B9 20 04                 . .
-L9521:  lsr     a                               ; 9521 4A                       J
-        ora     #$22                            ; 9522 09 22                    ."
-        tay                                     ; 9524 A8                       .
-        jsr     L984F                           ; 9525 20 4F 98                  O.
-        ldy     $0F                             ; 9528 A4 0F                    ..
-        lda     L0010                           ; 952A A5 10                    ..
-        and     #$10                            ; 952C 29 10                    ).
-        beq     L9553                           ; 952E F0 23                    .#
-        lda     $0330                           ; 9530 AD 30 03                 .0.
-        sta     $0330,y                         ; 9533 99 30 03                 .0.
-        lda     $0348                           ; 9536 AD 48 03                 .H.
-        sta     $0348,y                         ; 9539 99 48 03                 .H.
-        rts                                     ; 953C 60                       `
+; shot_snap_to_wall — probe ahead of the player; if the muzzle is inside a
+; wall, move the new shot (slot Y) onto the player's x so it isn't born
+; embedded in the tile. Used by Crystal Eye / Napalm Bomb / Super Arrow.
+; ----------------------------------------------------------------------------
+shot_snap_to_wall:
+        sty     $0F                             ; 951C 84 0F
+        lda     $0420,y                         ; 951E B9 20 04
+        lsr     a                               ; 9521 4A
+        ora     #$22                            ; 9522 09 22
+        tay                                     ; 9524 A8
+        jsr     L984F                           ; 9525 20 4F 98
+        ldy     $0F                             ; 9528 A4 0F
+        lda     L0010                           ; 952A A5 10
+        and     #$10                            ; 952C 29 10
+        beq     fire_none                       ; 952E F0 23
+        lda     $0330                           ; 9530 AD 30 03
+        sta     $0330,y                         ; 9533 99 30 03
+        lda     $0348                           ; 9536 AD 48 03
+        sta     $0348,y                         ; 9539 99 48 03
+        rts                                     ; 953C 60
 
 ; ----------------------------------------------------------------------------
-L953D:  sta     L0000                           ; 953D 85 00                    ..
+; --- weapon_deduct — A = cost: subtract from the current weapon's meter
+; ($B0+id), clamping at $80 = empty. ---
+weapon_deduct:  sta     L0000                           ; 953D 85 00                    ..
         ldy     $32                             ; 953F A4 32                    .2
         lda     $B0,y                           ; 9541 B9 B0 00                 ...
         and     #$7F                            ; 9544 29 7F                    ).
@@ -2770,10 +2860,14 @@ L954D:  ora     #$80                            ; 954D 09 80                    
         rts                                     ; 9552 60                       `
 
 ; ----------------------------------------------------------------------------
-L9553:  rts                                     ; 9553 60                       `
+; --- fire_none — weapon $08 (Charge Kick): no projectile; the charge slide
+; is triggered by the ground state ($8102: cost 1, sound $23, pose $B0). ---
+fire_none:  rts                                     ; 9553 60                       `
 
 ; ----------------------------------------------------------------------------
-L9554:  lda     $16                             ; 9554 A5 16                    ..
+; --- shot_set_facing — face the new shot (slot Y) and the player from held
+; L/R input, else from the player's facing flag (gravity-flip aware). ---
+shot_set_facing:  lda     $16                             ; 9554 A5 16                    ..
         and     #$03                            ; 9556 29 03                    ).
         bne     L9568                           ; 9558 D0 0E                    ..
         lda     #$02                            ; 955A A9 02                    ..
@@ -2787,115 +2881,43 @@ L9568:  sta     $0420,y                         ; 9568 99 20 04                 
 L956E:  jmp     entity_facing_to_flags                           ; 956E 4C 30 EC                 L0.
 
 ; ----------------------------------------------------------------------------
-weapon_fire_lo:  .byte   $E3                             ; 9571 E3                       .
-        .byte   $AF                             ; 9572 AF                       .
-        .byte   $3B                             ; 9573 3B                       ;
-        .byte   $3B                             ; 9574 3B                       ;
-        sty     $3F,x                           ; 9575 94 3F                    .?
-        asl     $7B,x                           ; 9577 16 7B                    .{
-        .byte   $53                             ; 9579 53                       S
-        .byte   $E7                             ; 957A E7                       .
-        .byte   $87                             ; 957B 87                       .
-        .byte   $87                             ; 957C 87                       .
-        bne     L9562                           ; 957D D0 E3                    ..
-        .byte   $E3                             ; 957F E3                       .
-        .byte   $E3                             ; 9580 E3                       .
-weapon_fire_hi:  bcc     L9515                           ; 9581 90 92                    ..
-        .byte   $92                             ; 9583 92                       .
-        .byte   $92                             ; 9584 92                       .
-        .byte   $93                             ; 9585 93                       .
-        .byte   $93                             ; 9586 93                       .
-        sty     $94,x                           ; 9587 94 94                    ..
-        sta     $93,x                           ; 9589 95 93                    ..
-        bcc     L951D                           ; 958B 90 90                    ..
-        sty     $90,x                           ; 958D 94 90                    ..
-        bcc     L9521                           ; 958F 90 90                    ..
-L9591:  plp                                     ; 9591 28                       (
-        .byte   $50                             ; 9592 50                       P
-L9593:  .byte   $FF                             ; 9593 FF                       .
-L9594:  clc                                     ; 9594 18                       .
-        tay                                     ; 9595 A8                       .
-        .byte   $A9                             ; 9596 A9                       .
-L9597:  brk                                     ; 9597 00                       .
-        rol     $36,x                           ; 9598 36 36                    66
-L959A:  .byte   $33                             ; 959A 33                       3
-        brk                                     ; 959B 00                       .
-L959C:  brk                                     ; 959C 00                       .
-L959D:  .byte   $04                             ; 959D 04                       .
-L959E:  ora     $05                             ; 959E 05 05                    ..
-L95A0:  brk                                     ; 95A0 00                       .
-        .byte   $0D                             ; 95A1 0D                       .
-        .byte   $0E                             ; 95A2 0E                       .
-L95A3:  .byte   $1A                             ; 95A3 1A                       .
-        jsr     L0221                           ; 95A4 20 21 02                  !.
-        .byte   $45                             ; 95A7 45                       E
-L95A8:  ora     $1A                             ; 95A8 05 1A                    ..
-        .byte   $74                             ; 95AA 74                       t
-L95AB:  .byte   $73                             ; 95AB 73                       s
-        .byte   $72                             ; 95AC 72                       r
-        tax                                     ; 95AD AA                       .
-L95AE:  ldy     $03B1                           ; 95AE AC B1 03                 ...
-L95B1:  .byte   $04                             ; 95B1 04                       .
-        ora     ($41,x)                         ; 95B2 01 41                    .A
-        .byte   $1A                             ; 95B4 1A                       .
-L95B5:  .byte   $1A                             ; 95B5 1A                       .
-        .byte   $14                             ; 95B6 14                       .
-        .byte   $EC                             ; 95B7 EC                       .
-L95B8:  brk                                     ; 95B8 00                       .
-        brk                                     ; 95B9 00                       .
-        .byte   $FF                             ; 95BA FF                       .
-L95BB:  brk                                     ; 95BB 00                       .
-        bpl     L95CE                           ; 95BC 10 10                    ..
-L95BE:  inx                                     ; 95BE E8                       .
-        brk                                     ; 95BF 00                       .
-        brk                                     ; 95C0 00                       .
-L95C1:  .byte   $FF                             ; 95C1 FF                       .
-        .byte   $02                             ; 95C2 02                       .
-        asl     $0C                             ; 95C3 06 0C                    ..
-weapon_empty_tbl:  brk                                     ; 95C5 00                       .
-        .byte   $80                             ; 95C6 80                       .
-        .byte   $80                             ; 95C7 80                       .
-        .byte   $80                             ; 95C8 80                       .
-        .byte   $80                             ; 95C9 80                       .
-        .byte   $80                             ; 95CA 80                       .
-        .byte   $80                             ; 95CB 80                       .
-        .byte   $80                             ; 95CC 80                       .
-        brk                                     ; 95CD 00                       .
-L95CE:  .byte   $80                             ; 95CE 80                       .
-        brk                                     ; 95CF 00                       .
-        brk                                     ; 95D0 00                       .
-        brk                                     ; 95D1 00                       .
-        brk                                     ; 95D2 00                       .
-        brk                                     ; 95D3 00                       .
-        brk                                     ; 95D4 00                       .
-        ldy     a:L0000,x                       ; 95D5 BC 00 00                 ...
-        brk                                     ; 95D8 00                       .
-        brk                                     ; 95D9 00                       .
-        brk                                     ; 95DA 00                       .
-        brk                                     ; 95DB 00                       .
-        brk                                     ; 95DC 00                       .
-        ldy     a:$CC,x                         ; 95DD BC CC 00                 ...
-        .byte   $BC                             ; 95E0 BC                       .
-L95E1:  brk                                     ; 95E1 00                       .
-        brk                                     ; 95E2 00                       .
-        .byte   $03                             ; 95E3 03                       .
-L95E4:  asl     L0000                           ; 95E4 06 00                    ..
-        .byte   $04                             ; 95E6 04                       .
-        .byte   $04                             ; 95E7 04                       .
-L95E8:  brk                                     ; 95E8 00                       .
-        brk                                     ; 95E9 00                       .
-        brk                                     ; 95EA 00                       .
-        ldy     L0000,x                         ; 95EB B4 00                    ..
-        brk                                     ; 95ED 00                       .
-        brk                                     ; 95EE 00                       .
-        brk                                     ; 95EF 00                       .
-        brk                                     ; 95F0 00                       .
-        brk                                     ; 95F1 00                       .
-        brk                                     ; 95F2 00                       .
-        ldy     $C4,x                           ; 95F3 B4 C4                    ..
-        brk                                     ; 95F5 00                       .
-        brk                                     ; 95F6 00                       .
-        brk                                     ; 95F7 00                       .
+; -----------------------------------------------------------------------------
+; Weapon fire handler table + per-weapon data (see id map in the bank header)
+; -----------------------------------------------------------------------------
+weapon_fire_lo: .byte   $E3,$AF,$3B,$3B,$94,$3F,$16,$7B,$53,$E7,$87,$87,$D0,$E3,$E3,$E3 ; 9571
+weapon_fire_hi: .byte   $90,$92,$92,$92,$93,$93,$94,$94,$95,$93,$90,$90,$94,$90,$90,$90 ; 9581
+buster_tier_threshold:.byte   $28,$50,$FF       ; 9591  charge thresholds ($38 < t -> tier X)
+buster_tier_preset:.byte   $18,$A8,$A9          ; 9594  shot presets: $18 norm / $A8 mid / $A9 full
+buster_tier_pose:.byte   $00,$36,$36            ; 9597  pose aux ORed with facing -> $10
+buster_tier_xvel_sub:.byte   $33,$00            ; 959A  xvel sub $33/$00 (tier 2 = $959C)
+rush_type_tbl:  .byte   $00                     ; 959C  tier-2 xvel sub; rush reads +$0A/+$0B
+buster_tier_xvel_px:.byte   $04                 ; 959D  xvel px $04 (tiers 1/2 = $959E/F)
+rush_shape_tbl: .byte   $05,$05                 ; 959E  tier-1/2 xvel px; rush shape at +$0A/+$0B
+buster_tier_charge:.byte   $00,$0D,$0E          ; 95A0  $5B damage tier left by the fired shot
+buster_tier_sound:.byte   $1A,$20,$21           ; 95A3  fire sounds $1A/$20/$21
+        .byte   $02,$45                         ; 95A6  rush_type_tbl+$0A/$0B: $02 Rush Coil / $45 Rush Jet
+wpn23_type_tbl: .byte   $05,$1A                 ; 95A8  rush_shape_tbl+$0A/$0B: $05 / $1A
+        .byte   $74                             ; 95AA  wpn23_type+2: $74 Gyro Attack shot
+wpn23_preset_tbl:.byte   $73                    ; 95AB  wpn23_type+3: $73 Crystal Eye shot
+        .byte   $72                             ; 95AC
+        .byte   $AA                             ; 95AD  wpn23_preset+2 (Gyro)
+wpn23_xvel_tbl: .byte   $AC                     ; 95AE  wpn23_preset+3 (Crystal)
+        .byte   $B1                             ; 95AF
+        .byte   $03                             ; 95B0  wpn23_xvel+2: 3 px/f (Gyro)
+wpn23_sound_tbl:.byte   $04                     ; 95B1  wpn23_xvel+3: 4 px/f (Crystal)
+        .byte   $01                             ; 95B2
+        .byte   $41                             ; 95B3  wpn23_sound+2: $41 (Gyro)
+        .byte   $1A                             ; 95B4  wpn23_sound+3: $1A (Crystal)
+stone_xofs_tbl: .byte   $1A,$14,$EC             ; 95B5  x offs +1..3: +$14 / -$14 / 0
+stone_xscr_tbl: .byte   $00,$00,$FF             ; 95B8  x screen adj +1..3: 0 / -1 / 0
+stone_yofs_tbl: .byte   $00,$10,$10             ; 95BB  y offs +1..3: +$10 / +$10 / -$18
+stone_yscr_tbl: .byte   $E8,$00,$00             ; 95BE  y screen adj +1..3: 0 / 0 / -1
+stone_phase_tbl:.byte   $FF,$02,$06,$0C         ; 95C1  spiral phase +1..3: 2 / 6 / $0C
+weapon_empty_tbl:.byte   $00,$80,$80,$80,$80,$80,$80,$80,$00,$80,$00,$00,$00,$00,$00,$00 ; 95C5  per-id empty value ($80 = metered)
+        .byte   $BC,$00,$00,$00,$00,$00,$00,$00,$BC,$CC,$00,$BC ; 95D5  (unreferenced)
+wave_phase_tbl: .byte   $00,$00,$03             ; 95E1  segment phase +1..3: 0 / 3 / 6
+wave_flag_tbl:  .byte   $06,$00,$04,$04         ; 95E4  segment ent_flags OR +1..3
+water_line_tbl: .byte   $00,$00,$00,$B4,$00,$00,$00,$00,$00,$00,$00,$B4,$C4,$00,$00,$00 ; 95E8  water-surface y per stage bank (vscroll)
 L95F8:  lda     $16                             ; 95F8 A5 16                    ..
         ldy     $AF                             ; 95FA A4 AF                    ..
         and     L9069,y                         ; 95FC 39 69 90                 9i.

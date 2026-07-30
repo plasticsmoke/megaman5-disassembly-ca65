@@ -165,4 +165,8 @@ scroll_dir_cur  := $AC          ; scroll direction latch (mirrors $28)
 ; Weapons
 cur_weapon      := $32          ; current weapon id (0 = buster; indexes $B0+ energy,
                                 ; fire table $1B:9571, player palette variant)
+                                ; ids: 0 buster, 1 Water Wave, 2 Gyro Attack,
+                                ; 3 Crystal Eye, 4 Napalm Bomb, 5 Super Arrow,
+                                ; 6 Power Stone, 7 Gravity Hold, 8 Charge Kick,
+                                ; 9 Star Crash, A/B Rush Coil/Jet, C Beat
 buster_charge   := $5B          ; buster charge level (>= $0E = full charge)
