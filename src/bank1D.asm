@@ -43,7 +43,10 @@ LF2F3           := $F2F3
 LFF24           := $FF24
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $3B — (interior not yet annotated)
+; BEHAVIOR type $3B — hopping sniper: wakes within $50 px or when the
+; player fires; leaps (yvel $09.6F), and while grounded fires a 2-shot
+; aimed volley every $B4 frames (type $3C, speed 8, adjacent 16-dir
+; headings around the player octant), one volley alive at a time
 ; =============================================================================
         lda     $14                             ; A000 A5 14                    ..
         and     #$40                            ; A002 29 40                    )@
@@ -137,14 +140,17 @@ LA0B1:  rts                                     ; A0B1 60                       
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $3F — (interior not yet annotated)
+; BEHAVIOR type $3F — ballistic mover: facing dispatch + raw y velocity
 ; =============================================================================
         jsr     entity_process_y_vel                           ; A0B2 20 68 E9                  h.
         jmp     entity_facing_dispatch                           ; A0B5 4C 65 EA                 Le.
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $50 — (interior not yet annotated)
+; BEHAVIOR type $50 — burst pod: sleeps until the player is within
+; $50x/$14y, then rises 3px armed (shape $C1); when a shot connects it
+; dies (LA54D) and splits into three type $C4 fragments (shape $C6,
+; pose $73, $F0-frame life, dirs 0-2); otherwise settles back down
 ; =============================================================================
         jsr     entity_set_facing                           ; A0B8 20 16 EC                  ..
         jsr     entity_facing_to_flags                           ; A0BB 20 30 EC                  0.
@@ -255,7 +261,8 @@ LA1A3:  rts                                     ; A1A3 60                       
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $C4 — ending pose actor (player pose $C4 chain)
+; BEHAVIOR type $C4 — burst fragment (spawned in threes by type $50
+; when shot; $F0-frame life)
 ; =============================================================================
         dec     $0468,x                         ; A1A4 DE 68 04                 .h.
         bne     LA1AC                           ; A1A7 D0 03                    ..
