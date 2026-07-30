@@ -1024,607 +1024,72 @@ L85C3:  brk                                     ; 85C3 00                       
         brk                                     ; 86C0 00                       .
         brk                                     ; 86C1 00                       .
         brk                                     ; 86C2 00                       .
-bhv_bank_tbl:  ora     $1D1D,x                         ; 86C3 1D 1D 1D                 ...
-        ora     $0A0A,x                         ; 86C6 1D 0A 0A                 ...
-        ora     $05                             ; 86C9 05 05                    ..
-        ora     $05                             ; 86CB 05 05                    ..
-        asl     a                               ; 86CD 0A                       .
-        ora     $05                             ; 86CE 05 05                    ..
-        ora     $05                             ; 86D0 05 05                    ..
-        ora     $1D                             ; 86D2 05 1D                    ..
-        ora     $1D1D,x                         ; 86D4 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 86D7 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 86DA 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 86DD 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 86E0 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 86E3 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 86E6 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 86E9 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 86EC 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 86EF 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 86F2 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 86F5 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 86F8 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 86FB 1D 1D 1D                 ...
-        .byte   $1D                             ; 86FE 1D                       .
-        .byte   $1D                             ; 86FF 1D                       .
-L8700:  ora     $1D1D,x                         ; 8700 1D 1D 1D                 ...
-        asl     a                               ; 8703 0A                       .
-        ora     $05                             ; 8704 05 05                    ..
-        .byte   $03                             ; 8706 03                       .
-        .byte   $03                             ; 8707 03                       .
-        ora     $041D,x                         ; 8708 1D 1D 04                 ...
-        ora     $1D                             ; 870B 05 1D                    ..
-        ora     $05                             ; 870D 05 05                    ..
-        ora     $1D1D,x                         ; 870F 1D 1D 1D                 ...
-        .byte   $02                             ; 8712 02                       .
-        ora     $1D1D,x                         ; 8713 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 8716 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 8719 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 871C 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 871F 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 8722 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 8725 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 8728 1D 1D 1D                 ...
-        ora     $0606,x                         ; 872B 1D 06 06                 ...
-        asl     $06                             ; 872E 06 06                    ..
-        ora     $0606,x                         ; 8730 1D 06 06                 ...
-        ora     $1D1D,x                         ; 8733 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 8736 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 8739 1D 1D 1D                 ...
-        ora     $0202,x                         ; 873C 1D 02 02                 ...
-        .byte   $02                             ; 873F 02                       .
-        .byte   $02                             ; 8740 02                       .
-        .byte   $02                             ; 8741 02                       .
-        ora     $0706,x                         ; 8742 1D 06 07                 ...
-        .byte   $07                             ; 8745 07                       .
-        .byte   $07                             ; 8746 07                       .
-        .byte   $07                             ; 8747 07                       .
-        .byte   $07                             ; 8748 07                       .
-        .byte   $07                             ; 8749 07                       .
-        .byte   $07                             ; 874A 07                       .
-        .byte   $07                             ; 874B 07                       .
-        php                                     ; 874C 08                       .
-        php                                     ; 874D 08                       .
-        php                                     ; 874E 08                       .
-        ora     $0808,x                         ; 874F 1D 08 08                 ...
-        php                                     ; 8752 08                       .
-        php                                     ; 8753 08                       .
-        ora     #$09                            ; 8754 09 09                    ..
-        ora     #$09                            ; 8756 09 09                    ..
-        ora     #$09                            ; 8758 09 09                    ..
-        ora     #$09                            ; 875A 09 09                    ..
-        ora     #$09                            ; 875C 09 09                    ..
-        ora     $1D1D,x                         ; 875E 1D 1D 1D                 ...
-        ora     $021D,x                         ; 8761 1D 1D 02                 ...
-        .byte   $02                             ; 8764 02                       .
-        .byte   $03                             ; 8765 03                       .
-        .byte   $03                             ; 8766 03                       .
-        .byte   $03                             ; 8767 03                       .
-        .byte   $04                             ; 8768 04                       .
-        .byte   $04                             ; 8769 04                       .
-        .byte   $04                             ; 876A 04                       .
-        .byte   $04                             ; 876B 04                       .
-        .byte   $04                             ; 876C 04                       .
-        .byte   $04                             ; 876D 04                       .
-        .byte   $04                             ; 876E 04                       .
-        asl     a                               ; 876F 0A                       .
-        asl     a                               ; 8770 0A                       .
-        asl     a                               ; 8771 0A                       .
-        .byte   $03                             ; 8772 03                       .
-        .byte   $03                             ; 8773 03                       .
-        ora     $0A04,x                         ; 8774 1D 04 0A                 ...
-        asl     a                               ; 8777 0A                       .
-        .byte   $03                             ; 8778 03                       .
-        ora     $1D1D,x                         ; 8779 1D 1D 1D                 ...
-        ora     $070D                           ; 877C 0D 0D 07                 ...
-        ora     $1D1D,x                         ; 877F 1D 1D 1D                 ...
-        ora     $0D0A,x                         ; 8782 1D 0A 0D                 ...
-        ora     $1D1D,x                         ; 8785 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 8788 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 878B 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 878E 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 8791 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 8794 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 8797 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 879A 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 879D 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 87A0 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 87A3 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 87A6 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 87A9 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 87AC 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 87AF 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 87B2 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 87B5 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 87B8 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 87BB 1D 1D 1D                 ...
-        ora     $1D1D,x                         ; 87BE 1D 1D 1D                 ...
-        .byte   $1D                             ; 87C1 1D                       .
-        .byte   $1D                             ; 87C2 1D                       .
-death_transform_tbl:  brk                                     ; 87C3 00                       .
-        brk                                     ; 87C4 00                       .
-        brk                                     ; 87C5 00                       .
-        brk                                     ; 87C6 00                       .
-        brk                                     ; 87C7 00                       .
-        brk                                     ; 87C8 00                       .
-        brk                                     ; 87C9 00                       .
-        brk                                     ; 87CA 00                       .
-        brk                                     ; 87CB 00                       .
-        brk                                     ; 87CC 00                       .
-        brk                                     ; 87CD 00                       .
-        brk                                     ; 87CE 00                       .
-        brk                                     ; 87CF 00                       .
-        brk                                     ; 87D0 00                       .
-        brk                                     ; 87D1 00                       .
-        brk                                     ; 87D2 00                       .
-        brk                                     ; 87D3 00                       .
-        brk                                     ; 87D4 00                       .
-        brk                                     ; 87D5 00                       .
-        brk                                     ; 87D6 00                       .
-        brk                                     ; 87D7 00                       .
-        brk                                     ; 87D8 00                       .
-        brk                                     ; 87D9 00                       .
-        brk                                     ; 87DA 00                       .
-        brk                                     ; 87DB 00                       .
-        brk                                     ; 87DC 00                       .
-        brk                                     ; 87DD 00                       .
-        brk                                     ; 87DE 00                       .
-        brk                                     ; 87DF 00                       .
-        brk                                     ; 87E0 00                       .
-        brk                                     ; 87E1 00                       .
-        brk                                     ; 87E2 00                       .
-        brk                                     ; 87E3 00                       .
-        brk                                     ; 87E4 00                       .
-        brk                                     ; 87E5 00                       .
-        brk                                     ; 87E6 00                       .
-        brk                                     ; 87E7 00                       .
-        brk                                     ; 87E8 00                       .
-        brk                                     ; 87E9 00                       .
-        brk                                     ; 87EA 00                       .
-        brk                                     ; 87EB 00                       .
-        brk                                     ; 87EC 00                       .
-        brk                                     ; 87ED 00                       .
-        brk                                     ; 87EE 00                       .
-        brk                                     ; 87EF 00                       .
-        brk                                     ; 87F0 00                       .
-        brk                                     ; 87F1 00                       .
-        brk                                     ; 87F2 00                       .
-        brk                                     ; 87F3 00                       .
-        brk                                     ; 87F4 00                       .
-        brk                                     ; 87F5 00                       .
-        brk                                     ; 87F6 00                       .
-        brk                                     ; 87F7 00                       .
-        brk                                     ; 87F8 00                       .
-        brk                                     ; 87F9 00                       .
-        brk                                     ; 87FA 00                       .
-        brk                                     ; 87FB 00                       .
-        brk                                     ; 87FC 00                       .
-        brk                                     ; 87FD 00                       .
-        brk                                     ; 87FE 00                       .
-        brk                                     ; 87FF 00                       .
-        brk                                     ; 8800 00                       .
-        brk                                     ; 8801 00                       .
-        brk                                     ; 8802 00                       .
-        ora     (L0000,x)                       ; 8803 01 00                    ..
-        brk                                     ; 8805 00                       .
-        brk                                     ; 8806 00                       .
-        ldx     a:L0000                         ; 8807 AE 00 00                 ...
-        brk                                     ; 880A 00                       .
-        brk                                     ; 880B 00                       .
-        brk                                     ; 880C 00                       .
-        brk                                     ; 880D 00                       .
-        brk                                     ; 880E 00                       .
-        brk                                     ; 880F 00                       .
-        brk                                     ; 8810 00                       .
-        brk                                     ; 8811 00                       .
-        lda     a:L0000                         ; 8812 AD 00 00                 ...
-        brk                                     ; 8815 00                       .
-        brk                                     ; 8816 00                       .
-        brk                                     ; 8817 00                       .
-        brk                                     ; 8818 00                       .
-        brk                                     ; 8819 00                       .
-        brk                                     ; 881A 00                       .
-        brk                                     ; 881B 00                       .
-        brk                                     ; 881C 00                       .
-        brk                                     ; 881D 00                       .
-        brk                                     ; 881E 00                       .
-        brk                                     ; 881F 00                       .
-        brk                                     ; 8820 00                       .
-        brk                                     ; 8821 00                       .
-        brk                                     ; 8822 00                       .
-        brk                                     ; 8823 00                       .
-        brk                                     ; 8824 00                       .
-        brk                                     ; 8825 00                       .
-        brk                                     ; 8826 00                       .
-        brk                                     ; 8827 00                       .
-        brk                                     ; 8828 00                       .
-        brk                                     ; 8829 00                       .
-        brk                                     ; 882A 00                       .
-        brk                                     ; 882B 00                       .
-        ldy     L0000,x                         ; 882C B4 00                    ..
-        ldy     L0000,x                         ; 882E B4 00                    ..
-        brk                                     ; 8830 00                       .
-        ldy     L0000,x                         ; 8831 B4 00                    ..
-        brk                                     ; 8833 00                       .
-        brk                                     ; 8834 00                       .
-        brk                                     ; 8835 00                       .
-        brk                                     ; 8836 00                       .
-        brk                                     ; 8837 00                       .
-        brk                                     ; 8838 00                       .
-        brk                                     ; 8839 00                       .
-        brk                                     ; 883A 00                       .
-        brk                                     ; 883B 00                       .
-        brk                                     ; 883C 00                       .
-        brk                                     ; 883D 00                       .
-        brk                                     ; 883E 00                       .
-        lda     a:L0000                         ; 883F AD 00 00                 ...
-        brk                                     ; 8842 00                       .
-        brk                                     ; 8843 00                       .
-        ldy     L0000,x                         ; 8844 B4 00                    ..
-        ldy     L0000,x                         ; 8846 B4 00                    ..
-        brk                                     ; 8848 00                       .
-        ldy     L0000,x                         ; 8849 B4 00                    ..
-        brk                                     ; 884B 00                       .
-        ldy     L0000,x                         ; 884C B4 00                    ..
-        brk                                     ; 884E 00                       .
-        brk                                     ; 884F 00                       .
-        ldy     L0000,x                         ; 8850 B4 00                    ..
-        brk                                     ; 8852 00                       .
-        brk                                     ; 8853 00                       .
-        ldy     L0000,x                         ; 8854 B4 00                    ..
-        ldy     L0000,x                         ; 8856 B4 00                    ..
-        brk                                     ; 8858 00                       .
-        ldy     L0000,x                         ; 8859 B4 00                    ..
-        ldy     L0000,x                         ; 885B B4 00                    ..
-        brk                                     ; 885D 00                       .
-        brk                                     ; 885E 00                       .
-        brk                                     ; 885F 00                       .
-        brk                                     ; 8860 00                       .
-        brk                                     ; 8861 00                       .
-        brk                                     ; 8862 00                       .
-        ldy     a:L0000                         ; 8863 AC 00 00                 ...
-        brk                                     ; 8866 00                       .
-        brk                                     ; 8867 00                       .
-        lda     #$00                            ; 8868 A9 00                    ..
-        brk                                     ; 886A 00                       .
-        brk                                     ; 886B 00                       .
-        brk                                     ; 886C 00                       .
-        cpy     #$00                            ; 886D C0 00                    ..
-        brk                                     ; 886F 00                       .
-        brk                                     ; 8870 00                       .
-        brk                                     ; 8871 00                       .
-        brk                                     ; 8872 00                       .
-        brk                                     ; 8873 00                       .
-        brk                                     ; 8874 00                       .
-        brk                                     ; 8875 00                       .
-        brk                                     ; 8876 00                       .
-        brk                                     ; 8877 00                       .
-        brk                                     ; 8878 00                       .
-        brk                                     ; 8879 00                       .
-        brk                                     ; 887A 00                       .
-        brk                                     ; 887B 00                       .
-        brk                                     ; 887C 00                       .
-        brk                                     ; 887D 00                       .
-        brk                                     ; 887E 00                       .
-        brk                                     ; 887F 00                       .
-        brk                                     ; 8880 00                       .
-        brk                                     ; 8881 00                       .
-        brk                                     ; 8882 00                       .
-        brk                                     ; 8883 00                       .
-        brk                                     ; 8884 00                       .
-        brk                                     ; 8885 00                       .
-        brk                                     ; 8886 00                       .
-        brk                                     ; 8887 00                       .
-        brk                                     ; 8888 00                       .
-        brk                                     ; 8889 00                       .
-        brk                                     ; 888A 00                       .
-        brk                                     ; 888B 00                       .
-        brk                                     ; 888C 00                       .
-        brk                                     ; 888D 00                       .
-        brk                                     ; 888E 00                       .
-        brk                                     ; 888F 00                       .
-        brk                                     ; 8890 00                       .
-        brk                                     ; 8891 00                       .
-        brk                                     ; 8892 00                       .
-        brk                                     ; 8893 00                       .
-        brk                                     ; 8894 00                       .
-        brk                                     ; 8895 00                       .
-        brk                                     ; 8896 00                       .
-        brk                                     ; 8897 00                       .
-        brk                                     ; 8898 00                       .
-        brk                                     ; 8899 00                       .
-        brk                                     ; 889A 00                       .
-        brk                                     ; 889B 00                       .
-        brk                                     ; 889C 00                       .
-        brk                                     ; 889D 00                       .
-        brk                                     ; 889E 00                       .
-        brk                                     ; 889F 00                       .
-        brk                                     ; 88A0 00                       .
-        brk                                     ; 88A1 00                       .
-        brk                                     ; 88A2 00                       .
-        brk                                     ; 88A3 00                       .
-        brk                                     ; 88A4 00                       .
-        brk                                     ; 88A5 00                       .
-        brk                                     ; 88A6 00                       .
-        brk                                     ; 88A7 00                       .
-        brk                                     ; 88A8 00                       .
-        brk                                     ; 88A9 00                       .
-        brk                                     ; 88AA 00                       .
-        brk                                     ; 88AB 00                       .
-        brk                                     ; 88AC 00                       .
-        brk                                     ; 88AD 00                       .
-        brk                                     ; 88AE 00                       .
-        brk                                     ; 88AF 00                       .
-        brk                                     ; 88B0 00                       .
-        brk                                     ; 88B1 00                       .
-        brk                                     ; 88B2 00                       .
-        brk                                     ; 88B3 00                       .
-        brk                                     ; 88B4 00                       .
-        brk                                     ; 88B5 00                       .
-        brk                                     ; 88B6 00                       .
-        brk                                     ; 88B7 00                       .
-        brk                                     ; 88B8 00                       .
-        brk                                     ; 88B9 00                       .
-        brk                                     ; 88BA 00                       .
-        brk                                     ; 88BB 00                       .
-        brk                                     ; 88BC 00                       .
-        brk                                     ; 88BD 00                       .
-        brk                                     ; 88BE 00                       .
-        brk                                     ; 88BF 00                       .
-        brk                                     ; 88C0 00                       .
-        brk                                     ; 88C1 00                       .
-        brk                                     ; 88C2 00                       .
-bhv_pc_lo_tbl:  .byte   $63                             ; 88C3 63                       c
-        .byte   $63                             ; 88C4 63                       c
-        .byte   $3F                             ; 88C5 3F                       ?
-        .byte   $33                             ; 88C6 33                       3
-        ror     $9F,x                           ; 88C7 76 9F                    v.
-        brk                                     ; 88C9 00                       .
-        brk                                     ; 88CA 00                       .
-        and     $70,x                           ; 88CB 35 70                    5p
-        php                                     ; 88CD 08                       .
-        .byte   $E3                             ; 88CE E3                       .
-        bcc     L88E7                           ; 88CF 90 16                    ..
-        nop                                     ; 88D1 EA                       .
-        .byte   $7C                             ; 88D2 7C                       |
-        adc     $12                             ; 88D3 65 12                    e.
-        .byte   $1B                             ; 88D5 1B                       .
-        sbc     $57                             ; 88D6 E5 57                    .W
-        .byte   $FB                             ; 88D8 FB                       .
-        dec     $5D,x                           ; 88D9 D6 5D                    .]
-        and     $11A0,x                         ; 88DB 3D A0 11                 =..
-        adc     ($BC,x)                         ; 88DE 61 BC                    a.
-        .byte   $32                             ; 88E0 32                       2
-        .byte   $63                             ; 88E1 63                       c
-        .byte   $FA                             ; 88E2 FA                       .
-        .byte   $64                             ; 88E3 64                       d
-        rol     $A8C2,x                         ; 88E4 3E C2 A8                 >..
-L88E7:  adc     $BEBB,x                         ; 88E7 7D BB BE                 }..
-        .byte   $3F                             ; 88EA 3F                       ?
-        adc     $F9,x                           ; 88EB 75 F9                    u.
-        adc     ($50,x)                         ; 88ED 61 50                    aP
-        .byte   $E2                             ; 88EF E2                       .
-        .byte   $13                             ; 88F0 13                       .
-        eor     #$66                            ; 88F1 49 66                    If
-        tsx                                     ; 88F3 BA                       .
-        php                                     ; 88F4 08                       .
-        .byte   $80                             ; 88F5 80                       .
-        .byte   $DB                             ; 88F6 DB                       .
-        bne     L8952                           ; 88F7 D0 59                    .Y
-        .byte   $C2                             ; 88F9 C2                       .
-        .byte   $E2                             ; 88FA E2                       .
-        .byte   $9E                             ; 88FB 9E                       .
-        .byte   $3F                             ; 88FC 3F                       ?
-        inc     L0000,x                         ; 88FD F6 00                    ..
-        ldy     $DBE6,x                         ; 88FF BC E6 DB                 ...
-        .byte   $B2                             ; 8902 B2                       .
-        cpx     $14                             ; 8903 E4 14                    ..
-        ldy     $CF49                           ; 8905 AC 49 CF                 .I.
-        and     $3872,y                         ; 8908 39 72 38                 9r8
-        .byte   $1F                             ; 890B 1F                       .
-        ror     $3D,x                           ; 890C 76 3D                    v=
-        inc     $3B7D,x                         ; 890E FE 7D 3B                 .};
-        .byte   $72                             ; 8911 72                       r
-        brk                                     ; 8912 00                       .
-        clv                                     ; 8913 B8                       .
-        ldy     $B94A,x                         ; 8914 BC 4A B9                 .J.
-        .byte   $1F                             ; 8917 1F                       .
-        ldy     $CC7A,x                         ; 8918 BC 7A CC                 .z.
-        .byte   $E2                             ; 891B E2                       .
-        cpx     #$98                            ; 891C E0 98                    ..
-        lsr     a                               ; 891E 4A                       J
-        txa                                     ; 891F 8A                       .
-        adc     L8C0A,y                         ; 8920 79 0A 8C                 y..
-        .byte   $DA                             ; 8923 DA                       .
-        ldy     $0ABD,x                         ; 8924 BC BD 0A                 ...
-        .byte   $0F                             ; 8927 0F                       .
-        .byte   $E2                             ; 8928 E2                       .
-        adc     $13                             ; 8929 65 13                    e.
-        and     L0000                           ; 892B 25 00                    %.
-        .byte   $92                             ; 892D 92                       .
-        sed                                     ; 892E F8                       .
-        cmp     $63                             ; 892F C5 63                    .c
-        eor     $D3,x                           ; 8931 55 D3                    U.
-        .byte   $66                             ; 8933 66                       f
-L8934:  .byte   $63                             ; 8934 63                       c
-        .byte   $5F                             ; 8935 5F                       _
-        ldy     $4B,x                           ; 8936 B4 4B                    .K
-        sta     ($E8,x)                         ; 8938 81 E8                    ..
-L893A:  asl     $C879                           ; 893A 0E 79 C8                 .y.
-        asl     $14,x                           ; 893D 16 14                    ..
-        sta     ($39),y                         ; 893F 91 39                    .9
-        .byte   $33                             ; 8941 33                       3
-        .byte   $72                             ; 8942 72                       r
-        jsr     L8A00                           ; 8943 20 00 8A                  ..
-L8946:  bcc     L897C                           ; 8946 90 34                    .4
-        txa                                     ; 8948 8A                       .
-        .byte   $5B                             ; 8949 5B                       [
-        sta     $98,x                           ; 894A 95 98                    ..
-        brk                                     ; 894C 00                       .
-        sta     $66AA                           ; 894D 8D AA 66                 ..f
-        .byte   $CE                             ; 8950 CE                       .
-        .byte   $5F                             ; 8951 5F                       _
-L8952:  ldx     $5CAF                           ; 8952 AE AF 5C                 ..\
-        sbc     $CE2F                           ; 8955 ED 2F CE                 ./.
-        .byte   $D4                             ; 8958 D4                       .
-        .byte   $EB                             ; 8959 EB                       .
-        dec     $4505                           ; 895A CE 05 45                 ..E
-        .byte   $5F                             ; 895D 5F                       _
-        .byte   $E2                             ; 895E E2                       .
-        .byte   $7F                             ; 895F 7F                       .
-        .byte   $BC                             ; 8960 BC                       .
-L8961:  inc     $1ABC,x                         ; 8961 FE BC 1A                 ...
-        tax                                     ; 8964 AA                       .
-        brk                                     ; 8965 00                       .
-        jmp     (L00DF)                         ; 8966 6C DF 00                 l..
-
-; ----------------------------------------------------------------------------
-        ror     a                               ; 8969 6A                       j
-        tax                                     ; 896A AA                       .
-        cmp     $253A,y                         ; 896B D9 3A 25                 .:%
-        .byte   $FA                             ; 896E FA                       .
-        brk                                     ; 896F 00                       .
-        .byte   $53                             ; 8970 53                       S
-        .byte   $F4                             ; 8971 F4                       .
-        ora     $3BA3,x                         ; 8972 1D A3 3B                 ..;
-        .byte   $84                             ; 8975 84                       .
-L8976:  .byte   $B3                             ; 8976 B3                       .
-        and     #$00                            ; 8977 29 00                    ).
-        sbc     $5959                           ; 8979 ED 59 59                 .YY
-L897C:  brk                                     ; 897C 00                       .
-        .byte   $9C                             ; 897D 9C                       .
-        tya                                     ; 897E 98                       .
-        ror     $DB                             ; 897F 66 DB                    f.
-        bne     L8976                           ; 8981 D0 F3                    ..
-        sed                                     ; 8983 F8                       .
-        eor     $ED66,x                         ; 8984 5D 66 ED                 ]f.
-        ldy     $F7                             ; 8987 A4 F7                    ..
-        ora     $1919,y                         ; 8989 19 19 19                 ...
-        .byte   $64                             ; 898C 64                       d
-        .byte   $64                             ; 898D 64                       d
-        .byte   $64                             ; 898E 64                       d
-        .byte   $64                             ; 898F 64                       d
-        .byte   $64                             ; 8990 64                       d
-        .byte   $64                             ; 8991 64                       d
-        .byte   $64                             ; 8992 64                       d
-bhv_pc_hi_tbl:  txa                                     ; 8993 8A                       .
-        txa                                     ; 8994 8A                       .
-        lda     ($B8),y                         ; 8995 B1 B8                    ..
-        ldx     $A6                             ; 8997 A6 A6                    ..
-        ldy     #$A0                            ; 8999 A0 A0                    ..
-        ldy     #$A0                            ; 899B A0 A0                    ..
-        ldy     $A0                             ; 899D A4 A0                    ..
-        lda     ($A2,x)                         ; 899F A1 A2                    ..
-        ldx     #$A3                            ; 89A1 A2 A3                    ..
-        txa                                     ; 89A3 8A                       .
-        .byte   $8B                             ; 89A4 8B                       .
-        bcc     L8934                           ; 89A5 90 8D                    ..
-        stx     L9690                           ; 89A7 8E 90 96                 ...
-        .byte   $8F                             ; 89AA 8F                       .
-        ldy     $8F                             ; 89AB A4 8F                    ..
-        bcc     L893A                           ; 89AD 90 8B                    ..
-        sty     L8AA8                           ; 89AF 8C A8 8A                 ...
-        bcc     L8946                           ; 89B2 90 92                    ..
-        .byte   $93                             ; 89B4 93                       .
-        ldy     L9795                           ; 89B5 AC 95 97                 ...
-        .byte   $97                             ; 89B8 97                       .
-        .byte   $A7                             ; 89B9 A7                       .
-        .byte   $AB                             ; 89BA AB                       .
-        tya                                     ; 89BB 98                       .
-        tya                                     ; 89BC 98                       .
-        stx     L8D99                           ; 89BD 8E 99 8D                 ...
-        .byte   $8F                             ; 89C0 8F                       .
-        .byte   $96                             ; 89C1 96                       .
-L89C2:  .byte   $90,$90                    ; 89C2 90 90   (branch out of range for ca65: target has no local label)
-        .byte   $9C                             ; 89C4 9C                       .
-        .byte   $9C                             ; 89C5 9C                       .
-        sta     L9D9E,x                         ; 89C6 9D 9E 9D                 ...
-        sty     L918D                           ; 89C9 8C 8D 91                 ...
-        .byte   $92                             ; 89CC 92                       .
-        .byte   $97                             ; 89CD 97                       .
-        ldy     #$8C                            ; 89CE A0 8C                    ..
-        lda     ($9D,x)                         ; 89D0 A1 9D                    ..
-        ldy     #$A4                            ; 89D2 A0 A4                    ..
-        ldy     $A4                             ; 89D4 A4 A4                    ..
-        ldx     $A4                             ; 89D6 A6 A4                    ..
-        .byte   $B2                             ; 89D8 B2                       .
-        ldy     $A5,x                           ; 89D9 B4 A5                    ..
-        lda     $B8                             ; 89DB A5 B8                    ..
-        lda     $A5                             ; 89DD A5 A5                    ..
-        tsx                                     ; 89DF BA                       .
-        tsx                                     ; 89E0 BA                       .
-        ldy     $A0,x                           ; 89E1 B4 A0                    ..
-        ldy     #$8C                            ; 89E3 A0 8C                    ..
-        ldx     $A2                             ; 89E5 A6 A2                    ..
-        .byte   $A3                             ; 89E7 A3                       .
-        sty     $ADA3                           ; 89E8 8C A3 AD                 ...
-        sta     $A4A9                           ; 89EB 8D A9 A4                 ...
-        lda     $9C                             ; 89EE A5 9C                    ..
-        lda     $9F                             ; 89F0 A5 9F                    ..
-        ldx     $A6                             ; 89F2 A6 A6                    ..
-        sty     $A9AA                           ; 89F4 8C AA A9                 ...
-        ldy     $A98D                           ; 89F7 AC 8D A9                 ...
-        .byte   $AB                             ; 89FA AB                       .
-        .byte   $AB                             ; 89FB AB                       .
-        ldy     #$A1                            ; 89FC A0 A1                    ..
-        lda     ($A3,x)                         ; 89FE A1 A3                    ..
-L8A00:  txa                                     ; 8A00 8A                       .
-        ldy     $A5                             ; 8A01 A4 A5                    ..
-        .byte   $AF                             ; 8A03 AF                       .
-L8A04:  txa                                     ; 8A04 8A                       .
-        .byte   $B3                             ; 8A05 B3                       .
-        .byte   $B3                             ; 8A06 B3                       .
-        ldy     $B4,x                           ; 8A07 B4 B4                    ..
-        ldy     $B6,x                           ; 8A09 B4 B6                    ..
-        ldx     $B6,y                           ; 8A0B B6 B6                    ..
-        lda     ($A2,x)                         ; 8A0D A1 A2                    ..
-        ldx     #$A5                            ; 8A0F A2 A5                    ..
-        lda     $B4                             ; 8A11 A5 B4                    ..
-        ldx     $A0                             ; 8A13 A6 A0                    ..
-        ldx     #$A2                            ; 8A15 A2 A2                    ..
-        ldy     $A2                             ; 8A17 A4 A2                    ..
-        ldy     $A5                             ; 8A19 A4 A5                    ..
-        lda     $A0                             ; 8A1B A5 A0                    ..
-        lda     ($A1,x)                         ; 8A1D A1 A1                    ..
-        bcc     L89C2                           ; 8A1F 90 A1                    ..
-        .byte   $A3                             ; 8A21 A3                       .
-        .byte   $A3                             ; 8A22 A3                       .
-        .byte   $A3                             ; 8A23 A3                       .
-        ldy     #$A0                            ; 8A24 A0 A0                    ..
-        lda     ($A2,x)                         ; 8A26 A1 A2                    ..
-        ldx     #$A2                            ; 8A28 A2 A2                    ..
-        ldx     #$A4                            ; 8A2A A2 A4                    ..
-        lda     $A6                             ; 8A2C A5 A6                    ..
-        sta     L8C94                           ; 8A2E 8D 94 8C                 ...
-        sta     $A68C,y                         ; 8A31 99 8C A6                 ...
-        .byte   $A7                             ; 8A34 A7                       .
-        ldy     #$A2                            ; 8A35 A0 A2                    ..
-        ldx     #$A0                            ; 8A37 A2 A0                    ..
-        lda     ($A1,x)                         ; 8A39 A1 A1                    ..
-        lda     ($A2,x)                         ; 8A3B A1 A2                    ..
-        .byte   $A3                             ; 8A3D A3                       .
-        ldy     $A0                             ; 8A3E A4 A0                    ..
-        ldy     #$A0                            ; 8A40 A0 A0                    ..
-        ldy     $A4                             ; 8A42 A4 A4                    ..
-        .byte   $BB                             ; 8A44 BB                       .
-        lda     $A2                             ; 8A45 A5 A2                    ..
-        lda     ($A0,x)                         ; 8A47 A1 A0                    ..
-        lda     $AEAE                           ; 8A49 AD AE AE                 ...
-        ldy     #$A0                            ; 8A4C A0 A0                    ..
-        lda     $90                             ; 8A4E A5 90                    ..
-        sta     L9B9E,x                         ; 8A50 9D 9E 9B                 ...
-        lda     ($A2,x)                         ; 8A53 A1 A2                    ..
-        bcc     L8A04                           ; 8A55 90 AD                    ..
-        lda     ($B0,x)                         ; 8A57 A1 B0                    ..
-        lda     ($B1),y                         ; 8A59 B1 B1                    ..
-        lda     ($8A),y                         ; 8A5B B1 8A                    ..
-        txa                                     ; 8A5D 8A                       .
-        txa                                     ; 8A5E 8A                       .
-        txa                                     ; 8A5F 8A                       .
-        txa                                     ; 8A60 8A                       .
-        txa                                     ; 8A61 8A                       .
-        txa                                     ; 8A62 8A                       .
+; -----------------------------------------------------------------------------
+; Behavior dispatch tables, indexed by entity type ($00-$CF): AI bank at
+; $A000 ($1D = generic, else the stage bank), behavior PC lo/hi, and the
+; on-kill transform (second form spawned at death; 0 = explosion type $B8).
+; -----------------------------------------------------------------------------
+bhv_bank_tbl:   .byte   $1D,$1D,$1D,$1D,$0A,$0A,$05,$05,$05,$05,$0A,$05,$05,$05,$05,$05 ; 86C3  types $00-$0F
+        .byte   $1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D ; 86D3  types $10-$1F
+        .byte   $1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D ; 86E3  types $20-$2F
+        .byte   $1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D     ; 86F3  types $30-$3C
+L8700:          .byte   $1D,$1D,$1D,$0A,$05,$05,$03,$03,$1D,$1D,$04,$05,$1D,$05,$05,$1D ; 8700
+        .byte   $1D,$1D,$02,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D ; 8710
+        .byte   $1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$06,$06,$06,$06 ; 8720
+        .byte   $1D,$06,$06,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$02,$02,$02 ; 8730
+        .byte   $02,$02,$1D,$06,$07,$07,$07,$07,$07,$07,$07,$07,$08,$08,$08,$1D ; 8740
+        .byte   $08,$08,$08,$08,$09,$09,$09,$09,$09,$09,$09,$09,$09,$09,$1D,$1D ; 8750
+        .byte   $1D,$1D,$1D,$02,$02,$03,$03,$03,$04,$04,$04,$04,$04,$04,$04,$0A ; 8760
+        .byte   $0A,$0A,$03,$03,$1D,$04,$0A,$0A,$03,$1D,$1D,$1D,$0D,$0D,$07,$1D ; 8770
+        .byte   $1D,$1D,$1D,$0A,$0D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D ; 8780
+        .byte   $1D,$1D,$1D                                             ; 8790
+        .byte   $1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D ; 8793
+        .byte   $1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D ; 87A3
+        .byte   $1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D ; 87B3
+; ^ 8793-87C2 (unreferenced)
+death_transform_tbl: .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 87C3  types $00-$0F
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 87D3  types $10-$1F
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 87E3  types $20-$2F
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 87F3  types $30-$3F
+        .byte   $01,$00,$00,$00,$AE,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$AD ; 8803  types $40-$4F
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 8813  types $50-$5F
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$B4,$00,$B4,$00,$00,$B4,$00 ; 8823  types $60-$6F
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$AD,$00,$00,$00 ; 8833  types $70-$7F
+        .byte   $00,$B4,$00,$B4,$00,$00,$B4,$00,$00,$B4,$00,$00,$00,$B4,$00,$00 ; 8843  types $80-$8F
+        .byte   $00,$B4,$00,$B4,$00,$00,$B4,$00,$B4,$00,$00,$00,$00,$00,$00,$00 ; 8853  types $90-$9F
+        .byte   $AC,$00,$00,$00,$00,$A9,$00,$00,$00,$00,$C0,$00,$00,$00,$00,$00 ; 8863  types $A0-$AF
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 8873  types $B0-$BF
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 8883  types $C0-$CF
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 8893
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 88A3
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 88B3
+; ^ 8893-88C2 (unreferenced)
+bhv_pc_lo_tbl:  .byte   $63,$63,$3F,$33,$76,$9F,$00,$00,$35,$70,$08,$E3,$90,$16,$EA,$7C ; 88C3  types $00-$0F
+        .byte   $65,$12,$1B,$E5,$57,$FB,$D6,$5D,$3D,$A0,$11,$61,$BC,$32,$63,$FA ; 88D3  types $10-$1F
+        .byte   $64,$3E,$C2,$A8,$7D,$BB,$BE,$3F,$75,$F9,$61,$50,$E2,$13,$49,$66 ; 88E3  types $20-$2F
+        .byte   $BA,$08,$80,$DB,$D0,$59,$C2,$E2,$9E,$3F,$F6,$00,$BC,$E6,$DB,$B2 ; 88F3  types $30-$3F
+        .byte   $E4,$14,$AC,$49,$CF,$39,$72,$38,$1F,$76,$3D,$FE,$7D,$3B,$72,$00 ; 8903  types $40-$4F
+        .byte   $B8,$BC,$4A,$B9,$1F,$BC,$7A,$CC,$E2,$E0,$98,$4A,$8A,$79,$0A,$8C ; 8913  types $50-$5F
+        .byte   $DA,$BC,$BD,$0A,$0F,$E2,$65,$13,$25,$00,$92,$F8,$C5,$63,$55,$D3 ; 8923  types $60-$6F
+        .byte   $66,$63,$5F,$B4,$4B,$81,$E8,$0E,$79,$C8,$16,$14,$91,$39,$33,$72 ; 8933  types $70-$7F
+        .byte   $20,$00,$8A,$90,$34,$8A,$5B,$95,$98,$00,$8D,$AA,$66,$CE,$5F,$AE ; 8943  types $80-$8F
+        .byte   $AF,$5C,$ED,$2F,$CE,$D4,$EB,$CE,$05,$45,$5F,$E2,$7F,$BC,$FE,$BC ; 8953  types $90-$9F
+        .byte   $1A,$AA,$00,$6C,$DF,$00,$6A,$AA,$D9,$3A,$25,$FA,$00,$53,$F4,$1D ; 8963  types $A0-$AF
+        .byte   $A3,$3B,$84,$B3,$29,$00,$ED,$59,$59,$00,$9C,$98,$66,$DB,$D0,$F3 ; 8973  types $B0-$BF
+        .byte   $F8,$5D,$66,$ED,$A4,$F7,$19,$19,$19,$64,$64,$64,$64,$64,$64,$64 ; 8983  types $C0-$CF
+bhv_pc_hi_tbl:  .byte   $8A,$8A,$B1,$B8,$A6,$A6,$A0,$A0,$A0,$A0,$A4,$A0,$A1,$A2,$A2,$A3 ; 8993  types $00-$0F
+        .byte   $8A,$8B,$90,$8D,$8E,$90,$96,$8F,$A4,$8F,$90,$8B,$8C,$A8,$8A,$90 ; 89A3  types $10-$1F
+        .byte   $92,$93,$AC,$95,$97,$97,$A7,$AB,$98,$98,$8E,$99,$8D,$8F,$96,$90 ; 89B3  types $20-$2F
+        .byte   $90,$9C,$9C,$9D,$9E,$9D,$8C,$8D,$91,$92,$97,$A0,$8C,$A1,$9D,$A0 ; 89C3  types $30-$3F
+        .byte   $A4,$A4,$A4,$A6,$A4,$B2,$B4,$A5,$A5,$B8,$A5,$A5,$BA,$BA,$B4,$A0 ; 89D3  types $40-$4F
+        .byte   $A0,$8C,$A6,$A2,$A3,$8C,$A3,$AD,$8D,$A9,$A4,$A5,$9C,$A5,$9F,$A6 ; 89E3  types $50-$5F
+        .byte   $A6,$8C,$AA,$A9,$AC,$8D,$A9,$AB,$AB,$A0,$A1,$A1,$A3,$8A,$A4,$A5 ; 89F3  types $60-$6F
+        .byte   $AF,$8A,$B3,$B3,$B4,$B4,$B4,$B6,$B6,$B6,$A1,$A2,$A2,$A5,$A5,$B4 ; 8A03  types $70-$7F
+        .byte   $A6,$A0,$A2,$A2,$A4,$A2,$A4,$A5,$A5,$A0,$A1,$A1,$90,$A1,$A3,$A3 ; 8A13  types $80-$8F
+        .byte   $A3,$A0,$A0,$A1,$A2,$A2,$A2,$A2,$A4,$A5,$A6,$8D,$94,$8C,$99,$8C ; 8A23  types $90-$9F
+        .byte   $A6,$A7,$A0,$A2,$A2,$A0,$A1,$A1,$A1,$A2,$A3,$A4,$A0,$A0,$A0,$A4 ; 8A33  types $A0-$AF
+        .byte   $A4,$BB,$A5,$A2,$A1,$A0,$AD,$AE,$AE,$A0,$A0,$A5,$90,$9D,$9E,$9B ; 8A43  types $B0-$BF
+        .byte   $A1,$A2,$90,$AD,$A1,$B0,$B1,$B1,$B1,$8A,$8A,$8A,$8A,$8A,$8A,$8A ; 8A53  types $C0-$CF
 ; =============================================================================
 ; BEHAVIOR types $00/$01/$1E/$6D/$71 — inert (effect actors: animation
 ; system only; type $01 is the generic one-shot effect/spark)
@@ -2687,7 +2152,10 @@ L9252:  lda     #$01                            ; 9252 A9 01                    
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $20 — (interior not yet annotated)
+; BEHAVIOR type $20 — leaper: rests $3C frames, then springs at the player
+; (xvel $01.C4, yvel $05.A8); when it ends up right above (octant 8) it
+; pauses, spawns a type $01 flash and slams straight down (thud $36);
+; walls flip it, landings restart the cycle
 ; =============================================================================
         lda     #$3C                            ; 9264 A9 3C                    .<
         jsr     L9330                           ; 9266 20 30 93                  0.
@@ -2788,7 +2256,10 @@ L9330:  sta     $0468,x                         ; 9330 9D 68 04                 
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $21 — (interior not yet annotated)
+; BEHAVIOR type $21 — homing dart: every $3C frames launches at the player
+; (8-way, speed $18), re-aiming every 8 frames (pose L9447 by octant) and
+; towing a type $55 trail segment (velocity tables L944F+); when the run
+; expires it climbs back to y=$40 and rewinds
 ; =============================================================================
         inc     $04C8,x                         ; 933E FE C8 04                 ...
         lda     $04C8,x                         ; 9341 BD C8 04                 ...
@@ -2953,7 +2424,11 @@ L9477:  brk                                     ; 9477 00                       
         ora     (L0000,x)                       ; 947C 01 00                    ..
         brk                                     ; 947E 00                       .
 ; =============================================================================
-; BEHAVIOR type $9C — (interior not yet annotated)
+; BEHAVIOR type $9C — hover pest (gravity-flip aware): wakes within $5A px
+; or the moment the player fires; putters horizontally (motor $47, turns
+; at walls), mirrors itself to the current flip, and cycles 4 aimed type
+; $9D shots (sound $48, speed $28, spread L95A0); its contact hitbox
+; rides $1C above the sprite (shape $CE swap at $9504)
 ; =============================================================================
         jsr     entity_x_dist_px                           ; 947F 20 94 EC                  ..
         cmp     #$5A                            ; 9482 C9 5A                    .Z
@@ -3097,7 +2572,10 @@ L95A0:  .byte   $0C                             ; 95A0 0C                       
         ora     $06                             ; 95A5 05 06                    ..
         .byte   $07                             ; 95A7 07                       .
 ; =============================================================================
-; BEHAVIOR type $23 — (interior not yet annotated)
+; BEHAVIOR type $23 — pendulum: the anchor slot stays put while the hitbox
+; swings on per-anim-phase x/y offset tables (L9635/L963F), dealing
+; contact damage at the displaced position (whoosh $38); reverses its
+; swing mirror on anim phase 9
 ; =============================================================================
         lda     $0570,x                         ; 95A8 BD 70 05                 .p.
         cmp     #$08                            ; 95AB C9 08                    ..
@@ -3177,7 +2655,10 @@ L963F:  brk                                     ; 963F 00                       
         bit     $2C2C                           ; 9644 2C 2C 2C                 ,,,
         .byte   $2C,$1C                         ; 9647
 ; =============================================================================
-; BEHAVIOR type $2E — (interior not yet annotated)
+; BEHAVIOR type $2E — drift lift: the spawn code (&7) picks its 8-way
+; heading and run length (L96D4); carries a riding player by feeding its
+; velocity into the conveyor channel ($39-$3B); pauses $1E frames between
+; runs and gives way (stops, drops) if ridden through the pause
 ; =============================================================================
         lda     $0510,x                         ; 9649 BD 10 05
         and     #$07                            ; 964C 29 07                    ).
@@ -3210,11 +2691,9 @@ L9651:  tay                                     ; 9651 A8                       
         dec     $0480,x                         ; 9688 DE 80 04                 ...
         bne     L96D3                           ; 968B D0 46                    .F
         lda     #$D0                            ; 968D A9 D0                    ..
-        .byte   $9D                             ; 968F 9D                       .
-L9690:  dey                                     ; 9690 88                       .
-        ora     $A9                             ; 9691 05 A9                    ..
-        stx     $9D,y                           ; 9693 96 9D                    ..
-        ldy     #$05                            ; 9695 A0 05                    ..
+        sta     $0588,x                         ; 968F 9D 88 05
+        lda     #$96                            ; 9692 A9 96
+        sta     $05A0,x                         ; 9694 9D A0 05
         jmp     entity_stop_y                           ; 9697 4C 1E EA                 L..
 
 ; ----------------------------------------------------------------------------
@@ -3251,7 +2730,10 @@ L96D4:  rti                                     ; 96D4 40                       
 ; ----------------------------------------------------------------------------
         sec                                     ; 96D5 38                       8
 ; =============================================================================
-; BEHAVIOR type $16 — (interior not yet annotated)
+; BEHAVIOR type $16 — pounce hopper: wakes within $5A/$32 or when the
+; player fires; springs up (sound $45, pose $37) and hops at the player,
+; re-hopping off walls (pose $38 between hops); after connecting with the
+; player it rests $5A frames (pose $49) before re-arming
 ; =============================================================================
         jsr     entity_set_facing                           ; 96D6 20 16 EC                  ..
         jsr     entity_facing_to_flags                           ; 96D9 20 30 EC                  0.
@@ -3330,7 +2812,9 @@ L977C:  rts                                     ; 977C 60                       
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $24 — (interior not yet annotated)
+; BEHAVIOR type $24 — pop-up trap: dormant until the player is within $20
+; px, then launches a type $25 column from its spot (shape $D0, 10 HP,
+; rise timer $19)
 ; =============================================================================
         ldy     $0480,x                         ; 977D BC 80 04                 ...
         lda     $0300,y                         ; 9780 B9 00 03                 ...
@@ -3361,7 +2845,8 @@ L97BA:  rts                                     ; 97BA 60                       
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $25 — (interior not yet annotated)
+; BEHAVIOR type $25 — pop-up column: rises while its timer runs, peaks,
+; then re-dives (pose $51) and burrows back in
 ; =============================================================================
         lda     $0540,x                         ; 97BB BD 40 05                 .@.
         bne     L97D3                           ; 97BE D0 13                    ..
@@ -3393,7 +2878,9 @@ L97D3:  cmp     #$02                            ; 97D3 C9 02                    
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $3A — (interior not yet annotated)
+; BEHAVIOR type $3A — telescoper: idles $30/$60 frames, then extends
+; upward 16px in four 4px steps (hitbox grows through shapes $C0-$D5)
+; and retracts, flips direction, repeats
 ; =============================================================================
         lda     #$05                            ; 97F6 A9 05                    ..
         sta     $0588,x                         ; 97F8 9D 88 05                 ...
@@ -3411,10 +2898,8 @@ L9812:  dec     $0468,x                         ; 9812 DE 68 04                 
         lda     #$68                            ; 9817 A9 68                    .h
         jsr     entity_set_subtype                           ; 9819 20 98 EA                  ..
         lda     #$26                            ; 981C A9 26                    .&
-        .byte   $9D                             ; 981E 9D                       .
-L981F:  dey                                     ; 981F 88                       .
-        ora     $A9                             ; 9820 05 A9                    ..
-        tya                                     ; 9822 98                       .
+        sta     $0588,x                         ; 981E 9D 88 05
+        lda     #$98                            ; 9821 A9 98
         sta     $05A0,x                         ; 9823 9D A0 05                 ...
         lda     $0570,x                         ; 9826 BD 70 05                 .p.
         cmp     #$04                            ; 9829 C9 04                    ..
@@ -3462,7 +2947,9 @@ L986D:  cpy     #$D0                            ; 986D C0 D0                    
         .byte   $D4                             ; 9870 D4                       .
         .byte   $D5,$D4,$D3,$D0                 ; 9871
 ; =============================================================================
-; BEHAVIOR type $28 — (interior not yet annotated)
+; BEHAVIOR type $28 — gravity dripper (Gravity Man stage): mirrors the
+; room's flip state, playing an 8-frame turn anim whenever gravity
+; changes; keeps one type $29 drop spawned (preset $54, linked slot)
 ; =============================================================================
         lda     #$00                            ; 9875 A9 00
         sta     $0570,x                         ; 9877 9D 70 05                 .p.
@@ -3525,7 +3012,9 @@ L98F8:  rts                                     ; 98F8 60                       
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $29 — (interior not yet annotated)
+; BEHAVIOR type $29 — drop: falls toward the current gravity side (up
+; when vflipped, via the inverse-gravity path LE7A8), sticks where it
+; lands (pose 1); wiped when it leaves the screen
 ; =============================================================================
         lda     $0528,x                         ; 98F9 BD 28 05                 .(.
         and     #$40                            ; 98FC 29 40                    )@
@@ -3567,7 +3056,10 @@ L9940:  lda     #$F8                            ; 9940 A9 F8                    
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $2B — (interior not yet annotated)
+; BEHAVIOR type $2B — shield walker: shape bit 6 deflects shots from the
+; front; every $78 frames it opens to fire a type $2C shot (preset $57,
+; 2 px/f) and re-guards; hits from behind strip the shield; Gravity Hold
+; ($32 = 7) skips the facing test
 ; =============================================================================
         lda     #$00                            ; 9950 A9 00                    ..
         sta     $0570,x                         ; 9952 9D 70 05                 .p.
@@ -3650,7 +3142,9 @@ L99FD:  rts                                     ; 99FD 60                       
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $9E — (interior not yet annotated)
+; BEHAVIOR type $9E — sleeper sentry (chain partially traced): shared
+; flip helper L9BA5; wakes at $40 px (shape $C1), attack anim fires its
+; L9B86 action
 ; =============================================================================
         jsr     L9BA5                           ; 99FE 20 A5 9B                  ..
         lda     $0540,x                         ; 9A01 BD 40 05                 .@.
