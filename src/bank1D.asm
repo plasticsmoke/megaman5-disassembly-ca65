@@ -405,7 +405,11 @@ LA2AB:  sta     $0420,x                         ; A2AB 9D 20 04                 
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $53 — (interior not yet annotated)
+; BEHAVIOR type $53 — pop-out ambusher: dormant until the player is within
+; $50 px horizontally and $10 px vertically; then plays its emerge anim
+; (sub_type $75) — mid-anim it settles 4 px and turns armored+damaging
+; (shape $D1) — and at anim phase 2 becomes a walker (sub_type $76) that
+; sets off toward the player under gravity, reversing at walls
 ; =============================================================================
         jsr     entity_x_dist_px                           ; A2B9 20 94 EC                  ..
         cmp     #$50                            ; A2BC C9 50                    .P
@@ -455,7 +459,11 @@ LA31E:  rts                                     ; A31E 60                       
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $54 — (interior not yet annotated)
+; BEHAVIOR type $54 — hovering strafer: flies horizontally, reversing
+; direction every $40 frames ($20 on the first leg, so it sways about
+; its spawn point); every $96 frames releases a 2-shot spread (type $55,
+; sub_type $78, speed idx $08) fanned one 16-dir step either side of
+; the aim-at-player angle
 ; =============================================================================
         lda     #$20                            ; A31F A9 20                    . 
         sta     $0468,x                         ; A321 9D 68 04                 .h.
@@ -497,7 +505,12 @@ LA379:  rts                                     ; A379 60                       
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $56 — (interior not yet annotated)
+; BEHAVIOR type $56 — delayed chaser: lies dormant $78 frames, then plays
+; its wake anim with sound $37; once the anim reaches phase 5 it turns
+; armored+damaging (shape $C1, sub_type $7A) and homes on the player at
+; speed idx $38, re-aiming every $20 frames and dropping an aimed type
+; $55 shot (sub_type $7B) every $78 frames; after player contact it
+; drifts upward for $3C frames, then re-aims and dives again
 ; =============================================================================
         lda     $0540,x                         ; A37A BD 40 05                 .@.
         bne     LA396                           ; A37D D0 17                    ..
@@ -593,7 +606,11 @@ LA43C:  rts                                     ; A43C 60                       
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $18 — (interior not yet annotated)
+; BEHAVIOR type $18 — shell-back walker: patrols, turning around at walls
+; and ledges (sub_type $24 turn anim, flip at its midpoint, back to $23);
+; sets the shot-deflect bit every frame but clears it when an incoming
+; shot's direction opposes its own facing — so shots striking its face
+; connect while shots hitting its armored back bounce off
 ; =============================================================================
         lda     $0558,x                         ; A43D BD 58 05                 .X.
         cmp     #$24                            ; A440 C9 24                    .$
@@ -638,7 +655,12 @@ LA497:  rts                                     ; A497 60                       
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $5A — (interior not yet annotated)
+; BEHAVIOR type $5A — kamikaze flyer: sails horizontally; striking a wall
+; bursts it (sound $2B, self becomes a type $01/$42 puff) into 3 type $5B
+; fragments fanned around the aim-at-player angle; while Gravity Hold is
+; equipped it turns shot-proof (shape $E2); if a shot kills it instead
+; (manual damage_engine call), it splits into 3 type $5B fragments in a
+; wide fan (angles $0E/$0A/$06; sub_types from LA543, gravity-flip aware)
 ; =============================================================================
         ldy     #$0E                            ; A498 A0 0E                    ..
         jsr     entity_horiz_dispatch                           ; A49A 20 3F EA                  ?.
@@ -733,7 +755,8 @@ LA543:  .byte   $80                             ; A543 80                       
         sta     ($82,x)                         ; A547 81 82                    ..
         .byte   $80                             ; A549 80                       .
 ; =============================================================================
-; BEHAVIOR type $5B — (interior not yet annotated)
+; BEHAVIOR type $5B — burst fragment (spawned in threes by type $5A):
+; drifts on its launch velocity (facing + raw y dispatch, flags kept)
 ; =============================================================================
         jmp     L84FC                           ; A54A 4C FC 84                 L..
 
@@ -762,7 +785,12 @@ LA56C:  jsr     entity_wipe_x                           ; A56C 20 C4 F2         
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $5D — (interior not yet annotated)
+; BEHAVIOR type $5D — minion generator: stationary, always facing the
+; player; keeps up to 3 type $52 hoppers alive — when fewer exist
+; (checked every 8 frames, $32-frame cooldown) it plays its spawn anim
+; (sub_type $87) and births one with 1 HP walking at 1 px/frame, then
+; idles again (sub_type $AE); LA620 = its hurt check, probing a taller
+; box $0C px above the sprite (shape $CD) and calling damage_engine
 ; =============================================================================
         jsr     LA620                           ; A579 20 20 A6                   .
         bcc     LA5BD                           ; A57C 90 3F                    .?
@@ -863,7 +891,10 @@ LA620:  lda     $0378,x                         ; A620 BD 78 03                 
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $52 — (interior not yet annotated)
+; BEHAVIOR type $52 — wall-hopping minion (spawned by type $5D): walks
+; under gravity until blocked by a wall, then springs up (yvel 5.$7A)
+; still moving forward; on landing it resumes walking, reversing only
+; if the wall still blocks it
 ; =============================================================================
         ldy     #$17                            ; A64A A0 17                    ..
         jsr     entity_gravity_collide                           ; A64C 20 B7 E7                  ..
@@ -896,7 +927,10 @@ LA68B:  rts                                     ; A68B 60                       
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $5F — (interior not yet annotated)
+; BEHAVIOR type $5F — slow hopper: leaps in shallow arcs (yvel 5.$A8 up,
+; xvel 0.$B5 along its facing), riding gravity while airborne; each
+; landing plays a crouch anim, then it springs again — it never re-aims
+; at the player
 ; =============================================================================
         lda     #$B5                            ; A68C A9 B5                    ..
         sta     $03A8,x                         ; A68E 9D A8 03                 ...
@@ -935,7 +969,12 @@ LA6D9:  rts                                     ; A6D9 60                       
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $60 — (interior not yet annotated)
+; BEHAVIOR type $60 — pop-up turret: hidden until the player is within
+; $40 px horizontally and $10 px vertically; emerges facing the player
+; in three 4-px steps (shapes $D1/$C0/$CC per anim phase), fires a type
+; $61 shot straight ahead at 2 px/frame (anim phase 9), then at phase
+; $10 retracts step by step (shapes reversed via LA7BA) and stays
+; hidden $1E frames before re-arming
 ; =============================================================================
         lda     #$00                            ; A6DA A9 00                    ..
         sta     $0570,x                         ; A6DC 9D 70 05                 .p.
