@@ -44,14 +44,15 @@ MM5 returns to CHR-ROM with MMC3 CHR banking (as in MM3):
 
 | banks | contents |
 |---|---|
-| `$00-$0D` | stage banks at `$A000`: stage data + that stage's enemy AI (bank `$00` also hosts a per-frame engine service, `$01` the pause menu at `$8000`) |
-| `$0E-$11` | code + screen/data banks (menus, cutscene screens — being classified) |
+| `$00-$0D` | stage banks at `$A000`: stage data + that stage's enemy AI + one weapon's damage table each (`$A800`). Bank `$00` also hosts a per-frame engine service, `$01` the pause menu, `$0B` stage-load support (all at `$8000`) |
+| `$0E/$0F` | ending / cutscene flow (`$0E:A000` entry) + its data (`$0F` at `$8000`) |
+| `$10/$11` | pseudo-stage screen data: title, menus, cutscenes |
 | `$12/$13` | animation data pair (descriptors at `$8000` + records at `$A000`) |
 | `$14/$15` | animation data pair (probable — same paired-pointer structure) |
-| `$16` | data (being classified) |
+| `$16` | animation data (third anim pair, with `$17`'s `$A000` image) |
 | `$17` | title / menus / stage select + stage→bank directory |
 | `$18/$19` | sound engine (`$8000` update / `$8003` play) + sound data |
-| `$1A` | data incl. text (being classified) |
+| `$1A` | nametable screen data (menus/cutscenes) |
 | `$1B` | player state machine + weapons (`$8000`); spawn engine at `$988A` |
 | `$1C` | behavior engine: per-type AI dispatch (coroutines via behavior PC) |
 | `$1D` | generic enemy AI bank (`$A000`, 123 entity types) |
