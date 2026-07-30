@@ -3395,7 +3395,8 @@ L9BF0:  rts                                     ; 9BF0 60                       
 L9BF1:  sei                                     ; 9BF1 78                       x
         plp                                     ; 9BF2 28                       (
 ; =============================================================================
-; BEHAVIOR type $BF — (interior not yet annotated)
+; BEHAVIOR type $BF — bubble: floats straight up; keeps rising while the
+; probe reports water ($80) and it stays on-screen, else pops (wiped)
 ; =============================================================================
         ldy     #$06                            ; 9BF3 A0 06                    ..
         jsr     entity_move_up                           ; 9BF5 20 80 E7                  ..
@@ -3409,7 +3410,9 @@ L9C05:  jmp     entity_wipe_x                           ; 9C05 4C C4 F2         
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $31 — (interior not yet annotated)
+; BEHAVIOR type $31 — spread launcher: walks, turning at walls/ledges
+; (probe $15/$16); on its anim beat lobs three type $32 shells in an
+; upward fan (dirs L9C7D, speed $10, presets 2-4)
 ; =============================================================================
         lda     $0540,x                         ; 9C08 BD 40 05                 .@.
         bne     L9C5F                           ; 9C0B D0 52                    .R
@@ -3466,9 +3469,9 @@ L9C79:  jsr     L852F                           ; 9C79 20 2F 85                 
 L9C7C:  rts                                     ; 9C7C 60                       `
 
 ; ----------------------------------------------------------------------------
-L9C7D:  asl     $0200                           ; 9C7D 0E 00 02                 ...
+L9C7D:  .byte   $0E,$00,$02                     ; 9C7D  fan directions
 ; =============================================================================
-; BEHAVIOR type $32 — (interior not yet annotated)
+; BEHAVIOR type $32 — lobbed shell: rises, drifting on its facing
 ; =============================================================================
         jsr     entity_move_up_nofacing                           ; 9C80 20 4A E9                  J.
         jsr     entity_facing_dispatch                           ; 9C83 20 65 EA                  e.
@@ -3477,7 +3480,10 @@ L9C7D:  asl     $0200                           ; 9C7D 0E 00 02                 
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $5C — (interior not yet annotated)
+; BEHAVIOR type $5C — head hunter: homes on a point $20 above the player
+; (8-way, speed 8); on arrival locks on, riding the player's frame-to-
+; frame movement ($3C-$3E deltas) while cycling its orbit direction,
+; then breaks off and re-homes
 ; =============================================================================
         lda     $0378                           ; 9C8A AD 78 03                 .x.
         pha                                     ; 9C8D 48                       H
@@ -3573,7 +3579,9 @@ L9D58:  rts                                     ; 9D58 60                       
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $35 — (interior not yet annotated)
+; BEHAVIOR type $35 — edge gun: even spawn codes pin to the camera's left
+; edge and fire a fast type $37 shot (8 px/f, preset $5B) every $3C
+; frames; odd codes idle facing out
 ; =============================================================================
         lda     $0510,x                         ; 9D59 BD 10 05                 ...
         and     #$01                            ; 9D5C 29 01                    ).
@@ -3632,7 +3640,10 @@ L9DDA:  rts                                     ; 9DDA 60                       
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR types $33/$3E/$BD — (interior not yet annotated)
+; BEHAVIOR types $33/$3E/$BD — launcher (head of a pair): keeps its home
+; y in ent_var5 (stage bank 4: pinned against camera y while vscrolling);
+; in its launch window (L9EC6+ by phase) flings a type+1 child (HP 1-2,
+; yvel $05.A8 up) from L9ECC above; child slot tracked in ent_var6
 ; =============================================================================
         lda     $0528,x                         ; 9DDB BD 28 05                 .(.
         and     #$FB                            ; 9DDE 29 FB                    ).
@@ -3735,17 +3746,17 @@ L9EC2:  sta     $0378,x                         ; 9EC2 9D 78 03                 
 L9EC5:  rts                                     ; 9EC5 60                       `
 
 ; ----------------------------------------------------------------------------
-L9EC6:  .byte   $04                             ; 9EC6 04                       .
-        php                                     ; 9EC7 08                       .
-L9EC8:  .byte   $07                             ; 9EC8 07                       .
-        .byte   $02                             ; 9EC9 02                       .
-L9ECA:  asl     a                               ; 9ECA 0A                       .
-        .byte   $05                             ; 9ECB 05                       .
-L9ECC:  bpl     L9EE6                           ; 9ECC 10 18                    ..
-L9ECE:  .byte   $87                             ; 9ECE 87                       .
-        .byte   $C1                             ; 9ECF C1
+; launch-window tables (per phase idx 0/1): anim frame, fire phase,
+; alt fire phase, child y offset, child shape
+L9EC6:  .byte   $04,$08                         ; 9EC6
+L9EC8:  .byte   $07,$02                         ; 9EC8
+L9ECA:  .byte   $0A,$05                         ; 9ECA
+L9ECC:  .byte   $10,$18                         ; 9ECC
+L9ECE:  .byte   $87,$C1                         ; 9ECE
 ; =============================================================================
-; BEHAVIOR types $34/$BE — (interior not yet annotated)
+; BEHAVIOR types $34/$BE — flung child: tumbles down walking its facing;
+; on landing either settles inert (sub_type $91 -> type $5E, pose $92,
+; chime $2B) or bursts into a type $8C spark (LA56C)
 ; =============================================================================
         ldy     #$07                            ; 9ED0 A0 07
         jsr     entity_gravity_collide                           ; 9ED2 20 B7 E7                  ..
@@ -3756,8 +3767,7 @@ L9ECE:  .byte   $87                             ; 9ECE 87                       
 L9EDE:  lda     $0558,x                         ; 9EDE BD 58 05                 .X.
         cmp     #$91                            ; 9EE1 C9 91                    ..
         bne     L9EFC                           ; 9EE3 D0 17                    ..
-        .byte   $20                             ; 9EE5 20                        
-L9EE6:  cpy     $F2                             ; 9EE6 C4 F2                    ..
+        jsr     entity_wipe_x                   ; 9EE5 20 C4 F2
         lda     #$5E                            ; 9EE8 A9 5E                    .^
         sta     $0300,x                         ; 9EEA 9D 00 03                 ...
         lda     #$81                            ; 9EED A9 81                    ..
@@ -3777,239 +3787,25 @@ L9EFC:  jsr     LA56C                           ; 9EFC 20 6C A5                 
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $5E — (interior not yet annotated)
+; BEHAVIOR type $5E — inert (the settled remnant of type $34/$BE)
 ; =============================================================================
         rts                                     ; 9F0A 60                       `
 
 ; ----------------------------------------------------------------------------
-        brk                                     ; 9F0B 00                       .
-        brk                                     ; 9F0C 00                       .
-        brk                                     ; 9F0D 00                       .
-        brk                                     ; 9F0E 00                       .
-        brk                                     ; 9F0F 00                       .
-        brk                                     ; 9F10 00                       .
-        brk                                     ; 9F11 00                       .
-        brk                                     ; 9F12 00                       .
-        brk                                     ; 9F13 00                       .
-        brk                                     ; 9F14 00                       .
-        brk                                     ; 9F15 00                       .
-        brk                                     ; 9F16 00                       .
-        brk                                     ; 9F17 00                       .
-        brk                                     ; 9F18 00                       .
-        brk                                     ; 9F19 00                       .
-        brk                                     ; 9F1A 00                       .
-        brk                                     ; 9F1B 00                       .
-        brk                                     ; 9F1C 00                       .
-        brk                                     ; 9F1D 00                       .
-        ora     (L0000,x)                       ; 9F1E 01 00                    ..
-        brk                                     ; 9F20 00                       .
-        brk                                     ; 9F21 00                       .
-        brk                                     ; 9F22 00                       .
-        brk                                     ; 9F23 00                       .
-        brk                                     ; 9F24 00                       .
-        brk                                     ; 9F25 00                       .
-        brk                                     ; 9F26 00                       .
-        brk                                     ; 9F27 00                       .
-        .byte   $04                             ; 9F28 04                       .
-        bvc     L9F4B                           ; 9F29 50 20                    P 
-        brk                                     ; 9F2B 00                       .
-        rts                                     ; 9F2C 60                       `
-
-; ----------------------------------------------------------------------------
-        brk                                     ; 9F2D 00                       .
-        rti                                     ; 9F2E 40                       @
-
-; ----------------------------------------------------------------------------
-        brk                                     ; 9F2F 00                       .
-        brk                                     ; 9F30 00                       .
-        brk                                     ; 9F31 00                       .
-        rti                                     ; 9F32 40                       @
-
-; ----------------------------------------------------------------------------
-        brk                                     ; 9F33 00                       .
-        bpl     L9F36                           ; 9F34 10 00                    ..
-L9F36:  brk                                     ; 9F36 00                       .
-        brk                                     ; 9F37 00                       .
-        .byte   $03                             ; 9F38 03                       .
-        brk                                     ; 9F39 00                       .
-        sta     ($40,x)                         ; 9F3A 81 40                    .@
-        plp                                     ; 9F3C 28                       (
-        brk                                     ; 9F3D 00                       .
-        brk                                     ; 9F3E 00                       .
-        rti                                     ; 9F3F 40                       @
-
-; ----------------------------------------------------------------------------
-        brk                                     ; 9F40 00                       .
-        brk                                     ; 9F41 00                       .
-        brk                                     ; 9F42 00                       .
-        brk                                     ; 9F43 00                       .
-        brk                                     ; 9F44 00                       .
-        brk                                     ; 9F45 00                       .
-        brk                                     ; 9F46 00                       .
-        brk                                     ; 9F47 00                       .
-        brk                                     ; 9F48 00                       .
-        brk                                     ; 9F49 00                       .
-        brk                                     ; 9F4A 00                       .
-L9F4B:  brk                                     ; 9F4B 00                       .
-        brk                                     ; 9F4C 00                       .
-        brk                                     ; 9F4D 00                       .
-        brk                                     ; 9F4E 00                       .
-        brk                                     ; 9F4F 00                       .
-        brk                                     ; 9F50 00                       .
-        brk                                     ; 9F51 00                       .
-        brk                                     ; 9F52 00                       .
-        brk                                     ; 9F53 00                       .
-        brk                                     ; 9F54 00                       .
-        brk                                     ; 9F55 00                       .
-        ora     (L0000,x)                       ; 9F56 01 00                    ..
-        brk                                     ; 9F58 00                       .
-        bpl     L9F5B                           ; 9F59 10 00                    ..
-L9F5B:  brk                                     ; 9F5B 00                       .
-        brk                                     ; 9F5C 00                       .
-        brk                                     ; 9F5D 00                       .
-        brk                                     ; 9F5E 00                       .
-        brk                                     ; 9F5F 00                       .
-        bpl     L9F62                           ; 9F60 10 00                    ..
-L9F62:  brk                                     ; 9F62 00                       .
-        brk                                     ; 9F63 00                       .
-        brk                                     ; 9F64 00                       .
-        brk                                     ; 9F65 00                       .
-        brk                                     ; 9F66 00                       .
-        brk                                     ; 9F67 00                       .
-        bvc     L9F6A                           ; 9F68 50 00                    P.
-L9F6A:  .byte   $04                             ; 9F6A 04                       .
-L9F6B:  brk                                     ; 9F6B 00                       .
-        brk                                     ; 9F6C 00                       .
-        brk                                     ; 9F6D 00                       .
-        .byte   $02                             ; 9F6E 02                       .
-        bvc     L9F71                           ; 9F6F 50 00                    P.
-L9F71:  ora     (L0000,x)                       ; 9F71 01 00                    ..
-        brk                                     ; 9F73 00                       .
-        ora     (L0000,x)                       ; 9F74 01 00                    ..
-        bit     L0000                           ; 9F76 24 00                    $.
-        bmi     L9F7A                           ; 9F78 30 00                    0.
-L9F7A:  php                                     ; 9F7A 08                       .
-        brk                                     ; 9F7B 00                       .
-        brk                                     ; 9F7C 00                       .
-        brk                                     ; 9F7D 00                       .
-        .byte   $0C                             ; 9F7E 0C                       .
-        ora     (L0000),y                       ; 9F7F 11 00                    ..
-        brk                                     ; 9F81 00                       .
-        brk                                     ; 9F82 00                       .
-        brk                                     ; 9F83 00                       .
-        brk                                     ; 9F84 00                       .
-        brk                                     ; 9F85 00                       .
-        brk                                     ; 9F86 00                       .
-        brk                                     ; 9F87 00                       .
-        brk                                     ; 9F88 00                       .
-        brk                                     ; 9F89 00                       .
-        brk                                     ; 9F8A 00                       .
-        brk                                     ; 9F8B 00                       .
-        brk                                     ; 9F8C 00                       .
-        brk                                     ; 9F8D 00                       .
-        brk                                     ; 9F8E 00                       .
-        brk                                     ; 9F8F 00                       .
-        brk                                     ; 9F90 00                       .
-        brk                                     ; 9F91 00                       .
-        php                                     ; 9F92 08                       .
-        brk                                     ; 9F93 00                       .
-        brk                                     ; 9F94 00                       .
-        brk                                     ; 9F95 00                       .
-        brk                                     ; 9F96 00                       .
-        brk                                     ; 9F97 00                       .
-        brk                                     ; 9F98 00                       .
-        brk                                     ; 9F99 00                       .
-        jsr     L0000                           ; 9F9A 20 00 00                  ..
-        brk                                     ; 9F9D 00                       .
-        brk                                     ; 9F9E 00                       .
-        brk                                     ; 9F9F 00                       .
-        brk                                     ; 9FA0 00                       .
-        brk                                     ; 9FA1 00                       .
-        bit     a:$04                           ; 9FA2 2C 04 00                 ,..
-        brk                                     ; 9FA5 00                       .
-        brk                                     ; 9FA6 00                       .
-        brk                                     ; 9FA7 00                       .
-        brk                                     ; 9FA8 00                       .
-        brk                                     ; 9FA9 00                       .
-        php                                     ; 9FAA 08                       .
-        brk                                     ; 9FAB 00                       .
-        .byte   $02                             ; 9FAC 02                       .
-        brk                                     ; 9FAD 00                       .
-        ora     (L0000,x)                       ; 9FAE 01 00                    ..
-        .byte   $80                             ; 9FB0 80                       .
-        rti                                     ; 9FB1 40                       @
-
-; ----------------------------------------------------------------------------
-        bpl     L9FF4                           ; 9FB2 10 40                    .@
-        brk                                     ; 9FB4 00                       .
-        brk                                     ; 9FB5 00                       .
-        brk                                     ; 9FB6 00                       .
-        brk                                     ; 9FB7 00                       .
-        brk                                     ; 9FB8 00                       .
-        brk                                     ; 9FB9 00                       .
-        .byte   $82                             ; 9FBA 82                       .
-        brk                                     ; 9FBB 00                       .
-        .byte   $0C                             ; 9FBC 0C                       .
-        brk                                     ; 9FBD 00                       .
-        brk                                     ; 9FBE 00                       .
-        rti                                     ; 9FBF 40                       @
-
-; ----------------------------------------------------------------------------
-        brk                                     ; 9FC0 00                       .
-        brk                                     ; 9FC1 00                       .
-        brk                                     ; 9FC2 00                       .
-        brk                                     ; 9FC3 00                       .
-        brk                                     ; 9FC4 00                       .
-        brk                                     ; 9FC5 00                       .
-        ora     (L0000,x)                       ; 9FC6 01 00                    ..
-        brk                                     ; 9FC8 00                       .
-        brk                                     ; 9FC9 00                       .
-        brk                                     ; 9FCA 00                       .
-        brk                                     ; 9FCB 00                       .
-        bpl     L9FCE                           ; 9FCC 10 00                    ..
-L9FCE:  brk                                     ; 9FCE 00                       .
-        brk                                     ; 9FCF 00                       .
-        brk                                     ; 9FD0 00                       .
-        brk                                     ; 9FD1 00                       .
-        brk                                     ; 9FD2 00                       .
-        brk                                     ; 9FD3 00                       .
-        brk                                     ; 9FD4 00                       .
-        brk                                     ; 9FD5 00                       .
-        ora     (L0000,x)                       ; 9FD6 01 00                    ..
-        brk                                     ; 9FD8 00                       .
-        brk                                     ; 9FD9 00                       .
-        brk                                     ; 9FDA 00                       .
-        brk                                     ; 9FDB 00                       .
-        brk                                     ; 9FDC 00                       .
-        ora     ($22,x)                         ; 9FDD 01 22                    ."
-        .byte   $10,$40                    ; 9FDF 10 40   (branch out of range for ca65: target has no local label)
-        bpl     L9F6B                           ; 9FE1 10 88                    ..
-        rti                                     ; 9FE3 40                       @
-
-; ----------------------------------------------------------------------------
-        jsr     L4100                           ; 9FE4 20 00 41                  .A
-        .byte   $04                             ; 9FE7 04                       .
-        brk                                     ; 9FE8 00                       .
-        brk                                     ; 9FE9 00                       .
-        rts                                     ; 9FEA 60                       `
-
-; ----------------------------------------------------------------------------
-        .byte   $04                             ; 9FEB 04                       .
-        bpl     L9FEE                           ; 9FEC 10 00                    ..
-L9FEE:  php                                     ; 9FEE 08                       .
-        brk                                     ; 9FEF 00                       .
-        .byte   $04                             ; 9FF0 04                       .
-        brk                                     ; 9FF1 00                       .
-        .byte   $22                             ; 9FF2 22                       "
-        .byte   $10                             ; 9FF3 10                       .
-L9FF4:  brk                                     ; 9FF4 00                       .
-        brk                                     ; 9FF5 00                       .
-        brk                                     ; 9FF6 00                       .
-        brk                                     ; 9FF7 00                       .
-        jsr     L0000                           ; 9FF8 20 00 00                  ..
-        brk                                     ; 9FFB 00                       .
-        rti                                     ; 9FFC 40                       @
-
-; ----------------------------------------------------------------------------
-        .byte   $10,$02                    ; 9FFD 10 02   (branch out of range for ca65: target has no local label)
-        .byte   $10                             ; 9FFF 10                       .
+; $9F0B-$9FFF: unreferenced (padding / leftover data)
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 9F0B
+        .byte   $00,$00,$00,$01,$00,$00,$00,$00,$00,$00,$00,$00,$00,$04,$50,$20 ; 9F1B
+        .byte   $00,$60,$00,$40,$00,$00,$00,$40,$00,$10,$00,$00,$00,$03,$00,$81 ; 9F2B
+        .byte   $40,$28,$00,$00,$40,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 9F3B
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$01,$00,$00,$10,$00 ; 9F4B
+        .byte   $00,$00,$00,$00,$00,$10,$00,$00,$00,$00,$00,$00,$00,$50,$00,$04 ; 9F5B
+        .byte   $00,$00,$00,$02,$50,$00,$01,$00,$00,$01,$00,$24,$00,$30,$00,$08 ; 9F6B
+        .byte   $00,$00,$00,$0C,$11,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 9F7B
+        .byte   $00,$00,$00,$00,$00,$00,$00,$08,$00,$00,$00,$00,$00,$00,$00,$20 ; 9F8B
+        .byte   $00,$00,$00,$00,$00,$00,$00,$2C,$04,$00,$00,$00,$00,$00,$00,$08 ; 9F9B
+        .byte   $00,$02,$00,$01,$00,$80,$40,$10,$40,$00,$00,$00,$00,$00,$00,$82 ; 9FAB
+        .byte   $00,$0C,$00,$00,$40,$00,$00,$00,$00,$00,$00,$01,$00,$00,$00,$00 ; 9FBB
+        .byte   $00,$10,$00,$00,$00,$00,$00,$00,$00,$00,$00,$01,$00,$00,$00,$00 ; 9FCB
+        .byte   $00,$00,$01,$22,$10,$40,$10,$88,$40,$20,$00,$41,$04,$00,$00,$60 ; 9FDB
+        .byte   $04,$10,$00,$08,$00,$04,$00,$22,$10,$00,$00,$00,$00,$20,$00,$00 ; 9FEB
+        .byte   $00,$40,$10,$02,$10                                     ; 9FFB
