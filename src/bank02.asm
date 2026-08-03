@@ -36,6 +36,18 @@ L8936           := $8936
 LE700           := $E700
 LF2F3           := $F2F3
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR type $4F — BIG PETS director (Wily 1 boss; spawn code $59 in
+; bank $0C scr $1B). The boss body is background tiles on an IRQ-split
+; screen (mode $1D): $1C:84A6 freezes the player, then after the IRQ
+; handshake ($1E) this sets up the split ($9B/$99/$FD), CHR R1 := $E8,
+; fades in the palette at $A26F + fills the boss HP bar ($1C:8420).
+; Fight loop ($A067): every $D2 frames spit 1-2 "pet" minions (type
+; $7B) from the mouth at X=$D8/Y=$34, targets picked from LA283 (no
+; immediate repeat). Face sub_type $C2 -> $C3 (mouth open) while either
+; ram row ($78/$79, driven by the two type $7A segments) is at rest
+; 0/$FF; vflip overlay bits from LA28B by anim phase.
+; =============================================================================
         jsr     L84A6                           ; A000 20 A6 84                  ..
         bcs     LA066                           ; A003 B0 61                    .a
         lda     #$80                            ; A005 A9 80                    ..
@@ -77,17 +89,13 @@ LF2F3           := $F2F3
         sta     $05A0,x                         ; A054 9D A0 05                 ...
         lda     #$D2                            ; A057 A9 D2                    ..
         sta     $0468,x                         ; A059 9D 68 04                 .h.
-        lda     #$02                            ; A05C A9 02                    ..
-        .byte   $9D                             ; A05E 9D                       .
-        rti                                     ; A05F 40                       @
+        lda     #$02                            ; A05C A9 02
+        sta     $0540,x                         ; A05E 9D 40 05
+        lda     #$00                            ; A061 A9 00
+        sta     $0570,x                         ; A063 9D 70 05
+LA066:  rts                                     ; A066 60
 
-; ----------------------------------------------------------------------------
-LA060:  ora     $A9                             ; A060 05 A9                    ..
-        brk                                     ; A062 00                       .
-        sta     $0570,x                         ; A063 9D 70 05                 .p.
-LA066:  rts                                     ; A066 60                       `
-
-; ----------------------------------------------------------------------------
+; --- $A067: fight loop --------------------------------------------------------
         lda     $0468,x                         ; A067 BD 68 04                 .h.
         bne     LA0CF                           ; A06A D0 63                    .c
         lda     #$D2                            ; A06C A9 D2                    ..
@@ -111,9 +119,8 @@ LA07F:  jsr     find_free_slot_y                           ; A07F 20 6F F1      
         sta     $0330,y                         ; A095 99 30 03                 .0.
         lda     #$00                            ; A098 A9 00                    ..
         sta     $03D8,y                         ; A09A 99 D8 03                 ...
-        lda     #$02                            ; A09D A9 02                    ..
-        .byte   $99                             ; A09F 99                       .
-LA0A0:  .byte   $F0,$03                    ; A0A0 F0 03   (branch out of range for ca65: target has no local label)
+        lda     #$02                            ; A09D A9 02
+        sta     $03F0,y                         ; A09F 99 F0 03 pet yvel 2 px/f down
 LA0A2:  lda     $E4                             ; A0A2 A5 E4                    ..
         adc     $E5                             ; A0A4 65 E5                    e.
         sta     $E4                             ; A0A6 85 E4                    ..
@@ -170,6 +177,19 @@ LA105:  clc                                     ; A105 18                       
 LA115:  rts                                     ; A115 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR type $7A — BIG PETS ram row (two per fight, spawn code $5B;
+; also the row-pair boss of the Wily 1 room). Each drives one BG scroll
+; offset of the boss body: $78 (row at Y=$90) or $79 (other row) :=
+; $D8 - own X ($A1CE). Idles until the HP bar is up ($2F bit 7) and the
+; player is in play (state < 8); inert while Gravity Hold ($32==7) is
+; equipped. A weapon hit ($EFF8 clear-carry) kills the shot
+; (entity_wipe_y_checked) and knocks the row left at 4 px/f ($A12E);
+; reaching X=$20 it shudders ($A165, X bit 0 toggle), crawls back right
+; at 2 px/f ($A193), shudders again at X=$D8 ($A1AC), then re-arms.
+; While extended it drags the player via the push vars $39-$3B and
+; deals contact damage through shape $B2 + player_take_damage.
+; =============================================================================
         lda     $2F                             ; A116 A5 2F                    ./
         bpl     LA115                           ; A118 10 FB                    ..
         lda     $30                             ; A11A A5 30                    .0
@@ -220,12 +240,11 @@ LA17A:  dec     $0468,x                         ; A17A DE 68 04                 
         sta     $0420,x                         ; A181 9D 20 04                 . .
         lda     #$02                            ; A184 A9 02                    ..
         sta     $03C0,x                         ; A186 9D C0 03                 ...
-        lda     #$93                            ; A189 A9 93                    ..
-        .byte   $9D                             ; A18B 9D                       .
-        dey                                     ; A18C 88                       .
-LA18D:  ora     $A9                             ; A18D 05 A9                    ..
-        lda     ($9D,x)                         ; A18F A1 9D                    ..
-        ldy     #$05                            ; A191 A0 05                    ..
+        lda     #$93                            ; A189 A9 93
+        sta     $0588,x                         ; A18B 9D 88 05
+        lda     #$A1                            ; A18E A9 A1
+        sta     $05A0,x                         ; A190 9D A0 05 behavior PC := $A193
+; --- $A193: crawl back right --------------------------------------------------
         jsr     LA1F6                           ; A193 20 F6 A1                  ..
         lda     $0330,x                         ; A196 BD 30 03                 .0.
         cmp     #$D8                            ; A199 C9 D8                    ..
@@ -285,6 +304,13 @@ LA1F6:  jsr     entity_facing_dispatch                           ; A1F6 20 65 EA
 LA213:  rts                                     ; A213 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR type $7B — BIG PETS "pet" minion. Rises out of the mouth
+; (entity_move_up_nofacing) until the collision flag $0390 trips, then
+; teleports to the top (Y=0) at its target X ($0468, from LA283), and
+; bounces diagonally at $01.6A px/f (facing + vert dispatch), dir
+; ping-ponged every $16 frames (eor #$03 on $0420).
+; =============================================================================
         jsr     entity_move_up_nofacing                           ; A214 20 4A E9                  J.
         lda     $0390,x                         ; A217 BD 90 03                 ...
         beq     LA26E                           ; A21A F0 52                    .R
@@ -323,41 +349,39 @@ LA213:  rts                                     ; A213 60                       
 LA26E:  rts                                     ; A26E 60                       `
 
 ; ----------------------------------------------------------------------------
-        .byte   $0F                             ; A26F 0F                       .
-        rol     $16,x                           ; A270 36 16                    6.
-        asl     $0F                             ; A272 06 0F                    ..
-        bmi     LA286                           ; A274 30 10                    0.
-        brk                                     ; A276 00                       .
-        .byte   $0F                             ; A277 0F                       .
-        bmi     LA29B                           ; A278 30 21                    0!
-        ora     ($0F),y                         ; A27A 11 0F                    ..
-        .byte   $0F                             ; A27C 0F                       .
-        jsr     L0F21                           ; A27D 20 21 0F                  !.
-        .byte   $0F                             ; A280 0F                       .
-        .byte   $20                             ; A281 20                        
-        .byte   $2B                             ; A282 2B                       +
-LA283:  jsr     LA060                           ; A283 20 60 A0                  `.
-LA286:  rti                                     ; A286 40                       @
-
+; Big Pets data: fade-in palette (5 rows for $1C:8420), pet target Xs,
+; face vflip overlay bits by anim phase (+3 when mouth open, $C3).
 ; ----------------------------------------------------------------------------
-        .byte   $80                             ; A287 80                       .
-        jsr     LA060                           ; A288 20 60 A0                  `.
-LA28B:  brk                                     ; A28B 00                       .
-        brk                                     ; A28C 00                       .
-        rti                                     ; A28D 40                       @
-
+        .byte   $0F,$36,$16,$06                 ; A26F  palette
+        .byte   $0F,$30,$10,$00                 ; A273
+        .byte   $0F,$30,$21,$11                 ; A277
+        .byte   $0F,$0F,$20,$21                 ; A27B
+        .byte   $0F,$0F,$20,$2B                 ; A27F
+LA283:  .byte   $20,$60,$A0,$40,$80,$20,$60,$A0 ; A283  pet target X
+LA28B:  .byte   $00,$00,$40,$40,$00,$00         ; A28B  face vflip bits
 ; ----------------------------------------------------------------------------
-        rti                                     ; A28E 40                       @
-
-; ----------------------------------------------------------------------------
-        brk                                     ; A28F 00                       .
-        brk                                     ; A290 00                       .
+; =============================================================================
+; BEHAVIOR type $7C — CIRCRING Q9 (Wily 2 boss; spawn code $5C in bank
+; $0D scr $18). Another IRQ-split background boss (mode $19): after the
+; $84A6/$1E handshake, $84D5 resets the special screen, CHR R0 := $EA,
+; camera Y $FA=$40, palette $A5A4 fade + HP fill ($1C:8420). Spawns its
+; escort: two floor crawlers (type $7D via LA4E4, at X=$34/$C4) and two
+; orbiting pods (type $B1 via LA515, angles $E4/$1C) — then centers at
+; ($80,$58) and circles ($A33E): angle $0480 advances every 4 frames
+; through dir table LA5B8 at speed 8, camera tracks it ($A458: $FA/$78
+; := center - own pos). Every $3C frames it drops an aimed bomb (type
+; $7E via LA469). Each full lap (angle $3F) it dashes ($A3D0): speed
+; $01.33/$00.D9 at the player, 4 reversals timed by LA5E8/LA5EC, an
+; aimed shot (type $7F via LA4B9) on every other reversal, then back to
+; circling. Eye opens on a random cadence (LA5FF): anim phase steps
+; through LA603, shape $F3 (eye open, vulnerable) vs $A9 (closed).
+; =============================================================================
         jsr     L84A6                           ; A291 20 A6 84                  ..
         bcs     LA26E                           ; A294 B0 D8                    ..
         lda     #$80                            ; A296 A9 80                    ..
         sta     $1E                             ; A298 85 1E                    ..
-        .byte   $A9                             ; A29A A9                       .
-LA29B:  ora     $2385,y                         ; A29B 19 85 23                 ..#
+        lda     #$19                            ; A29A A9 19
+        sta     $23                             ; A29C 85 23    IRQ split mode $19
         lda     #$A8                            ; A29E A9 A8                    ..
         sta     $0588,x                         ; A2A0 9D 88 05                 ...
         lda     #$A2                            ; A2A3 A9 A2                    ..
@@ -550,7 +574,8 @@ LA458:  lda     #$98                            ; A458 A9 98                    
         sta     $78                             ; A466 85 78                    .x
         rts                                     ; A468 60                       `
 
-; ----------------------------------------------------------------------------
+; --- LA469: drop an aimed bomb — type $7E, sub $BB, from $44 above own Y;
+; yvel $03.7A down, xvel toward the player scaled by distance (LA5F0/F5/FA)
 LA469:  jsr     find_free_slot_y                           ; A469 20 6F F1                  o.
         bcs     LA4B8                           ; A46C B0 4A                    .J
         lda     #$BB                            ; A46E A9 BB                    ..
@@ -586,7 +611,8 @@ LA4AA:  lda     LA5F5,y                         ; A4AA B9 F5 A5                 
         ldx     $A6                             ; A4B6 A6 A6                    ..
 LA4B8:  rts                                     ; A4B8 60                       `
 
-; ----------------------------------------------------------------------------
+; --- LA4B9: fire an aimed shot — type $7F, sub $BC, from $14 below own Y,
+; 16-dir at the player, speed $28
 LA4B9:  jsr     find_free_slot_y                           ; A4B9 20 6F F1                  o.
         bcs     LA4E3                           ; A4BC B0 25                    .%
         lda     #$BC                            ; A4BE A9 BC                    ..
@@ -608,7 +634,7 @@ LA4B9:  jsr     find_free_slot_y                           ; A4B9 20 6F F1      
         ldx     $A6                             ; A4E1 A6 A6                    ..
 LA4E3:  rts                                     ; A4E3 60                       `
 
-; ----------------------------------------------------------------------------
+; --- LA4E4: spawn a floor crawler — type $7D, sub $BD, at Y=$BC, xvel $00.66
 LA4E4:  jsr     find_free_slot_y                           ; A4E4 20 6F F1                  o.
         lda     #$BD                            ; A4E7 A9 BD                    ..
         jsr     entity_init_pos                           ; A4E9 20 A4 EA                  ..
@@ -630,7 +656,8 @@ LA4E4:  jsr     find_free_slot_y                           ; A4E4 20 6F F1      
         tya                                     ; A513 98                       .
         rts                                     ; A514 60                       `
 
-; ----------------------------------------------------------------------------
+; --- LA515: spawn an orbiting pod — type $B1 (generic orbiter, bank $1D),
+; sub $62, linked to this slot via $0468; start angle set by the caller
 LA515:  jsr     find_free_slot_y                           ; A515 20 6F F1                  o.
         lda     #$62                            ; A518 A9 62                    .b
         jsr     entity_init_pos                           ; A51A 20 A4 EA                  ..
@@ -646,10 +673,20 @@ LA515:  jsr     find_free_slot_y                           ; A515 20 6F F1      
         rts                                     ; A532 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR type $7E — Circring Q9 falling bomb: plain ballistic drop.
+; =============================================================================
         jsr     entity_process_y_vel                           ; A533 20 68 E9                  h.
         jmp     entity_facing_dispatch                           ; A536 4C 65 EA                 Le.
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR type $7D — Circring Q9 floor crawler: paces the arena floor,
+; shoving the player via push vars $39-$3B (zeroed beyond $12 px) and
+; hurting on contact (Y-1 collide probe). Direction (and push) reverses
+; every $82 frames (eor #$0F); when the flip sets bit 3 it snaps back
+; to the floor (Y=$BC) and re-enters at $A539.
+; =============================================================================
         dec     $0378,x                         ; A539 DE 78 03                 .x.
         jsr     entity_player_collide                           ; A53C 20 87 EF                  ..
         inc     $0378,x                         ; A53F FE 78 03                 .x.
@@ -695,103 +732,52 @@ LA578:  jsr     entity_facing_dispatch                           ; A578 20 65 EA
 LA5A3:  rts                                     ; A5A3 60                       `
 
 ; ----------------------------------------------------------------------------
-        .byte   $0F                             ; A5A4 0F                       .
-        .byte   $37                             ; A5A5 37                       7
-        .byte   $27                             ; A5A6 27                       '
-        .byte   $03                             ; A5A7 03                       .
-        .byte   $0F                             ; A5A8 0F                       .
-        bmi     LA5D6                           ; A5A9 30 2B                    0+
-        .byte   $1B                             ; A5AB 1B                       .
-        .byte   $0F                             ; A5AC 0F                       .
-        bmi     LA5C3                           ; A5AD 30 14                    0.
-        .byte   $03                             ; A5AF 03                       .
-        .byte   $0F                             ; A5B0 0F                       .
-        .byte   $0F                             ; A5B1 0F                       .
-        .byte   $37                             ; A5B2 37                       7
-        .byte   $27                             ; A5B3 27                       '
-        .byte   $0F                             ; A5B4 0F                       .
-        bmi     LA5C7                           ; A5B5 30 10                    0.
-        .byte   $1C                             ; A5B7 1C                       .
-LA5B8:  ora     #$0A                            ; A5B8 09 0A                    ..
-        .byte   $0B                             ; A5BA 0B                       .
-        .byte   $0C                             ; A5BB 0C                       .
-        ora     $0F0E                           ; A5BC 0D 0E 0F                 ...
-        brk                                     ; A5BF 00                       .
-        .byte   $0F                             ; A5C0 0F                       .
-        .byte   $0E                             ; A5C1 0E                       .
-        .byte   $0D                             ; A5C2 0D                       .
-LA5C3:  .byte   $0C                             ; A5C3 0C                       .
-        .byte   $0B                             ; A5C4 0B                       .
-        asl     a                               ; A5C5 0A                       .
-        .byte   $09                             ; A5C6 09                       .
-LA5C7:  php                                     ; A5C7 08                       .
-        .byte   $07                             ; A5C8 07                       .
-        asl     $05                             ; A5C9 06 05                    ..
-        .byte   $04                             ; A5CB 04                       .
-        .byte   $03                             ; A5CC 03                       .
-        .byte   $02                             ; A5CD 02                       .
-        ora     (L0000,x)                       ; A5CE 01 00                    ..
-        ora     ($02,x)                         ; A5D0 01 02                    ..
-        .byte   $03                             ; A5D2 03                       .
-        .byte   $04                             ; A5D3 04                       .
-        ora     $06                             ; A5D4 05 06                    ..
-LA5D6:  .byte   $07                             ; A5D6 07                       .
-        php                                     ; A5D7 08                       .
-        ora     #$0A                            ; A5D8 09 0A                    ..
-        .byte   $0B                             ; A5DA 0B                       .
-        .byte   $0C                             ; A5DB 0C                       .
-        ora     $0F0E                           ; A5DC 0D 0E 0F                 ...
-        brk                                     ; A5DF 00                       .
-        .byte   $0F                             ; A5E0 0F                       .
-        asl     $0C0D                           ; A5E1 0E 0D 0C                 ...
-        .byte   $0B                             ; A5E4 0B                       .
-        asl     a                               ; A5E5 0A                       .
-        ora     #$08                            ; A5E6 09 08                    ..
-LA5E8:  brk                                     ; A5E8 00                       .
-        .byte   $03                             ; A5E9 03                       .
-        brk                                     ; A5EA 00                       .
-        .byte   $03                             ; A5EB 03                       .
-LA5EC:  .byte   $3C                             ; A5EC 3C                       <
-        brk                                     ; A5ED 00                       .
-        brk                                     ; A5EE 00                       .
-        brk                                     ; A5EF 00                       .
-LA5F0:  rti                                     ; A5F0 40                       @
-
+; Circring Q9 data: fade-in palette (5 rows for $1C:8420), circle dir
+; sequence, dash-reversal dir/pause, bomb xvel by distance, eye-open
+; cadence, anim-phase step map.
 ; ----------------------------------------------------------------------------
-        rts                                     ; A5F1 60                       `
-
+        .byte   $0F,$37,$27,$03                 ; A5A4  palette
+        .byte   $0F,$30,$2B,$1B                 ; A5A8
+        .byte   $0F,$30,$14,$03                 ; A5AC
+        .byte   $0F,$0F,$37,$27                 ; A5B0
+        .byte   $0F,$30,$10,$1C                 ; A5B4
+LA5B8:  .byte   $09,$0A,$0B,$0C,$0D,$0E,$0F,$00 ; A5B8  circle: 16-dir by angle
+        .byte   $0F,$0E,$0D,$0C,$0B,$0A,$09,$08 ; A5C0
+        .byte   $07,$06,$05,$04,$03,$02,$01,$00 ; A5C8
+        .byte   $01,$02,$03,$04,$05,$06,$07,$08 ; A5D0
+        .byte   $09,$0A,$0B,$0C,$0D,$0E,$0F,$00 ; A5D8
+        .byte   $0F,$0E,$0D,$0C,$0B,$0A,$09,$08 ; A5E0
+LA5E8:  .byte   $00,$03,$00,$03                 ; A5E8  dash reversal dir eor
+LA5EC:  .byte   $3C,$00,$00,$00                 ; A5EC  dash reversal pause
+LA5F0:  .byte   $40,$60,$80,$A0,$C0             ; A5F0  bomb: player dist steps
+LA5F5:  .byte   $47,$EB,$8F,$33,$D7             ; A5F5  bomb xvel sub
+LA5FA:  .byte   $01,$01,$02,$03,$03             ; A5FA  bomb xvel px
+LA5FF:  .byte   $1E,$3C,$5A,$78                 ; A5FF  eye-open cadence (rnd)
+LA603:  .byte   $01,$01,$10,$10,$10,$10,$10,$10 ; A603  anim phase step map
+        .byte   $10,$10,$10,$10,$10,$10,$10,$10 ; A60B
+        .byte   $10,$10,$01,$01,$01,$01,$01     ; A613
 ; ----------------------------------------------------------------------------
-        .byte   $80                             ; A5F2 80                       .
-        ldy     #$C0                            ; A5F3 A0 C0                    ..
-LA5F5:  .byte   $47                             ; A5F5 47                       G
-        .byte   $EB                             ; A5F6 EB                       .
-        .byte   $8F                             ; A5F7 8F                       .
-        .byte   $33                             ; A5F8 33                       3
-        .byte   $D7                             ; A5F9 D7                       .
-LA5FA:  ora     ($01,x)                         ; A5FA 01 01                    ..
-        .byte   $02                             ; A5FC 02                       .
-        .byte   $03                             ; A5FD 03                       .
-        .byte   $03                             ; A5FE 03                       .
-LA5FF:  asl     $5A3C,x                         ; A5FF 1E 3C 5A                 .<Z
-        sei                                     ; A602 78                       x
-LA603:  ora     ($01,x)                         ; A603 01 01                    ..
-        bpl     LA617                           ; A605 10 10                    ..
-        bpl     LA619                           ; A607 10 10                    ..
-        bpl     LA61B                           ; A609 10 10                    ..
-        bpl     LA61D                           ; A60B 10 10                    ..
-        bpl     LA61F                           ; A60D 10 10                    ..
-        bpl     LA621                           ; A60F 10 10                    ..
-        bpl     LA623                           ; A611 10 10                    ..
-        bpl     LA625                           ; A613 10 10                    ..
-        ora     ($01,x)                         ; A615 01 01                    ..
-LA617:  ora     ($01,x)                         ; A617 01 01                    ..
-LA619:  ora     (L0020,x)                       ; A619 01 20                    . 
-LA61B:  ldx     $84                             ; A61B A6 84                    ..
-LA61D:  bcs     LA5A3                           ; A61D B0 84                    ..
-LA61F:  lda     #$80                            ; A61F A9 80                    ..
-LA621:  sta     $1E                             ; A621 85 1E                    ..
-LA623:  lda     #$07                            ; A623 A9 07                    ..
-LA625:  sta     $23                             ; A625 85 23                    .#
+; =============================================================================
+; BEHAVIOR type $A0 — WILY PRESS (Wily 3+4 boss; spawned in bank $0E
+; scr $04 past the teleporter hub). Background boss in a vertical room
+; (IRQ mode $07, vscroll_flag $46 on): $84A6/$1E handshake, $84D5
+; screen reset, camera Y $FA=$B0, palette $A7BD fade + HP fill
+; ($1C:8420), then spawns its type $A1 underside rider and picks a
+; move duration from LA7D5/LA7D9 (16-bit), falling at 2 px/f. Cruise
+; ($A69F): stalks the player horizontally (re-aims every $14 frames,
+; bounces off X $39/$C8), mouth anim swap at phase 2 (sub $55/$56/$57),
+; until the duration runs out -> slam ($A719): dir=down, drops $20 px
+; per burst; on the down-burst spawns a type $6D floor-hit effect at
+; Y=$80, on the up-burst re-randomizes and resumes cruising. Camera and
+; both BG split rows track it ($A781: $FA/$78/$9B/$79 from own X/Y);
+; shape by sub_type via LA77C read ($A7D1-$A7D3: $89/$89/$C9).
+; =============================================================================
+        jsr     L84A6                           ; A61A 20 A6 84
+        bcs     LA5A3                           ; A61D B0 84
+        lda     #$80                            ; A61F A9 80
+        sta     $1E                             ; A621 85 1E
+        lda     #$07                            ; A623 A9 07
+        sta     $23                             ; A625 85 23    IRQ split mode $07
         lda     #$31                            ; A627 A9 31                    .1
         sta     $0588,x                         ; A629 9D 88 05                 ...
         lda     #$A6                            ; A62C A9 A6                    ..
@@ -958,6 +944,10 @@ LA781:  lda     #$C8                            ; A781 A9 C8                    
         rts                                     ; A7A9 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR type $A1 — Wily Press underside rider (sub $62, shape $DD):
+; pinned $20 px below the press ($0468 = press slot) at its X.
+; =============================================================================
         ldy     $0468,x                         ; A7AA BC 68 04                 .h.
         lda     $0378,y                         ; A7AD B9 78 03                 .x.
         clc                                     ; A7B0 18                       .
@@ -968,53 +958,22 @@ LA781:  lda     #$C8                            ; A781 A9 C8                    
         rts                                     ; A7BC 60                       `
 
 ; ----------------------------------------------------------------------------
-        .byte   $0F                             ; A7BD 0F                       .
-        bmi     LA7E7                           ; A7BE 30 27                    0'
-        .byte   $07                             ; A7C0 07                       .
-        .byte   $0F                             ; A7C1 0F                       .
-        bmi     LA7E6                           ; A7C2 30 22                    0"
-        .byte   $13                             ; A7C4 13                       .
-        .byte   $0F                             ; A7C5 0F                       .
-        bmi     LA7ED                           ; A7C6 30 25                    0%
-        ora     $0F,x                           ; A7C8 15 0F                    ..
-        .byte   $0F                             ; A7CA 0F                       .
-        plp                                     ; A7CB 28                       (
-        asl     $0F,x                           ; A7CC 16 0F                    ..
-        .byte   $22                             ; A7CE 22                       "
-        jsr     L8936                           ; A7CF 20 36 89                  6.
-        .byte   $89                             ; A7D2 89                       .
-        cmp     #$00                            ; A7D3 C9 00                    ..
-LA7D5:  bit     $C82C                           ; A7D5 2C 2C C8                 ,,.
-        .byte   $96                             ; A7D8 96                       .
-LA7D9:  ora     ($01,x)                         ; A7D9 01 01                    ..
-        brk                                     ; A7DB 00                       .
-        brk                                     ; A7DC 00                       .
-        .byte   $77                             ; A7DD 77                       w
-        .byte   $FF                             ; A7DE FF                       .
-        .byte   $FF                             ; A7DF FF                       .
-        .byte   $FF                             ; A7E0 FF                       .
-        .byte   $D7                             ; A7E1 D7                       .
-        .byte   $DF                             ; A7E2 DF                       .
-        .byte   $FF                             ; A7E3 FF                       .
-        .byte   $FF                             ; A7E4 FF                       .
-        .byte   $7D                             ; A7E5 7D                       }
-LA7E6:  .byte   $FF                             ; A7E6 FF                       .
-LA7E7:  .byte   $DF                             ; A7E7 DF                       .
-        .byte   $F7                             ; A7E8 F7                       .
-        cmp     $8FFF,x                         ; A7E9 DD FF 8F                 ...
-        .byte   $FF                             ; A7EC FF                       .
-LA7ED:  .byte   $FF                             ; A7ED FF                       .
-        .byte   $FF                             ; A7EE FF                       .
-        adc     $FE,x                           ; A7EF 75 FE                    u.
-        .byte   $7F                             ; A7F1 7F                       .
-        .byte   $FF                             ; A7F2 FF                       .
-        sbc     $FF,x                           ; A7F3 F5 FF                    ..
-        cmp     $45FF,x                         ; A7F5 DD FF 45                 ..E
-        .byte   $FF                             ; A7F8 FF                       .
-        sbc     $FF,x                           ; A7F9 F5 FF                    ..
-        sbc     $77FF,x                         ; A7FB FD FF 77                 ..w
-        .byte   $FF                             ; A7FE FF                       .
-        .byte   $5F                             ; A7FF 5F                       _
+; Wily Press data: fade-in palette (5 rows for $1C:8420), shape by
+; sub_type (read as LA77C+$55.. = $A7D1), cruise durations lo/hi.
+; $A7DD-$A7FF unreferenced.
+        .byte   $0F,$30,$27,$07                 ; A7BD  palette
+        .byte   $0F,$30,$22,$13                 ; A7C1
+        .byte   $0F,$30,$25,$15                 ; A7C5
+        .byte   $0F,$0F,$28,$16                 ; A7C9
+        .byte   $0F,$22,$20,$36                 ; A7CD
+        .byte   $89,$89,$C9,$00                 ; A7D1  shape for sub $55-$57
+LA7D5:  .byte   $2C,$2C,$C8,$96                 ; A7D5  cruise duration lo
+LA7D9:  .byte   $01,$01,$00,$00                 ; A7D9  cruise duration hi
+        .byte   $77,$FF,$FF,$FF,$D7,$DF,$FF,$FF ; A7DD  (unreferenced)
+        .byte   $7D,$FF,$DF,$F7,$DD,$FF,$8F,$FF ; A7E5
+        .byte   $FF,$FF,$75,$FE,$7F,$FF,$F5,$FF ; A7ED
+        .byte   $DD,$FF,$45,$FF,$F5,$FF,$FD,$FF ; A7F5
+        .byte   $77,$FF,$5F                     ; A7FD
         brk                                     ; A800 00                       .
         brk                                     ; A801 00                       .
         brk                                     ; A802 00                       .
@@ -2677,7 +2636,7 @@ LB022:  dec     L0000,x                         ; B022 D6 00                    
         .byte   $83                             ; B065 83                       .
         cmp     (L0000),y                       ; B066 D1 00                    ..
         ora     ($02,x)                         ; B068 01 02                    ..
-        ldx     LA18D,y                         ; B06A BE 8D A1                 ...
+        .byte   $BE,$8D,$A1                     ; B06A BE 8D A1                 ...
         .byte   $A3                             ; B06D A3                       .
         .byte   $C2                             ; B06E C2                       .
         .byte   $F3                             ; B06F F3                       .
@@ -4593,7 +4552,7 @@ LBBA8:  asl     $0E0E                           ; BBA8 0E 0E 0E                 
         lda     LBEA1,x                         ; BBDA BD A1 BE                 ...
         ldy     #$9F                            ; BBDD A0 9F                    ..
         .byte   $9F                             ; BBDF 9F                       .
-        ldx     LA0A0,y                         ; BBE0 BE A0 A0                 ...
+        .byte   $BE,$A0,$A0                     ; BBE0 BE A0 A0                 ...
         .byte   $BF                             ; BBE3 BF                       .
         ldy     #$A0                            ; BBE4 A0 A0                    ..
         .byte   $9F                             ; BBE6 9F                       .
@@ -4827,7 +4786,7 @@ LBC6A:  .byte   $1C                             ; BC6A 1C                       
         cld                                     ; BD8E D8                       .
         cld                                     ; BD8F D8                       .
         ldy     #$ED                            ; BD90 A0 ED                    ..
-        inc     LA0A0                           ; BD92 EE A0 A0                 ...
+        .byte   $EE,$A0,$A0                     ; BD92 EE A0 A0                 ...
         .byte   $A0                             ; BD95 A0                       .
 LBD96:  ldy     #$A0                            ; BD96 A0 A0                    ..
         ldy     #$A0                            ; BD98 A0 A0                    ..
@@ -4837,7 +4796,7 @@ LBD96:  ldy     #$A0                            ; BD96 A0 A0                    
         ldy     #$A0                            ; BDA1 A0 A0                    ..
         ldy     #$A0                            ; BDA3 A0 A0                    ..
         ldy     #$ED                            ; BDA5 A0 ED                    ..
-        inc     LA0A2                           ; BDA7 EE A2 A0                 ...
+        .byte   $EE,$A2,$A0                     ; BDA7 EE A2 A0                 ...
         ldx     #$A0                            ; BDAA A2 A0                    ..
         ldy     #$A0                            ; BDAC A0 A0                    ..
         ldy     #$A0                            ; BDAE A0 A0                    ..

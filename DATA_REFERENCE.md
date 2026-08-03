@@ -61,9 +61,9 @@ by screen `& 7` in boss-rush stage `$0E`).
 | `$09` | Proto castle 2 | — | Dark Man 2 | `$91` | `$09:A05C` |
 | `$0A` | Proto castle 3 | — | Dark Man 3 | `$93` | `$09:A12F` |
 | `$0B` | Proto castle 4 | — | Dark Man 4 | `$98` | `$09:A405` (spawn: type `$A2` `$03:A000`) |
-| `$0C` | Wily 1 | — | types `$7A`×2 + `$71` | `$7A` | `$02:A116` |
-| `$0D` | Wily 2 | — | type `$7C` | `$7C` | `$02:A291` |
-| `$0E` | Wily 3+4 | — | boss rush (screens `$08-$0F`) + types `$AF`/`$A0` | `$A0` | `$02:A61A` |
+| `$0C` | Wily 1 | — | Big Pets (director `$4F` + rows `$7A`×2 + body `$71`) | `$4F` | `$02:A000` |
+| `$0D` | Wily 2 | — | Circring Q9 | `$7C` | `$02:A291` |
+| `$0E` | Wily 3+4 | — | boss rush (screens `$08-$0F`, pods `$AF`) + Wily Press | `$A0` | `$02:A61A` |
 
 The eight robot masters' AI is packed into banks `$06-$08`, the four
 Dark Men into bank `$09` — a stage bank's `$A000-$A7FF` region hosts
