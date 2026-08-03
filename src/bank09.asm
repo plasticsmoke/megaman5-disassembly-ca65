@@ -31,6 +31,9 @@ L854D           := $854D
 L8550           := $8550
 LC030           := $C030
 ; ----------------------------------------------------------------------------
+; --- LA000: spawn the boss's two escort pods — type := own type + 1,
+; preset $46 with dir base $0D, linked both ways ($0480 = boss slot);
+; Dark Man 2 pods get xvel $00.80, Dark Man 4 pods $01.00.
 LA000:  lda     #$01                            ; A000 A9 01                    ..
         sta     $0E                             ; A002 85 0E                    ..
 LA004:  jsr     find_free_slot_y                           ; A004 20 6F F1                  o.
@@ -73,6 +76,14 @@ LA054:  sta     $03C0,y                         ; A054 99 C0 03                 
         rts                                     ; A05B 60                       `
 
 ; ----------------------------------------------------------------------------
+; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR type $91 — DARK MAN 2 (Proto castle 2 boss). Spawns two
+; type $92 shield pods (LA000, dir base $57), then rolls back and
+; forth; as his HP falls through the LA0E1 thresholds he shifts up a
+; gear (+$40 xvel sub) and changes tread sub_type (LA0E7). On each
+; turn-around: $78-frame pause with turn anim (sub $41).
+; =============================================================================
         lda     #$57                            ; A05C A9 57                    .W
         sta     $0D                             ; A05E 85 0D                    ..
         jsr     LA000                           ; A060 20 00 A0                  ..
@@ -127,16 +138,14 @@ LA0C0:  jsr     entity_facing_dispatch                           ; A0C0 20 65 EA
 LA0E0:  rts                                     ; A0E0 60                       `
 
 ; ----------------------------------------------------------------------------
-LA0E1:  .byte   $1A                             ; A0E1 1A                       .
-        .byte   $17                             ; A0E2 17                       .
-        .byte   $14                             ; A0E3 14                       .
-        ora     ($0E),y                         ; A0E4 11 0E                    ..
-        brk                                     ; A0E6 00                       .
-LA0E7:  .byte   $43                             ; A0E7 43                       C
-        .byte   $43                             ; A0E8 43                       C
-        .byte   $44                             ; A0E9 44                       D
-        .byte   $44                             ; A0EA 44                       D
-        eor     L0000                           ; A0EB 45 00                    E.
+LA0E1:  .byte   $1A,$17,$14,$11,$0E,$00         ; A0E1  HP gear thresholds
+LA0E7:  .byte   $43,$43,$44,$44,$45,$00         ; A0E7  tread sub_type per gear
+; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR type $92 — Dark Man 2's shield pod: hovers beside the boss
+; mirroring his X movement (delta of boss X vs his $0480 mark),
+; flipping to face him every $40 frames; dies with him.
+; =============================================================================
         jsr     L8541                           ; A0ED 20 41 85                  A.
         dec     $0468,x                         ; A0F0 DE 68 04                 .h.
         bne     LA0FD                           ; A0F3 D0 08                    ..
@@ -169,6 +178,15 @@ LA11D:  lda     $0330,x                         ; A11D BD 30 03                 
 LA12E:  rts                                     ; A12E 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR type $93 — DARK MAN 3 (Proto castle 3 boss). While the
+; player isn't frozen: close range (< $40 px) -> the paralyzer burst
+; (sub $4E, $A255): at the anim beat, three type $95 stun shots fan
+; out around the aim line, and the touched player is white-flashed
+; and frozen (LA662 + $54). Otherwise by RNG: a walking burst (sub
+; $4D, $A238) or a jump (arc $1C:8550, sub $4C): at even airborne
+; frames he fires aimed type $94 shots ($A1C7, speed $10).
+; =============================================================================
         lda     $0498,x                         ; A12F BD 98 04                 ...
         beq     LA138                           ; A132 F0 04                    ..
         dec     $0498,x                         ; A134 DE 98 04                 ...
@@ -266,11 +284,8 @@ LA1EA:  lda     L0000                           ; A1EA A5 00                    
 LA1FE:  rts                                     ; A1FE 60                       `
 
 ; ----------------------------------------------------------------------------
-LA1FF:  .byte   $A9                             ; A1FF A9                       .
-LA200:  jmp     $9820                           ; A200 4C 20 98                 L .
-
-; ----------------------------------------------------------------------------
-        nop                                     ; A203 EA                       .
+LA1FF:  lda     #$4C                            ; A1FF A9 4C
+        jsr     entity_set_subtype              ; A201 20 98 EA
         inc     $0540,x                         ; A204 FE 40 05                 .@.
         lda     #$11                            ; A207 A9 11                    ..
         sta     $0588,x                         ; A209 9D 88 05                 ...
@@ -372,10 +387,18 @@ LA2C3:  lda     #$2F                            ; A2C3 A9 2F                    
 LA2CD:  rts                                     ; A2CD 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR types $94/$97 — Dark Man straight shots (DM3 jump shot /
+; DM1 roll shot): fly with their spawn velocity.
+; =============================================================================
         jsr     entity_facing_dispatch                           ; A2CE 20 65 EA                  e.
         jmp     entity_vert_dispatch_raw                           ; A2D1 4C 86 EA                 L..
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR type $95 — Dark Man 3's stun shot: on player contact in
+; play, white-flash palette + hit_freeze $FF (LA662) — paralysis.
+; =============================================================================
         jsr     entity_facing_dispatch                           ; A2D4 20 65 EA                  e.
         jsr     entity_vert_dispatch_raw                           ; A2D7 20 86 EA                  ..
         jsr     entity_player_collide                           ; A2DA 20 87 EF                  ..
@@ -388,6 +411,13 @@ LA2CD:  rts                                     ; A2CD 60                       
         rts                                     ; A2EA 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR type $96 — DARK MAN 1 (Proto castle 1 boss). Rolls at the
+; player; damage changes his speed (HP bands at $A328: below $12 HP
+; xvel px 1, below 8 stop-and-fire), turn-arounds pause $1E (sub
+; $52); when flagged ($0498) he stops and fires type $97 shots from
+; the chest ($A364: preset $51 level, or aimed 16-dir when stopped).
+; =============================================================================
         lda     #$1C                            ; A2EB A9 1C                    ..
         sta     $04B0,x                         ; A2ED 9D B0 04                 ...
         lda     #$3C                            ; A2F0 A9 3C                    .<
@@ -450,10 +480,8 @@ LA364:  jsr     entity_set_facing                           ; A364 20 16 EC     
         sta     $0588,x                         ; A376 9D 88 05                 ...
         lda     #$A3                            ; A379 A9 A3                    ..
         sta     $05A0,x                         ; A37B 9D A0 05                 ...
-LA37E:  .byte   $BD                             ; A37E BD                       .
-        .byte   $70                             ; A37F 70                       p
-LA380:  ora     $C9                             ; A380 05 C9                    ..
-        .byte   $04                             ; A382 04                       .
+LA37E:  lda     $0570,x                         ; A37E BD 70 05
+        cmp     #$04                            ; A381 C9 04
         bne     LA363                           ; A383 D0 DE                    ..
         stx     $0F                             ; A385 86 0F                    ..
         jsr     entity_distance_calc                           ; A387 20 C2 EC                  ..
@@ -508,11 +536,20 @@ LA3D8:  lda     $0300,y                         ; A3D8 B9 00 03                 
         lda     #$53                            ; A3F9 A9 53                    .S
         jsr     entity_set_subtype                           ; A3FB 20 98 EA                  ..
         lda     $0450,x                         ; A3FE BD 50 04                 .P.
-        .byte   $9D                             ; A401 9D                       .
-LA402:  .byte   $B0,$04                    ; A402 B0 04   (branch out of range for ca65: target has no local label)
+        sta     $04B0,x                         ; A401 9D B0 04
 LA404:  rts                                     ; A404 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR type $98 — DARK MAN 4 (Proto castle 4 boss; also created
+; in place by the fake-Proto-Man scene, $03:A252, arriving with full
+; HP). Rematch spawns run their own intro: freeze ($84A6) + HP fill
+; ($1C:8477), shape $CC. Spawns two type $99 shield segments (LA000,
+; dir base $3B), then alternates by RNG between the ring attack (sub
+; $49, $A4ED: type $9A paralyzer rings at odd anim frames, preset
+; $4A) and jumps (L854D, sub $48/$47); after a jump he recalls the
+; shields and waits for them to re-form ($A4D7).
+; =============================================================================
         lda     $0450,x                         ; A405 BD 50 04                 .P.
         cmp     #$1C                            ; A408 C9 1C                    ..
         beq     LA42E                           ; A40A F0 22                    ."
@@ -658,6 +695,13 @@ LA52B:  lda     #$00                            ; A52B A9 00                    
         rts                                     ; A544 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR type $99 — Dark Man 4's shield segment: driven by the
+; boss's $0480 phase — 0: re-form at his side ($A62C, tracks his X
+; for facing), 1: fly out horizontally to the screen edge ($10/$F0)
+; and hover ($A574), 2: boomerang back, arming itself ($0498 = $FF)
+; within $20 px of the boss ($A5CC); dies if the boss is gone.
+; =============================================================================
         jsr     L8541                           ; A545 20 41 85                  A.
         ldy     $0480,x                         ; A548 BC 80 04                 ...
         lda     $0300,y                         ; A54B B9 00 03                 ...
@@ -792,9 +836,15 @@ LA64D:  lda     $0330                           ; A64D AD 30 03                 
         rts                                     ; A65E 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR type $9A — Dark Man 4's ring shot: straight flight.
+; =============================================================================
         jmp     entity_facing_dispatch                           ; A65F 4C 65 EA                 Le.
 
 ; ----------------------------------------------------------------------------
+; --- LA662: paralysis flash — sprite palette rows $0612-$0617 := $20
+; (white), palette dirty; returns Y=$FF for the caller to drop into
+; hit_freeze ($54).
 LA662:  lda     #$20                            ; A662 A9 20                    . 
         ldy     #$01                            ; A664 A0 01                    ..
 LA666:  sta     $0612,y                         ; A666 99 12 06                 ...
@@ -805,368 +855,57 @@ LA666:  sta     $0612,y                         ; A666 99 12 06                 
         rts                                     ; A671 60                       `
 
 ; ----------------------------------------------------------------------------
-        .byte   $FF                             ; A672 FF                       .
-        .byte   $FF                             ; A673 FF                       .
-        .byte   $FF                             ; A674 FF                       .
-        .byte   $FF                             ; A675 FF                       .
-        .byte   $FF                             ; A676 FF                       .
-        .byte   $FF                             ; A677 FF                       .
-        .byte   $FF                             ; A678 FF                       .
-        .byte   $FF                             ; A679 FF                       .
-        .byte   $FF                             ; A67A FF                       .
-        .byte   $FF                             ; A67B FF                       .
-        .byte   $FF                             ; A67C FF                       .
-        .byte   $FF                             ; A67D FF                       .
-        .byte   $FF                             ; A67E FF                       .
-        .byte   $FF                             ; A67F FF                       .
-        .byte   $FF                             ; A680 FF                       .
-        .byte   $FF                             ; A681 FF                       .
-        .byte   $FF                             ; A682 FF                       .
-        .byte   $FF                             ; A683 FF                       .
-        .byte   $FF                             ; A684 FF                       .
-        .byte   $FF                             ; A685 FF                       .
-        .byte   $FF                             ; A686 FF                       .
-        .byte   $FF                             ; A687 FF                       .
-        .byte   $FF                             ; A688 FF                       .
-        adc     $FFFF,x                         ; A689 7D FF FF                 }..
-        .byte   $FF                             ; A68C FF                       .
-        .byte   $F7                             ; A68D F7                       .
-        .byte   $FF                             ; A68E FF                       .
-        .byte   $DF                             ; A68F DF                       .
-        .byte   $FF                             ; A690 FF                       .
-        .byte   $FF                             ; A691 FF                       .
-        .byte   $FF                             ; A692 FF                       .
-        .byte   $FF                             ; A693 FF                       .
-        .byte   $FF                             ; A694 FF                       .
-        .byte   $FF                             ; A695 FF                       .
-        .byte   $FF                             ; A696 FF                       .
-        .byte   $FF                             ; A697 FF                       .
-        .byte   $FF                             ; A698 FF                       .
-        .byte   $FF                             ; A699 FF                       .
-        .byte   $FF                             ; A69A FF                       .
-        sbc     $FFFF,x                         ; A69B FD FF FF                 ...
-        .byte   $FF                             ; A69E FF                       .
-        .byte   $FF                             ; A69F FF                       .
-        .byte   $FF                             ; A6A0 FF                       .
-        .byte   $FF                             ; A6A1 FF                       .
-        .byte   $FF                             ; A6A2 FF                       .
-LA6A3:  .byte   $FF                             ; A6A3 FF                       .
-        .byte   $FF                             ; A6A4 FF                       .
-        .byte   $DF                             ; A6A5 DF                       .
-        .byte   $FF                             ; A6A6 FF                       .
-        sbc     $FFFF,x                         ; A6A7 FD FF FF                 ...
-        .byte   $FF                             ; A6AA FF                       .
-        .byte   $FF                             ; A6AB FF                       .
-        .byte   $FF                             ; A6AC FF                       .
-        .byte   $FF                             ; A6AD FF                       .
-        .byte   $FF                             ; A6AE FF                       .
-        .byte   $FF                             ; A6AF FF                       .
-        .byte   $FF                             ; A6B0 FF                       .
-        .byte   $FF                             ; A6B1 FF                       .
-        .byte   $FF                             ; A6B2 FF                       .
-        .byte   $FF                             ; A6B3 FF                       .
-        .byte   $FF                             ; A6B4 FF                       .
-        .byte   $FF                             ; A6B5 FF                       .
-        .byte   $FF                             ; A6B6 FF                       .
-        .byte   $FF                             ; A6B7 FF                       .
-        .byte   $FF                             ; A6B8 FF                       .
-        .byte   $FF                             ; A6B9 FF                       .
-        .byte   $FF                             ; A6BA FF                       .
-        .byte   $FF                             ; A6BB FF                       .
-        .byte   $FF                             ; A6BC FF                       .
-        .byte   $F7                             ; A6BD F7                       .
-        .byte   $FF                             ; A6BE FF                       .
-        .byte   $FF                             ; A6BF FF                       .
-        .byte   $FF                             ; A6C0 FF                       .
-        .byte   $DF                             ; A6C1 DF                       .
-        .byte   $FF                             ; A6C2 FF                       .
-        sbc     $FFFF,x                         ; A6C3 FD FF FF                 ...
-        .byte   $FF                             ; A6C6 FF                       .
-        .byte   $7F                             ; A6C7 7F                       .
-        .byte   $FF                             ; A6C8 FF                       .
-        .byte   $FF                             ; A6C9 FF                       .
-        .byte   $FF                             ; A6CA FF                       .
-        .byte   $FF                             ; A6CB FF                       .
-        .byte   $FF                             ; A6CC FF                       .
-        sbc     $FFFF,x                         ; A6CD FD FF FF                 ...
-        .byte   $FF                             ; A6D0 FF                       .
-        .byte   $FF                             ; A6D1 FF                       .
-        .byte   $FF                             ; A6D2 FF                       .
-        .byte   $FF                             ; A6D3 FF                       .
-        .byte   $FF                             ; A6D4 FF                       .
-        .byte   $7F                             ; A6D5 7F                       .
-        .byte   $FF                             ; A6D6 FF                       .
-        .byte   $FF                             ; A6D7 FF                       .
-        .byte   $FF                             ; A6D8 FF                       .
-        .byte   $FF                             ; A6D9 FF                       .
-        .byte   $FF                             ; A6DA FF                       .
-        .byte   $7F                             ; A6DB 7F                       .
-        .byte   $FF                             ; A6DC FF                       .
-        .byte   $FF                             ; A6DD FF                       .
-        .byte   $FF                             ; A6DE FF                       .
-        .byte   $FF                             ; A6DF FF                       .
-        .byte   $FF                             ; A6E0 FF                       .
-        .byte   $FF                             ; A6E1 FF                       .
-        .byte   $FF                             ; A6E2 FF                       .
-        .byte   $FF                             ; A6E3 FF                       .
-        .byte   $FF                             ; A6E4 FF                       .
-        .byte   $FF                             ; A6E5 FF                       .
-        .byte   $FF                             ; A6E6 FF                       .
-        .byte   $FF                             ; A6E7 FF                       .
-        .byte   $FF                             ; A6E8 FF                       .
-        .byte   $FF                             ; A6E9 FF                       .
-        .byte   $FF                             ; A6EA FF                       .
-        sbc     $FFFF,x                         ; A6EB FD FF FF                 ...
-        .byte   $FF                             ; A6EE FF                       .
-        .byte   $FF                             ; A6EF FF                       .
-        .byte   $FF                             ; A6F0 FF                       .
-        .byte   $FF                             ; A6F1 FF                       .
-        .byte   $FF                             ; A6F2 FF                       .
-        .byte   $FF                             ; A6F3 FF                       .
-        .byte   $FF                             ; A6F4 FF                       .
-        .byte   $FF                             ; A6F5 FF                       .
-        .byte   $FF                             ; A6F6 FF                       .
-        .byte   $FF                             ; A6F7 FF                       .
-        .byte   $FF                             ; A6F8 FF                       .
-        .byte   $FF                             ; A6F9 FF                       .
-        .byte   $FF                             ; A6FA FF                       .
-        .byte   $FF                             ; A6FB FF                       .
-        .byte   $FF                             ; A6FC FF                       .
-        .byte   $FF                             ; A6FD FF                       .
-        .byte   $FF                             ; A6FE FF                       .
-        .byte   $FF                             ; A6FF FF                       .
-        .byte   $FF                             ; A700 FF                       .
-        .byte   $BF                             ; A701 BF                       .
-        .byte   $FF                             ; A702 FF                       .
-        .byte   $FF                             ; A703 FF                       .
-        .byte   $FF                             ; A704 FF                       .
-        .byte   $DF                             ; A705 DF                       .
-        .byte   $FF                             ; A706 FF                       .
-        .byte   $FF                             ; A707 FF                       .
-        .byte   $FF                             ; A708 FF                       .
-        .byte   $FF                             ; A709 FF                       .
-        .byte   $FF                             ; A70A FF                       .
-        .byte   $FF                             ; A70B FF                       .
-        .byte   $FF                             ; A70C FF                       .
-        .byte   $FF                             ; A70D FF                       .
-        .byte   $FF                             ; A70E FF                       .
-        sbc     $FFFF,x                         ; A70F FD FF FF                 ...
-        .byte   $FF                             ; A712 FF                       .
-        cmp     $FFFF,x                         ; A713 DD FF FF                 ...
-        .byte   $FF                             ; A716 FF                       .
-        .byte   $FF                             ; A717 FF                       .
-        .byte   $FF                             ; A718 FF                       .
-        sbc     $FFFF,x                         ; A719 FD FF FF                 ...
-        .byte   $FF                             ; A71C FF                       .
-        .byte   $FF                             ; A71D FF                       .
-        .byte   $FF                             ; A71E FF                       .
-        .byte   $FF                             ; A71F FF                       .
-        .byte   $FF                             ; A720 FF                       .
-        .byte   $FF                             ; A721 FF                       .
-        .byte   $FF                             ; A722 FF                       .
-        .byte   $FF                             ; A723 FF                       .
-        .byte   $FF                             ; A724 FF                       .
-        .byte   $FF                             ; A725 FF                       .
-        .byte   $FF                             ; A726 FF                       .
-        sbc     $FFFF,x                         ; A727 FD FF FF                 ...
-        .byte   $FF                             ; A72A FF                       .
-        .byte   $FF                             ; A72B FF                       .
-        .byte   $FF                             ; A72C FF                       .
-        .byte   $FF                             ; A72D FF                       .
-        .byte   $FF                             ; A72E FF                       .
-        .byte   $DF                             ; A72F DF                       .
-        .byte   $FF                             ; A730 FF                       .
-        .byte   $FF                             ; A731 FF                       .
-        .byte   $FF                             ; A732 FF                       .
-        sbc     $DFFF,x                         ; A733 FD FF DF                 ...
-        .byte   $FF                             ; A736 FF                       .
-        .byte   $FF                             ; A737 FF                       .
-        .byte   $FF                             ; A738 FF                       .
-        .byte   $FF                             ; A739 FF                       .
-        .byte   $FF                             ; A73A FF                       .
-        .byte   $FF                             ; A73B FF                       .
-        .byte   $FF                             ; A73C FF                       .
-        .byte   $DF                             ; A73D DF                       .
-        .byte   $FF                             ; A73E FF                       .
-        .byte   $FF                             ; A73F FF                       .
-        .byte   $FF                             ; A740 FF                       .
-        .byte   $FF                             ; A741 FF                       .
-        .byte   $FF                             ; A742 FF                       .
-        .byte   $FF                             ; A743 FF                       .
-        .byte   $FF                             ; A744 FF                       .
-        .byte   $FF                             ; A745 FF                       .
-        .byte   $FF                             ; A746 FF                       .
-        .byte   $FF                             ; A747 FF                       .
-        .byte   $FF                             ; A748 FF                       .
-        .byte   $FF                             ; A749 FF                       .
-        .byte   $FF                             ; A74A FF                       .
-        .byte   $DF                             ; A74B DF                       .
-        .byte   $FF                             ; A74C FF                       .
-        .byte   $DF                             ; A74D DF                       .
-        .byte   $FF                             ; A74E FF                       .
-        .byte   $FF                             ; A74F FF                       .
-        .byte   $FF                             ; A750 FF                       .
-        sbc     $FF,x                           ; A751 F5 FF                    ..
-        .byte   $FF                             ; A753 FF                       .
-        .byte   $FF                             ; A754 FF                       .
-        .byte   $7F                             ; A755 7F                       .
-        .byte   $FF                             ; A756 FF                       .
-        .byte   $FF                             ; A757 FF                       .
-        .byte   $FF                             ; A758 FF                       .
-        .byte   $DF                             ; A759 DF                       .
-        .byte   $FF                             ; A75A FF                       .
-        sbc     $FFFF,x                         ; A75B FD FF FF                 ...
-        .byte   $FF                             ; A75E FF                       .
-        .byte   $FF                             ; A75F FF                       .
-        .byte   $FF                             ; A760 FF                       .
-        .byte   $FF                             ; A761 FF                       .
-        .byte   $FF                             ; A762 FF                       .
-        .byte   $FF                             ; A763 FF                       .
-        .byte   $FF                             ; A764 FF                       .
-        .byte   $FF                             ; A765 FF                       .
-        .byte   $DF                             ; A766 DF                       .
-        .byte   $FF                             ; A767 FF                       .
-        .byte   $FF                             ; A768 FF                       .
-        .byte   $FF                             ; A769 FF                       .
-        .byte   $FF                             ; A76A FF                       .
-        .byte   $FF                             ; A76B FF                       .
-        .byte   $FF                             ; A76C FF                       .
-        .byte   $FF                             ; A76D FF                       .
-        .byte   $FF                             ; A76E FF                       .
-        .byte   $FF                             ; A76F FF                       .
-        .byte   $FF                             ; A770 FF                       .
-        .byte   $FF                             ; A771 FF                       .
-        .byte   $FF                             ; A772 FF                       .
-        .byte   $FF                             ; A773 FF                       .
-        .byte   $FF                             ; A774 FF                       .
-        .byte   $FF                             ; A775 FF                       .
-        .byte   $FF                             ; A776 FF                       .
-        .byte   $FF                             ; A777 FF                       .
-        .byte   $FF                             ; A778 FF                       .
-        .byte   $FF                             ; A779 FF                       .
-        .byte   $FF                             ; A77A FF                       .
-        .byte   $7F                             ; A77B 7F                       .
-        .byte   $FF                             ; A77C FF                       .
-        .byte   $FF                             ; A77D FF                       .
-        .byte   $FF                             ; A77E FF                       .
-        .byte   $FF                             ; A77F FF                       .
-        .byte   $FF                             ; A780 FF                       .
-        .byte   $FF                             ; A781 FF                       .
-        sbc     $FFFF,x                         ; A782 FD FF FF                 ...
-        .byte   $F7                             ; A785 F7                       .
-        .byte   $FF                             ; A786 FF                       .
-        .byte   $FF                             ; A787 FF                       .
-        .byte   $FF                             ; A788 FF                       .
-        .byte   $7F                             ; A789 7F                       .
-        .byte   $FF                             ; A78A FF                       .
-        .byte   $FF                             ; A78B FF                       .
-        .byte   $FF                             ; A78C FF                       .
-        .byte   $FF                             ; A78D FF                       .
-        .byte   $FF                             ; A78E FF                       .
-        .byte   $FF                             ; A78F FF                       .
-        .byte   $FF                             ; A790 FF                       .
-        .byte   $FF                             ; A791 FF                       .
-        .byte   $FF                             ; A792 FF                       .
-        .byte   $FF                             ; A793 FF                       .
-LA794:  .byte   $FF                             ; A794 FF                       .
-        .byte   $FF                             ; A795 FF                       .
-        .byte   $FF                             ; A796 FF                       .
-        .byte   $FF                             ; A797 FF                       .
-        .byte   $FF                             ; A798 FF                       .
-        .byte   $FF                             ; A799 FF                       .
-        .byte   $FF                             ; A79A FF                       .
-        .byte   $F7                             ; A79B F7                       .
-        .byte   $FF                             ; A79C FF                       .
-        .byte   $FF                             ; A79D FF                       .
-        .byte   $FF                             ; A79E FF                       .
-        .byte   $FF                             ; A79F FF                       .
-        .byte   $FF                             ; A7A0 FF                       .
-        .byte   $DF                             ; A7A1 DF                       .
-        .byte   $FF                             ; A7A2 FF                       .
-        .byte   $FF                             ; A7A3 FF                       .
-        .byte   $F7                             ; A7A4 F7                       .
-        .byte   $FF                             ; A7A5 FF                       .
-        .byte   $FF                             ; A7A6 FF                       .
-        .byte   $FF                             ; A7A7 FF                       .
-        .byte   $FF                             ; A7A8 FF                       .
-        ror     $FFFF,x                         ; A7A9 7E FF FF                 ~..
-        .byte   $FF                             ; A7AC FF                       .
-        .byte   $FF                             ; A7AD FF                       .
-        .byte   $FF                             ; A7AE FF                       .
-        .byte   $DF                             ; A7AF DF                       .
-        .byte   $FF                             ; A7B0 FF                       .
-        .byte   $FF                             ; A7B1 FF                       .
-        .byte   $FF                             ; A7B2 FF                       .
-        .byte   $FF                             ; A7B3 FF                       .
-        .byte   $FF                             ; A7B4 FF                       .
-        .byte   $FF                             ; A7B5 FF                       .
-        .byte   $FF                             ; A7B6 FF                       .
-        .byte   $DF                             ; A7B7 DF                       .
-        .byte   $FF                             ; A7B8 FF                       .
-        .byte   $FF                             ; A7B9 FF                       .
-        .byte   $FF                             ; A7BA FF                       .
-        .byte   $FF                             ; A7BB FF                       .
-        .byte   $FF                             ; A7BC FF                       .
-        .byte   $FF                             ; A7BD FF                       .
-        .byte   $FF                             ; A7BE FF                       .
-        sbc     $FFFF,x                         ; A7BF FD FF FF                 ...
-        .byte   $FF                             ; A7C2 FF                       .
-        .byte   $FF                             ; A7C3 FF                       .
-        .byte   $FF                             ; A7C4 FF                       .
-        .byte   $FF                             ; A7C5 FF                       .
-        .byte   $FF                             ; A7C6 FF                       .
-        .byte   $FF                             ; A7C7 FF                       .
-        .byte   $FF                             ; A7C8 FF                       .
-        .byte   $FF                             ; A7C9 FF                       .
-        .byte   $FF                             ; A7CA FF                       .
-        .byte   $FF                             ; A7CB FF                       .
-        .byte   $FF                             ; A7CC FF                       .
-        sbc     $FFFF,x                         ; A7CD FD FF FF                 ...
-        .byte   $FF                             ; A7D0 FF                       .
-        .byte   $F7                             ; A7D1 F7                       .
-        .byte   $FF                             ; A7D2 FF                       .
-        .byte   $FF                             ; A7D3 FF                       .
-        .byte   $FF                             ; A7D4 FF                       .
-        .byte   $7F                             ; A7D5 7F                       .
-        .byte   $FF                             ; A7D6 FF                       .
-        .byte   $DF                             ; A7D7 DF                       .
-        .byte   $FF                             ; A7D8 FF                       .
-        .byte   $FF                             ; A7D9 FF                       .
-        .byte   $FF                             ; A7DA FF                       .
-        .byte   $FF                             ; A7DB FF                       .
-        .byte   $FF                             ; A7DC FF                       .
-        .byte   $FF                             ; A7DD FF                       .
-        .byte   $FF                             ; A7DE FF                       .
-        .byte   $FF                             ; A7DF FF                       .
-        .byte   $FF                             ; A7E0 FF                       .
-        .byte   $FF                             ; A7E1 FF                       .
-        .byte   $FF                             ; A7E2 FF                       .
-        .byte   $F7                             ; A7E3 F7                       .
-        .byte   $FF                             ; A7E4 FF                       .
-        .byte   $FF                             ; A7E5 FF                       .
-        .byte   $FF                             ; A7E6 FF                       .
-        sbc     $FF,x                           ; A7E7 F5 FF                    ..
-        .byte   $FF                             ; A7E9 FF                       .
-        .byte   $FF                             ; A7EA FF                       .
-        .byte   $FB                             ; A7EB FB                       .
-        .byte   $FF                             ; A7EC FF                       .
-        .byte   $FF                             ; A7ED FF                       .
-        .byte   $FF                             ; A7EE FF                       .
-        sbc     $FFFF,x                         ; A7EF FD FF FF                 ...
-        .byte   $FF                             ; A7F2 FF                       .
-        .byte   $FF                             ; A7F3 FF                       .
-        .byte   $FF                             ; A7F4 FF                       .
-        .byte   $FF                             ; A7F5 FF                       .
-        .byte   $FF                             ; A7F6 FF                       .
-        .byte   $FF                             ; A7F7 FF                       .
-        .byte   $FF                             ; A7F8 FF                       .
-        .byte   $7F                             ; A7F9 7F                       .
-        .byte   $FF                             ; A7FA FF                       .
-        .byte   $FF                             ; A7FB FF                       .
-        .byte   $FF                             ; A7FC FF                       .
-        .byte   $FF                             ; A7FD FF                       .
-        .byte   $FF                             ; A7FE FF                       .
-        .byte   $FF                             ; A7FF FF                       .
+; $A672-$A7FF: data, TBD (unreferenced in-bank)
+        .byte   $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF ; A672
+        .byte   $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF ; A67A
+        .byte   $FF,$FF,$FF,$FF,$FF,$FF,$FF,$7D ; A682
+        .byte   $FF,$FF,$FF,$F7,$FF,$DF,$FF,$FF ; A68A
+        .byte   $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF ; A692
+        .byte   $FF,$FD,$FF,$FF,$FF,$FF,$FF,$FF ; A69A
+        .byte   $FF,$FF,$FF,$DF,$FF,$FD,$FF,$FF ; A6A2
+        .byte   $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF ; A6AA
+        .byte   $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF ; A6B2
+        .byte   $FF,$FF,$FF,$F7,$FF,$FF,$FF,$DF ; A6BA
+        .byte   $FF,$FD,$FF,$FF,$FF,$7F,$FF,$FF ; A6C2
+        .byte   $FF,$FF,$FF,$FD,$FF,$FF,$FF,$FF ; A6CA
+        .byte   $FF,$FF,$FF,$7F,$FF,$FF,$FF,$FF ; A6D2
+        .byte   $FF,$7F,$FF,$FF,$FF,$FF,$FF,$FF ; A6DA
+        .byte   $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF ; A6E2
+        .byte   $FF,$FD,$FF,$FF,$FF,$FF,$FF,$FF ; A6EA
+        .byte   $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF ; A6F2
+        .byte   $FF,$FF,$FF,$FF,$FF,$FF,$FF,$BF ; A6FA
+        .byte   $FF,$FF,$FF,$DF,$FF,$FF,$FF,$FF ; A702
+        .byte   $FF,$FF,$FF,$FF,$FF,$FD,$FF,$FF ; A70A
+        .byte   $FF,$DD,$FF,$FF,$FF,$FF,$FF,$FD ; A712
+        .byte   $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF ; A71A
+        .byte   $FF,$FF,$FF,$FF,$FF,$FD,$FF,$FF ; A722
+        .byte   $FF,$FF,$FF,$FF,$FF,$DF,$FF,$FF ; A72A
+        .byte   $FF,$FD,$FF,$DF,$FF,$FF,$FF,$FF ; A732
+        .byte   $FF,$FF,$FF,$DF,$FF,$FF,$FF,$FF ; A73A
+        .byte   $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF ; A742
+        .byte   $FF,$DF,$FF,$DF,$FF,$FF,$FF,$F5 ; A74A
+        .byte   $FF,$FF,$FF,$7F,$FF,$FF,$FF,$DF ; A752
+        .byte   $FF,$FD,$FF,$FF,$FF,$FF,$FF,$FF ; A75A
+        .byte   $FF,$FF,$FF,$FF,$DF,$FF,$FF,$FF ; A762
+        .byte   $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF ; A76A
+        .byte   $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF ; A772
+        .byte   $FF,$7F,$FF,$FF,$FF,$FF,$FF,$FF ; A77A
+        .byte   $FD,$FF,$FF,$F7,$FF,$FF,$FF,$7F ; A782
+        .byte   $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF ; A78A
+        .byte   $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF ; A792
+        .byte   $FF,$F7,$FF,$FF,$FF,$FF,$FF,$DF ; A79A
+        .byte   $FF,$FF,$F7,$FF,$FF,$FF,$FF,$7E ; A7A2
+        .byte   $FF,$FF,$FF,$FF,$FF,$DF,$FF,$FF ; A7AA
+        .byte   $FF,$FF,$FF,$FF,$FF,$DF,$FF,$FF ; A7B2
+        .byte   $FF,$FF,$FF,$FF,$FF,$FD,$FF,$FF ; A7BA
+        .byte   $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF ; A7C2
+        .byte   $FF,$FF,$FF,$FD,$FF,$FF,$FF,$F7 ; A7CA
+        .byte   $FF,$FF,$FF,$7F,$FF,$DF,$FF,$FF ; A7D2
+        .byte   $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF ; A7DA
+        .byte   $FF,$F7,$FF,$FF,$FF,$F5,$FF,$FF ; A7E2
+        .byte   $FF,$FB,$FF,$FF,$FF,$FD,$FF,$FF ; A7EA
+        .byte   $FF,$FF,$FF,$FF,$FF,$FF,$FF,$7F ; A7F2
+        .byte   $FF,$FF,$FF,$FF,$FF,$FF ; A7FA
         brk                                     ; A800 00                       .
         brk                                     ; A801 00                       .
         brk                                     ; A802 00                       .
@@ -1454,7 +1193,7 @@ LA923:  brk                                     ; A923 00                       
         brk                                     ; A94D 00                       .
         brk                                     ; A94E 00                       .
         brk                                     ; A94F 00                       .
-        jsr     LA380                           ; A950 20 80 A3                  ..
+        .byte   $20,$80,$A3                     ; A950 20 80 A3                  ..
         rti                                     ; A953 40                       @
 
 ; ----------------------------------------------------------------------------
@@ -2340,7 +2079,7 @@ LACC6:  brk                                     ; ACC6 00                       
         brk                                     ; AD15 00                       .
         bne     LACC6                           ; AD16 D0 AE                    ..
         .byte   $CB                             ; AD18 CB                       .
-        cmp     LA6A3                           ; AD19 CD A3 A6                 ...
+        .byte   $CD,$A3,$A6                     ; AD19 CD A3 A6                 ...
         .byte   $80                             ; AD1C 80                       .
         .byte   $82                             ; AD1D 82                       .
         .byte   $83                             ; AD1E 83                       .
@@ -2462,7 +2201,7 @@ LACC6:  brk                                     ; ACC6 00                       
         lsr     $8E8E,x                         ; ADB4 5E 8E 8E                 ^..
         brk                                     ; ADB7 00                       .
         .byte   $CF                             ; ADB8 CF                       .
-        lsr     LA200,x                         ; ADB9 5E 00 A2                 ^..
+        .byte   $5E,$00,$A2                     ; ADB9 5E 00 A2                 ^..
         lsr     $0101,x                         ; ADBC 5E 01 01                 ^..
         brk                                     ; ADBF 00                       .
         .byte   $5C                             ; ADC0 5C                       \
@@ -4645,7 +4384,7 @@ LB900:  .byte   $02                             ; B900 02                       
         sta     LBE66,x                         ; B976 9D 66 BE                 .f.
         brk                                     ; B979 00                       .
         brk                                     ; B97A 00                       .
-        ldx     LA402,y                         ; B97B BE 02 A4                 ...
+        .byte   $BE,$02,$A4                     ; B97B BE 02 A4                 ...
         ora     L0000                           ; B97E 05 00                    ..
         ldx     a:$01,y                         ; B980 BE 01 00                 ...
         .byte   $B7                             ; B983 B7                       .
@@ -4816,7 +4555,7 @@ LBA98:  ror     $99                             ; BA98 66 99                    
         sty     $94,x                           ; BA9A 94 94                    ..
         bne     LBA72                           ; BA9C D0 D4                    ..
         sta     $0266,x                         ; BA9E 9D 66 02                 .f.
-        sta     LA794,y                         ; BAA1 99 94 A7                 ...
+        .byte   $99,$94,$A7                     ; BAA1 99 94 A7                 ...
         cmp     $D6,x                           ; BAA4 D5 D6                    ..
         .byte   $D7                             ; BAA6 D7                       .
         cld                                     ; BAA7 D8                       .
