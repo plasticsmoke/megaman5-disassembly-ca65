@@ -77,6 +77,19 @@ LE904           := $E904
 LF36F           := $F36F
 LFF24           := $FF24
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; ENDING SEQUENCE — $0E:A000 (jumped to by the game-flow hub, bank
+; $17, when the player reaches state $23 after the Wily Capsule). A
+; linear cutscene program, not entity AI: stops the music ($F0),
+; fades, and steps through the ending tableaux using pseudo-stage
+; nametables (banks $10/$0F at $A000 via LDAFC loads), IRQ split
+; modes 2/3/5, OAM tableaux copied straight into $0200 (e.g. LA57C),
+; palette programs (LA486), timed waits (LA47C / $FF24), and the
+; ending-cast spawner at $A490 (type table LA51E: effect actors) for
+; the castle-collapse and epilogue scenes. Beat-by-beat annotation
+; belongs with the menu/cutscene pass — structure noted here so the
+; stage-AI survey is complete.
+; =============================================================================
         lda     #$F0                            ; A000 A9 F0                    ..
         jsr     queue_sound_param                           ; A002 20 5B EC                  [.
         jsr     palette_fade_out                           ; A005 20 F1 C3                  ..
