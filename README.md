@@ -44,8 +44,8 @@ MM5 returns to CHR-ROM with MMC3 CHR banking (as in MM3):
 
 | banks | contents |
 |---|---|
-| `$00-$0D` | stage banks at `$A000`: stage data + that stage's enemy AI + one weapon's damage table each (`$A800`). Bank `$00` also hosts a per-frame engine service, `$01` the pause menu, `$0B` stage-load support (all at `$8000`) |
-| `$0E/$0F` | ending / cutscene flow (`$0E:A000` entry) + its data (`$0F` at `$8000`) |
+| `$00-$0D` | stage banks at `$A000`: AI code `$A000-$A7FF` + one weapon's damage table (`$A800`) + stage data (`$A900+`). Stages: `$00` Gravity, `$01` Wave, `$02` Stone, `$03` Gyro, `$04` Star, `$05` Charge, `$06` Napalm, `$07` Crystal, `$08-$0B` Proto castle 1-4, `$0C-$0D` Wily 1-2. Bank `$00` also hosts a per-frame engine service, `$01` the pause menu, `$0B` stage-load support (all at `$8000`) |
+| `$0E/$0F` | stage `$0E` = Wily 3+4 (boss rush teleporters + final fights) and ending / cutscene flow (`$0E:A000` entry) + its data (`$0F` at `$8000`) |
 | `$10/$11` | pseudo-stage screen data: title, menus, cutscenes |
 | `$12/$13` | animation data pair (descriptors at `$8000` + records at `$A000`) |
 | `$14/$15` | animation data pair (probable — same paired-pointer structure) |

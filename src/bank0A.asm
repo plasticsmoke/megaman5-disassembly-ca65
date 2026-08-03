@@ -371,187 +371,165 @@ LA2AD:  .byte   $0F                             ; A2AD 0F                       
         .byte   $0F                             ; A2AE 0F                       .
         .byte   $2C                             ; A2AF 2C                       ,
         .byte   $11                             ; A2B0 11                       .
-LA2B1:  bmi     LA2C2                           ; A2B1 30 0F                    0.
-        lda     $30                             ; A2B3 A5 30                    .0
-        bne     LA2AC                           ; A2B5 D0 F5                    ..
-        lda     $AF                             ; A2B7 A5 AF                    ..
-        bne     LA2CC                           ; A2B9 D0 11                    ..
-        lda     $27                             ; A2BB A5 27                    .'
-        .byte   $D0                             ; A2BD D0                       .
-LA2BE:  ora     $01A9                           ; A2BE 0D A9 01                 ...
-        .byte   $85                             ; A2C1 85                       .
-LA2C2:  .byte   $AF                             ; A2C2 AF                       .
-        lda     $0528                           ; A2C3 AD 28 05                 .(.
-        ora     #$40                            ; A2C6 09 40                    .@
-        sta     $0528                           ; A2C8 8D 28 05                 .(.
-        rts                                     ; A2CB 60                       `
+LA2B1:  .byte   $30,$0F                         ; A2B1 30 0F  colors read by $A0AC
+; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR type $B3 — boss-room director (one per stage, placed on the
+; boss room's screen; the spawn sub_type is the intro-drop animation).
+; In Gravity Man's stage only (stage_bank_alt==0 there, cf. LD4C2) it
+; first inverts gravity and sets the player's vflip bit — the fight is
+; entered on the ceiling. Then waits for the player to land (Y >= $A0,
+; or < $40 when flipped); a robot master already beaten ($6E bitmap)
+; short-circuits to player state $10 (stage clear). Otherwise: freeze
+; the player (state $19), unhide, drop to LA3B4[stage] ($A31A), play
+; the landing anim to frame LA3C0[stage] ($A33A; Charge Man sub $20
+; also spawns a type $6D/$21 smoke effect at Y=$8C), fill boss HP
+; 0->$1C with sound $26 every 4 frames ($A375, boss meter on: $2F=$80,
+; boss slot renders first), then wipe the slot and morph it into the
+; real boss: sub_type/type/shape from LA3CC/LA3D8/LA3E4[stage], HP $1C,
+; player state 0 — fight on. Table index = stage bank ($26), or the
+; room's screen & 7 in boss-rush stage $0E.
+; =============================================================================
+        lda     $30                             ; A2B3 A5 30    player_state
+        bne     LA2AC                           ; A2B5 D0 F5
+        lda     $AF                             ; A2B7 A5 AF    gravity_flip
+        bne     LA2CC                           ; A2B9 D0 11
+        lda     $27                             ; A2BB A5 27    stage_bank_alt (0 = Gravity stage)
+        bne     LA2CC                           ; A2BD D0 0D
+        lda     #$01                            ; A2BF A9 01
+        sta     $AF                             ; A2C1 85 AF    invert gravity for the fight
+        lda     $0528                           ; A2C3 AD 28 05
+        ora     #$40                            ; A2C6 09 40
+        sta     $0528                           ; A2C8 8D 28 05 player vflip bit
+        rts                                     ; A2CB 60
 
 ; ----------------------------------------------------------------------------
-LA2CC:  lda     $0378                           ; A2CC AD 78 03                 .x.
-        cmp     #$A0                            ; A2CF C9 A0                    ..
-        bcs     LA2D7                           ; A2D1 B0 04                    ..
-        cmp     #$40                            ; A2D3 C9 40                    .@
-        bcs     LA2AC                           ; A2D5 B0 D5                    ..
-LA2D7:  ldy     $26                             ; A2D7 A4 26                    .&
-        cpy     #$08                            ; A2D9 C0 08                    ..
-        bcs     LA2E9                           ; A2DB B0 0C                    ..
-        lda     $F2B2,y                         ; A2DD B9 B2 F2                 ...
-        and     $6E                             ; A2E0 25 6E                    %n
-        beq     LA2E9                           ; A2E2 F0 05                    ..
-        lda     #$10                            ; A2E4 A9 10                    ..
-        sta     $30                             ; A2E6 85 30                    .0
-LA2E8:  rts                                     ; A2E8 60                       `
+LA2CC:  lda     $0378                           ; A2CC AD 78 03 player Y px
+        cmp     #$A0                            ; A2CF C9 A0
+        bcs     LA2D7                           ; A2D1 B0 04
+        cmp     #$40                            ; A2D3 C9 40
+        bcs     LA2AC                           ; A2D5 B0 D5    mid-air: wait
+LA2D7:  ldy     $26                             ; A2D7 A4 26    stage_bank
+        cpy     #$08                            ; A2D9 C0 08
+        bcs     LA2E9                           ; A2DB B0 0C    castle: always fight
+        lda     $F2B2,y                         ; A2DD B9 B2 F2 stage bit mask
+        and     $6E                             ; A2E0 25 6E    boss-beaten bitmap
+        beq     LA2E9                           ; A2E2 F0 05
+        lda     #$10                            ; A2E4 A9 10
+        sta     $30                             ; A2E6 85 30    already beaten -> stage clear
+LA2E8:  rts                                     ; A2E8 60
 
 ; ----------------------------------------------------------------------------
-LA2E9:  lda     #$00                            ; A2E9 A9 00                    ..
-        sta     $0540,x                         ; A2EB 9D 40 05                 .@.
-        sta     $0570,x                         ; A2EE 9D 70 05                 .p.
-        lda     #$19                            ; A2F1 A9 19                    ..
-        sta     $30                             ; A2F3 85 30                    .0
-        lda     $0528,x                         ; A2F5 BD 28 05                 .(.
-        and     #$FB                            ; A2F8 29 FB                    ).
-        sta     $0528,x                         ; A2FA 9D 28 05                 .(.
-        lda     #$0A                            ; A2FD A9 0A                    ..
-        jsr     queue_sound_param                           ; A2FF 20 5B EC                  [.
-        lda     #$1A                            ; A302 A9 1A                    ..
-        sta     $0588,x                         ; A304 9D 88 05                 ...
-        lda     #$A3                            ; A307 A9 A3                    ..
-        sta     $05A0,x                         ; A309 9D A0 05                 ...
-        lda     $26                             ; A30C A5 26                    .&
-        cmp     #$0E                            ; A30E C9 0E                    ..
-        bne     LA317                           ; A310 D0 05                    ..
-        lda     $0348,x                         ; A312 BD 48 03                 .H.
-        and     #$07                            ; A315 29 07                    ).
-LA317:  sta     $0468,x                         ; A317 9D 68 04                 .h.
-        lda     #$00                            ; A31A A9 00                    ..
-        sta     $0570,x                         ; A31C 9D 70 05                 .p.
-        jsr     entity_process_y_vel                           ; A31F 20 68 E9                  h.
-        ldy     $0468,x                         ; A322 BC 68 04                 .h.
-        lda     LA3B4,y                         ; A325 B9 B4 A3                 ...
-        cmp     $0378,x                         ; A328 DD 78 03                 .x.
-        bcs     LA2E8                           ; A32B B0 BB                    ..
-        sta     $0378,x                         ; A32D 9D 78 03                 .x.
-        lda     #$3A                            ; A330 A9 3A                    .:
-        sta     $0588,x                         ; A332 9D 88 05                 ...
-        lda     #$A3                            ; A335 A9 A3                    ..
-        sta     $05A0,x                         ; A337 9D A0 05                 ...
-        ldy     $0468,x                         ; A33A BC 68 04                 .h.
-        lda     $0540,x                         ; A33D BD 40 05                 .@.
-        cmp     LA3C0,y                         ; A340 D9 C0 A3                 ...
-        bne     LA3B3                           ; A343 D0 6E                    .n
-        stx     $56                             ; A345 86 56                    .V
-        lda     #$80                            ; A347 A9 80                    ..
-        sta     $2F                             ; A349 85 2F                    ./
-        lda     #$75                            ; A34B A9 75                    .u
-        .byte   $9D                             ; A34D 9D                       .
-        dey                                     ; A34E 88                       .
-LA34F:  ora     $A9                             ; A34F 05 A9                    ..
-        .byte   $A3                             ; A351 A3                       .
-        sta     $05A0,x                         ; A352 9D A0 05                 ...
-        lda     $0558,x                         ; A355 BD 58 05                 .X.
-        cmp     #$20                            ; A358 C9 20                    . 
-        bne     LA375                           ; A35A D0 19                    ..
-        jsr     find_free_slot_y                           ; A35C 20 6F F1                  o.
-        bcs     LA375                           ; A35F B0 14                    ..
-        lda     #$21                            ; A361 A9 21                    .!
-        jsr     entity_init_pos                           ; A363 20 A4 EA                  ..
-LA366:  lda     #$6D                            ; A366 A9 6D                    .m
-        sta     $0300,y                         ; A368 99 00 03                 ...
-        lda     #$00                            ; A36B A9 00                    ..
-        .byte   $99                             ; A36D 99                       .
-LA36E:  php                                     ; A36E 08                       .
-        .byte   $04                             ; A36F 04                       .
-LA370:  lda     #$8C                            ; A370 A9 8C                    ..
-        sta     $0378,y                         ; A372 99 78 03                 .x.
-LA375:  lda     #$00                            ; A375 A9 00                    ..
-        sta     $0570,x                         ; A377 9D 70 05                 .p.
-        lda     $9D                             ; A37A A5 9D                    ..
-        and     #$03                            ; A37C 29 03                    ).
-        bne     LA3B3                           ; A37E D0 33                    .3
-        lda     #$26                            ; A380 A9 26                    .&
-        jsr     queue_sound                           ; A382 20 5D EC                  ].
-        inc     $0450,x                         ; A385 FE 50 04                 .P.
-        lda     $0450,x                         ; A388 BD 50 04                 .P.
-        cmp     #$1C                            ; A38B C9 1C                    ..
-        bne     LA3B3                           ; A38D D0 24                    .$
-        lda     $0468,x                         ; A38F BD 68 04                 .h.
-        pha                                     ; A392 48                       H
-        .byte   $20                             ; A393 20                        
-        .byte   $C4                             ; A394 C4                       .
-LA395:  .byte   $F2                             ; A395 F2                       .
-        pla                                     ; A396 68                       h
-        tay                                     ; A397 A8                       .
-        lda     LA3CC,y                         ; A398 B9 CC A3                 ...
-        jsr     entity_set_subtype                           ; A39B 20 98 EA                  ..
-        lda     LA3D8,y                         ; A39E B9 D8 A3                 ...
-        .byte   $9D                             ; A3A1 9D                       .
-LA3A2:  brk                                     ; A3A2 00                       .
-LA3A3:  .byte   $03                             ; A3A3 03                       .
-        lda     LA3E4,y                         ; A3A4 B9 E4 A3                 ...
-        sta     $0408,x                         ; A3A7 9D 08 04                 ...
-        lda     #$1C                            ; A3AA A9 1C                    ..
-        sta     $0450,x                         ; A3AC 9D 50 04                 .P.
-        lda     #$00                            ; A3AF A9 00                    ..
-        sta     $30                             ; A3B1 85 30                    .0
-LA3B3:  rts                                     ; A3B3 60                       `
+LA2E9:  lda     #$00                            ; A2E9 A9 00
+        sta     $0540,x                         ; A2EB 9D 40 05 anim phase
+        sta     $0570,x                         ; A2EE 9D 70 05 anim tick
+        lda     #$19                            ; A2F1 A9 19
+        sta     $30                             ; A2F3 85 30    player state $19: stand frozen
+        lda     $0528,x                         ; A2F5 BD 28 05
+        and     #$FB                            ; A2F8 29 FB
+        sta     $0528,x                         ; A2FA 9D 28 05 clear no-draw: boss appears
+        lda     #$0A                            ; A2FD A9 0A
+        jsr     queue_sound_param               ; A2FF 20 5B EC
+        lda     #$1A                            ; A302 A9 1A
+        sta     $0588,x                         ; A304 9D 88 05
+        lda     #$A3                            ; A307 A9 A3
+        sta     $05A0,x                         ; A309 9D A0 05 behavior PC := $A31A
+        lda     $26                             ; A30C A5 26
+        cmp     #$0E                            ; A30E C9 0E
+        bne     LA317                           ; A310 D0 05
+        lda     $0348,x                         ; A312 BD 48 03 boss rush: room screen
+        and     #$07                            ; A315 29 07
+LA317:  sta     $0468,x                         ; A317 9D 68 04 stage/table index
+; --- $A31A: drop to the landing Y ---------------------------------------------
+        lda     #$00                            ; A31A A9 00
+        sta     $0570,x                         ; A31C 9D 70 05
+        jsr     entity_process_y_vel            ; A31F 20 68 E9
+        ldy     $0468,x                         ; A322 BC 68 04
+        lda     LA3B4,y                         ; A325 B9 B4 A3 landing Y for this stage
+        cmp     $0378,x                         ; A328 DD 78 03
+        bcs     LA2E8                           ; A32B B0 BB    still falling
+        sta     $0378,x                         ; A32D 9D 78 03 land: clamp Y
+        lda     #$3A                            ; A330 A9 3A
+        sta     $0588,x                         ; A332 9D 88 05
+        lda     #$A3                            ; A335 A9 A3
+        sta     $05A0,x                         ; A337 9D A0 05 behavior PC := $A33A
+; --- $A33A: play the intro animation ------------------------------------------
+        ldy     $0468,x                         ; A33A BC 68 04
+        lda     $0540,x                         ; A33D BD 40 05 anim phase
+        cmp     LA3C0,y                         ; A340 D9 C0 A3 done?
+        bne     LA3B3                           ; A343 D0 6E
+        stx     $56                             ; A345 86 56    render_first: boss draws first
+        lda     #$80                            ; A347 A9 80
+        sta     $2F                             ; A349 85 2F    boss HP meter on
+        lda     #$75                            ; A34B A9 75
+        sta     $0588,x                         ; A34D 9D 88 05
+        lda     #$A3                            ; A350 A9 A3
+        sta     $05A0,x                         ; A352 9D A0 05 behavior PC := $A375
+        lda     $0558,x                         ; A355 BD 58 05 sub_type
+        cmp     #$20                            ; A358 C9 20    Charge Man's intro?
+        bne     LA375                           ; A35A D0 19
+        jsr     find_free_slot_y                ; A35C 20 6F F1
+        bcs     LA375                           ; A35F B0 14
+        lda     #$21                            ; A361 A9 21
+        jsr     entity_init_pos                 ; A363 20 A4 EA
+        lda     #$6D                            ; A366 A9 6D
+        sta     $0300,y                         ; A368 99 00 03 smoke: inert effect $6D
+        lda     #$00                            ; A36B A9 00
+        sta     $0408,y                         ; A36D 99 08 04
+        lda     #$8C                            ; A370 A9 8C
+        sta     $0378,y                         ; A372 99 78 03 at ground level
+; --- $A375: fill the boss HP meter --------------------------------------------
+LA375:  lda     #$00                            ; A375 A9 00
+        sta     $0570,x                         ; A377 9D 70 05 hold the anim
+        lda     $9D                             ; A37A A5 9D    frame counter
+        and     #$03                            ; A37C 29 03
+        bne     LA3B3                           ; A37E D0 33
+        lda     #$26                            ; A380 A9 26
+        jsr     queue_sound                     ; A382 20 5D EC HP tick
+        inc     $0450,x                         ; A385 FE 50 04
+        lda     $0450,x                         ; A388 BD 50 04
+        cmp     #$1C                            ; A38B C9 1C    full at 28
+        bne     LA3B3                           ; A38D D0 24
+        lda     $0468,x                         ; A38F BD 68 04
+        pha                                     ; A392 48
+        jsr     entity_wipe_x                   ; A393 20 C4 F2 fresh slot for the boss
+        pla                                     ; A396 68
+        tay                                     ; A397 A8
+        lda     LA3CC,y                         ; A398 B9 CC A3
+        jsr     entity_set_subtype              ; A39B 20 98 EA
+        lda     LA3D8,y                         ; A39E B9 D8 A3
+        sta     $0300,x                         ; A3A1 9D 00 03 morph into the real boss
+        lda     LA3E4,y                         ; A3A4 B9 E4 A3
+        sta     $0408,x                         ; A3A7 9D 08 04
+        lda     #$1C                            ; A3AA A9 1C
+        sta     $0450,x                         ; A3AC 9D 50 04
+        lda     #$00                            ; A3AF A9 00
+        sta     $30                             ; A3B1 85 30    fight on
+LA3B3:  rts                                     ; A3B3 60
 
 ; ----------------------------------------------------------------------------
-LA3B4:  bcs     LA366                           ; A3B4 B0 B0                    ..
-        ldy     LB0B0                           ; A3B6 AC B0 B0                 ...
-        ldy     LB0B0                           ; A3B9 AC B0 B0                 ...
-        bcs     LA36E                           ; A3BC B0 B0                    ..
-        bcs     LA370                           ; A3BE B0 B0                    ..
-LA3C0:  .byte   $0C                             ; A3C0 0C                       .
-        bpl     LA3CC                           ; A3C1 10 09                    ..
-        ora     $0C1E,x                         ; A3C3 1D 1E 0C                 ...
-        ora     #$15                            ; A3C6 09 15                    ..
-        brk                                     ; A3C8 00                       .
-        brk                                     ; A3C9 00                       .
-        brk                                     ; A3CA 00                       .
-        brk                                     ; A3CB 00                       .
-LA3CC:  ora     ($2A,x)                         ; A3CC 01 2A                    .*
-        php                                     ; A3CE 08                       .
-        .byte   $12                             ; A3CF 12                       .
-        .byte   $3C                             ; A3D0 3C                       <
-        ora     $2432,y                         ; A3D1 19 32 24                 .2$
-        .byte   $53                             ; A3D4 53                       S
-        .byte   $42                             ; A3D5 42                       B
-        .byte   $4B                             ; A3D6 4B                       K
-        .byte   $47                             ; A3D7 47                       G
-LA3D8:  sta     ($86,x)                         ; A3D8 81 86                    ..
-        adc     #$6E                            ; A3DA 69 6E                    in
-        sta     $896B                           ; A3DC 8D 6B 89                 .k.
-        .byte   $83                             ; A3DF 83                       .
-        stx     $91,y                           ; A3E0 96 91                    ..
-        .byte   $93                             ; A3E2 93                       .
-        tya                                     ; A3E3 98                       .
-LA3E4:  .byte   $CB                             ; A3E4 CB                       .
-        .byte   $CB                             ; A3E5 CB                       .
-        cmp     #$C8                            ; A3E6 C9 C8                    ..
-        iny                                     ; A3E8 C8                       .
-        .byte   $D7                             ; A3E9 D7                       .
-        .byte   $CB                             ; A3EA CB                       .
-        .byte   $CC                             ; A3EB CC                       .
-        .byte   $CB                             ; A3EC CB                       .
-LA3ED:  .byte   $D2                             ; A3ED D2                       .
-        .byte   $CB                             ; A3EE CB                       .
-        cpy     $3D40                           ; A3EF CC 40 3D                 .@=
-        .byte   $3B                             ; A3F2 3B                       ;
-        sec                                     ; A3F3 38                       8
-        rol     $33,x                           ; A3F4 36 33                    63
-        .byte   $2F                             ; A3F6 2F                       /
-        .byte   $29                             ; A3F7 29                       )
-LA3F8:  .byte   $0F                             ; A3F8 0F                       .
-        .byte   $0F                             ; A3F9 0F                       .
-        bit     $0F11                           ; A3FA 2C 11 0F                 ,..
-        .byte   $0F                             ; A3FD 0F                       .
-        jsr     L0F37                           ; A3FE 20 37 0F                  7.
-        .byte   $0F                             ; A401 0F                       .
-        jsr     L0F15                           ; A402 20 15 0F                  ..
-        .byte   $0F                             ; A405 0F                       .
-        .byte   $27                             ; A406 27                       '
-        ora     $A9,x                           ; A407 15 A9                    ..
-        .byte   $FF                             ; A409 FF                       .
+; Per-stage boss tables, indexed by stage bank (or boss-rush screen & 7):
+; $00 Gravity Man $81, $01 Wave Man $86, $02 Stone Man $69, $03 Gyro Man
+; $6E, $04 Star Man $8D, $05 Charge Man $6B, $06 Napalm Man $89, $07
+; Crystal Man $83, $08-$0B Dark Man 1-4 $96/$91/$93/$98.
+; ----------------------------------------------------------------------------
+LA3B4:  .byte   $B0,$B0,$AC,$B0,$B0,$AC,$B0,$B0 ; A3B4  landing Y px
+        .byte   $B0,$B0,$B0,$B0                 ; A3BC
+LA3C0:  .byte   $0C,$10,$09,$1D,$1E,$0C,$09,$15 ; A3C0  intro anim end frame
+        .byte   $00,$00,$00,$00                 ; A3C8
+LA3CC:  .byte   $01,$2A,$08,$12,$3C,$19,$32,$24 ; A3CC  boss sub_type
+        .byte   $53,$42,$4B,$47                 ; A3D4
+LA3D8:  .byte   $81,$86,$69,$6E,$8D,$6B,$89,$83 ; A3D8  boss entity type
+        .byte   $96,$91,$93,$98                 ; A3E0
+LA3E4:  .byte   $CB,$CB,$C9,$C8,$C8,$D7,$CB,$CC ; A3E4  boss shape
+        .byte   $CB,$D2,$CB,$CC                 ; A3EC
+        .byte   $40,$3D,$3B,$38,$36,$33,$2F,$29 ; A3F0  (unreferenced in-bank)
+LA3F8:  .byte   $0F,$0F,$2C,$11                 ; A3F8  palette rows for $A254
+        .byte   $0F,$0F,$20,$37                 ; A3FC
+        .byte   $0F,$0F,$20,$15                 ; A400
+        .byte   $0F,$0F,$27,$15                 ; A404
+; ----------------------------------------------------------------------------
+        lda     #$FF                            ; A408 A9 FF
         sta     $74                             ; A40A 85 74                    .t
         lda     #$00                            ; A40C A9 00                    ..
         sta     $75                             ; A40E 85 75                    .u
@@ -3662,12 +3640,12 @@ LB30F:  asl     $1D,x                           ; B30F 16 1D                    
         .byte   $32                             ; B42C 32                       2
         plp                                     ; B42D 28                       (
         brk                                     ; B42E 00                       .
-        jsr     LA3A2                           ; B42F 20 A2 A3                  ..
+        .byte   $20,$A2,$A3                     ; B42F 20 A2 A3                  ..
         .byte   $37                             ; B432 37                       7
         ora     LA4A3,y                         ; B433 19 A3 A4                 ...
         ora     LA236,y                         ; B436 19 36 A2                 .6.
         .byte   $A3                             ; B439 A3                       .
-        bit     LA34F                           ; B43A 2C 4F A3                 ,O.
+        .byte   $2C,$4F,$A3                     ; B43A 2C 4F A3                 ,O.
         ldy     $4F                             ; B43D A4 4F                    .O
         rol     $3130                           ; B43F 2E 30 31                 .01
         ldy     #$A1                            ; B442 A0 A1                    ..
@@ -3748,7 +3726,7 @@ LB477:  and     $4747                           ; B477 2D 47 47                 
         ora     $1919,y                         ; B4B8 19 19 19                 ...
         ora     LA208,y                         ; B4BB 19 08 A2                 ...
         .byte   $04                             ; B4BE 04                       .
-        bit     LA3A3                           ; B4BF 2C A3 A3                 ,..
+        .byte   $2C,$A3,$A3                     ; B4BF 2C A3 A3                 ,..
         .byte   $4F                             ; B4C2 4F                       O
         .byte   $4F                             ; B4C3 4F                       O
         .byte   $1F                             ; B4C4 1F                       .
@@ -4617,7 +4595,7 @@ LB92A:  lsr     $29,x                           ; B92A 56 29                    
         asl     LA1A0,x                         ; B93F 1E A0 A1                 ...
         ldx     #$50                            ; B942 A2 50                    .P
         asl     $1E9A,x                         ; B944 1E 9A 1E                 ...
-        asl     LA395,x                         ; B947 1E 95 A3                 ...
+        .byte   $1E,$95,$A3                     ; B947 1E 95 A3                 ...
         .byte   $23                             ; B94A 23                       #
         sta     $9A33,y                         ; B94B 99 33 9A                 .3.
         asl     LA01E,x                         ; B94E 1E 1E A0                 ...
@@ -4686,7 +4664,7 @@ LB9AA:  .byte   $14                             ; B9AA 14                       
         ora     (L0000,x)                       ; B9AC 01 00                    ..
         brk                                     ; B9AE 00                       .
         brk                                     ; B9AF 00                       .
-        lda     LA2BE,x                         ; B9B0 BD BE A2                 ...
+        .byte   $BD,$BE,$A2                     ; B9B0 BD BE A2                 ...
         bvc     LB9D3                           ; B9B3 50 1E                    P.
         txs                                     ; B9B5 9A                       .
         asl     $9534,x                         ; B9B6 1E 34 95                 .4.
