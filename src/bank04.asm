@@ -438,8 +438,9 @@ LA324:  rts                                     ; A324 60                       
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $AA — WILY MACHINE, phase 2 (teleporting pod). New
-; fortress intro ($84A6, special sound $16), CHR R0/R1 := $BC/$BE, IRQ
+; BEHAVIOR type $AA — WILY CAPSULE (the true final boss, emerging
+; from the wrecked machine). Fortress intro ($84A6, special sound
+; $16), CHR R0/R1 := $BC/$BE, IRQ
 ; mode $0D, centers at ($80,$68), palette $A5FE fade + HP fill. Cycle:
 ; fire a 4-way spread of curving orbs (type $AB at LA629/LA62D offsets,
 ; start angles LA631) and two type $47 floor bombs ($A4B6), then fade
