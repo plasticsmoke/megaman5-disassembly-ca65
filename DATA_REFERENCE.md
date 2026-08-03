@@ -63,7 +63,17 @@ by screen `& 7` in boss-rush stage `$0E`).
 | `$0B` | Proto castle 4 | — | Dark Man 4 | `$98` | `$09:A405` (spawn: type `$A2` `$03:A000`) |
 | `$0C` | Wily 1 | — | Big Pets (director `$4F` + rows `$7A`×2 + body `$71`) | `$4F` | `$02:A000` |
 | `$0D` | Wily 2 | — | Circring Q9 | `$7C` | `$02:A291` |
-| `$0E` | Wily 3+4 | — | boss rush (screens `$08-$0F`, pods `$AF`) + Wily Press | `$A0` | `$02:A61A` |
+| `$0E` | Wily 3 | — | boss rush (screens `$08-$0F`, pods `$AF`) + Wily Press | `$A0` | `$02:A61A` |
+| `$0F` | Wily 4 | — | Wily Machine `$A5`→`$A9`→`$AA` (scr `$07`), Wily Capsule `$B9` (scr `$0A`) | `$A5` | `$04:A000` |
+
+Stage `$0F` maps PRG bank `$0F` at `$A000` (stage data only — its AI
+lives in banks `$04`/`$0D`); its alternate bank is `$0E`. Fortress
+boss deaths chain through `death_transform_tbl` (`$1C:87C3`): robot
+masters and Dark Men → `$B4` (weapon-get/boss-death director), Big
+Pets `$4F` → `$AD`, water giant `$44` → `$AE`, Circring `$7C` → `$AD`,
+Wily Press `$A0` → `$AC`, Wily Machine `$A5` → `$A9` (explosion) →
+`$AA` (phase 2) → `$C0` (Wily escape) — the `$AC`/`$AD`/`$AE`/`$B4`/
+`$C0` directors all live in bank `$0A`.
 
 The eight robot masters' AI is packed into banks `$06-$08`, the four
 Dark Men into bank `$09` — a stage bank's `$A000-$A7FF` region hosts
