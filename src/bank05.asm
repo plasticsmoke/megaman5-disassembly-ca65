@@ -57,6 +57,13 @@ LF05A           := $F05A
 LFD10           := $FD10
 LFF10           := $FF10
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR types $06/$07 — gravity flip panel, horizontal (Gravity Man
+; stage): while the player touches it, gravity_flip is forced by which
+; side of the panel the player's X is on; polarity and the player's
+; vflip bit come from the per-type rows at $A06C ($A066/$A068 + type).
+; On an actual change: sound $3F. Type $07 is the mirrored polarity.
+; =============================================================================
         jsr     entity_player_collide                           ; A000 20 87 EF                  ..
         bcs     LA06B                           ; A003 B0 66                    .f
         lda     $AF                             ; A005 A5 AF                    ..
@@ -80,6 +87,10 @@ LFF10           := $FF10
         jmp     LA05E                           ; A032 4C 5E A0                 L^.
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR type $08 — gravity flip panel, vertical: same, but compares
+; the player's Y (above the panel = flipped).
+; =============================================================================
         jsr     entity_player_collide                           ; A035 20 87 EF                  ..
         bcs     LA06B                           ; A038 B0 31                    .1
         lda     $AF                             ; A03A A5 AF                    ..
@@ -105,12 +116,14 @@ LA066:  lda     #$3F                            ; A066 A9 3F                    
 LA068:  jsr     queue_sound                           ; A068 20 5D EC                  ].
 LA06B:  rts                                     ; A06B 60                       `
 
+        .byte   $40,$00,$01,$00                 ; A06C  panel rows: LA066/LA068+type
 ; ----------------------------------------------------------------------------
-        rti                                     ; A06C 40                       @
-
-; ----------------------------------------------------------------------------
-        brk                                     ; A06D 00                       .
-        ora     (L0000,x)                       ; A06E 01 00                    ..
+; =============================================================================
+; BEHAVIOR type $09 — Star Man stage space-section backdrop (IRQ mode
+; $17): rides the player's X/screen, oscillates vertically ($00.80,
+; reversing every $80 frames), and drives the vertical split ($FA from
+; own Y, $78/$79/$9B seeds, $FD=2).
+; =============================================================================
         lda     #$80                            ; A070 A9 80                    ..
         sta     $1E                             ; A072 85 1E                    ..
         lda     #$17                            ; A074 A9 17                    ..
@@ -162,6 +175,14 @@ LA0D5:  lda     #$02                            ; A0D5 A9 02                    
 LA0E2:  rts                                     ; A0E2 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR type $0B — Gyro Man stage express elevator: arms the
+; vertical-wrap scroll ($74/$46), and once ridden (player collide)
+; switches to IRQ mode $1D, then rockets the shaft upward $0.80/frame
+; ($A141, 16-bit through $FA/$FB); at the top it swaps in bank pair
+; $14/$1D, resets the section chain to screen $15/section $2B and
+; re-enters normal scrolling.
+; =============================================================================
         lda     #$FF                            ; A0E3 A9 FF                    ..
         sta     $74                             ; A0E5 85 74                    .t
         sta     $46                             ; A0E7 85 46                    .F
@@ -245,6 +266,13 @@ LA154:  sta     $FA                             ; A154 85 FA                    
 LA18F:  rts                                     ; A18F 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR type $0C — block restorer: after its delay, redraws its
+; metatile (LD7DB with row $22 / tile $10 from $0480/$0498), takes
+; sub_type $69, falls until it lands, then clears this block's bit in
+; the destroyed-block bitmap ($0680 via the $F2BA/$F2C2 masks) and
+; wipes — the re-materializing block animation.
+; =============================================================================
         lda     $0468,x                         ; A190 BD 68 04                 .h.
         beq     LA1B2                           ; A193 F0 1D                    ..
         lda     $1C                             ; A195 A5 1C                    ..
@@ -283,10 +311,8 @@ LA1D1:  lda     $0330,x                         ; A1D1 BD 30 03                 
         eor     #$FF                            ; A1E4 49 FF                    I.
         adc     #$01                            ; A1E6 69 01                    i.
 LA1E8:  cmp     #$10                            ; A1E8 C9 10                    ..
-        .byte   $90                             ; A1EA 90                       .
-LA1EB:  and     #$BD                            ; A1EB 29 BD                    ).
-        .byte   $80                             ; A1ED 80                       .
-        .byte   $04                             ; A1EE 04                       .
+        bcc     LA215                           ; A1EA 90 29    offscreen check
+        lda     $0480,x                         ; A1EC BD 80 04
         and     #$01                            ; A1EF 29 01                    ).
         asl     a                               ; A1F1 0A                       .
         asl     a                               ; A1F2 0A                       .
@@ -308,6 +334,14 @@ LA1EB:  and     #$BD                            ; A1EB 29 BD                    
 LA215:  rts                                     ; A215 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR type $0D — Wave Man stage bubble platform (spawned by the
+; $0E spawner). Big variant (this entry): forms at anim phase 4 (sub
+; $64), rises $00.80/frame; the player standing on top latches
+; ride_slot $37 (sub $5C while ridden, $64 free); pops at the ceiling
+; probe ($A276: sub $84 burst, becomes inert type $01). Small variant
+; at $A284 (sub $66): rises 1 px/f, pops shortly after being stood on.
+; =============================================================================
         lda     $0540,x                         ; A216 BD 40 05                 .@.
         cmp     #$04                            ; A219 C9 04                    ..
         bne     LA275                           ; A21B D0 58                    .X
@@ -371,13 +405,11 @@ LA276:  lda     #$84                            ; A276 A9 84                    
         sta     $03D8,x                         ; A299 9D D8 03                 ...
         lda     #$01                            ; A29C A9 01                    ..
         sta     $03F0,x                         ; A29E 9D F0 03                 ...
-        .byte   $FE                             ; A2A1 FE                       .
-LA2A2:  plp                                     ; A2A2 28                       (
-        ora     $A9                             ; A2A3 05 A9                    ..
-        ldx     $889D                           ; A2A5 AE 9D 88                 ...
-        ora     $A9                             ; A2A8 05 A9                    ..
-        ldx     #$9D                            ; A2AA A2 9D                    ..
-        ldy     #$05                            ; A2AC A0 05                    ..
+        inc     $0528,x                         ; A2A1 FE 28 05
+        lda     #$AE                            ; A2A4 A9 AE
+        sta     $0588,x                         ; A2A6 9D 88 05
+        lda     #$A2                            ; A2A9 A9 A2
+        sta     $05A0,x                         ; A2AB 9D A0 05 behavior PC := $A2AE
         ldy     #$14                            ; A2AE A0 14                    ..
         jsr     entity_move_up                           ; A2B0 20 80 E7                  ..
         lda     L0010                           ; A2B3 A5 10                    ..
@@ -406,6 +438,12 @@ LA2DC:  jsr     entity_wipe_x                           ; A2DC 20 C4 F2         
 LA2E9:  rts                                     ; A2E9 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR type $0E — bubble-column spawner (Wave Man stage): every $51
+; frames spawns a type $0D bubble, cycling through 5 columns (start
+; offset by screen via LA371): sub_type LA360, X LA365, shape LA36A,
+; variant PC LA36F/LA374 (big $A216 / small $A284).
+; =============================================================================
         ldy     $F9                             ; A2EA A4 F9                    ..
         lda     LA371,y                         ; A2EC B9 71 A3                 .q.
         sta     $0480,x                         ; A2EF 9D 80 04                 ...
@@ -455,25 +493,21 @@ LA35C:  dec     $0468,x                         ; A35C DE 68 04                 
         rts                                     ; A35F 60                       `
 
 ; ----------------------------------------------------------------------------
-LA360:  adc     $63                             ; A360 65 63                    ec
-        adc     $65                             ; A362 65 65                    ee
-        .byte   $63                             ; A364 63                       c
-LA365:  inx                                     ; A365 E8                       .
-        clv                                     ; A366 B8                       .
-        dey                                     ; A367 88                       .
-        cli                                     ; A368 58                       X
-        plp                                     ; A369 28                       (
-LA36A:  ora     L0000                           ; A36A 05 00                    ..
-        ora     $05                             ; A36C 05 05                    ..
-        brk                                     ; A36E 00                       .
-LA36F:  sty     $16                             ; A36F 84 16                    ..
-LA371:  sty     $84                             ; A371 84 84                    ..
-        .byte   $16                             ; A373 16                       .
-LA374:  ldx     #$A2                            ; A374 A2 A2                    ..
-        ldx     #$A2                            ; A376 A2 A2                    ..
-        ldx     #$00                            ; A378 A2 00                    ..
-        .byte   $02                             ; A37A 02                       .
-        .byte   $02                             ; A37B 02                       .
+LA360:  .byte   $65,$63,$65,$65,$63             ; A360  bubble sub_type
+LA365:  .byte   $E8,$B8,$88,$58,$28             ; A365  bubble X
+LA36A:  .byte   $05,$00,$05,$05,$00             ; A36A  bubble shape
+LA36F:  .byte   $84,$16                         ; A36F  bubble PC lo (overlaps)
+LA371:  .byte   $84,$84,$16                     ; A371  ^ + per-screen start idx
+LA374:  .byte   $A2,$A2,$A2,$A2,$A2             ; A374  bubble PC hi
+        .byte   $00,$02,$02                     ; A379  (start idx tail)
+; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR type $0F — Wily 1 shaft water level (IRQ mode $1C): pinned
+; to the camera center, vertical-scroll section ($46); its Y (kept in
+; $0498 across the offscreen clamp) rises and falls in $30-frame
+; strokes with a $1E pause at the top, and drives the water split
+; ($FA := water Y, $FD=2).
+; =============================================================================
         lda     #$80                            ; A37C A9 80                    ..
         sta     $1E                             ; A37E 85 1E                    ..
         lda     #$1C                            ; A380 A9 1C                    ..
@@ -544,6 +578,13 @@ LA406:  lda     #$02                            ; A406 A9 02                    
 LA413:  rts                                     ; A413 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR type $41 — Charge Man stage train parallax: rides the
+; player, sets up the split ($7A=$0F, $9B=$40, mode 4), and advances
+; the two background strips $78/$79 by +/- the player's own x
+; velocity while the pad is held ($16) — the scenery streams past the
+; moving train.
+; =============================================================================
         lda     $0330                           ; A414 AD 30 03                 .0.
         sta     $0330,x                         ; A417 9D 30 03                 .0.
         lda     $0348                           ; A41A AD 48 03                 .H.
@@ -619,6 +660,12 @@ LA4A2:  sta     $0480,x                         ; A4A2 9D 80 04                 
         rts                                     ; A4AB 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR type $42 — Wave Man stage jet ski: when touched in play,
+; sound $F1, player state $0D (ride), clears the arena and weapon
+; state, palette row from LA51B, player xvel $01.4C — then hands the
+; player its position (sub $1D mount pose) and wipes itself.
+; =============================================================================
         lda     $30                             ; A4AC A5 30                    .0
         bne     LA51A                           ; A4AE D0 6A                    .j
         lda     #$F1                            ; A4B0 A9 F1                    ..
@@ -668,11 +715,13 @@ LA4D1:  lda     LA51B,y                         ; A4D1 B9 1B A5                 
 LA51A:  rts                                     ; A51A 60                       `
 
 ; ----------------------------------------------------------------------------
-LA51B:  .byte   $0F                             ; A51B 0F                       .
-        .byte   $0F                             ; A51C 0F                       .
-        bit     LBD11                           ; A51D 2C 11 BD                 ,..
-        sei                                     ; A520 78                       x
-        .byte   $03                             ; A521 03                       .
+LA51B:  .byte   $0F,$0F,$2C,$11                 ; A51B  jet-ski palette row
+; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR type $48 — camera-locked sprite (Star Man stage): pins its
+; Y to the background ($0468 anchor - camera $FA).
+; =============================================================================
+        lda     $0378,x                         ; A51F BD 78 03
         sta     $0468,x                         ; A522 9D 68 04                 .h.
         lda     #$2F                            ; A525 A9 2F                    ./
         sta     $0588,x                         ; A527 9D 88 05                 ...
@@ -687,6 +736,17 @@ LA539:  sta     $0378,x                         ; A539 9D 78 03                 
         rts                                     ; A53C 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR type $4A — Proto castle 3 wall borer: clears the dynamic
+; tile-override list ($06C0/$43), then follows the movement program at
+; LA77D (duration/dir pairs, resumed at $0480; alternate start $26 off
+; screen $0F), carving as it goes: each step stamps its metatile to
+; tile $9C (LD8A2 + LA6BC, which also patches the collision row cache
+; $0640 and the pending PPU queue $07D0 across screen seams via the
+; LA7CF/LA7D8 index maps, forcing IRQ row redraw $1C=$FF) and appends
+; a dynamic override record. LA6A3 retires the oldest record when the
+; list is full. Program byte 0 ends the run (sub 0, PC $A5FD idle).
+; =============================================================================
         lda     #$00                            ; A53D A9 00                    ..
         sta     L0043                           ; A53F 85 43                    .C
         ldy     #$3F                            ; A541 A0 3F                    .?
@@ -768,6 +828,10 @@ LA5FA:  dec     $0468,x                         ; A5FA DE 68 04                 
 LA5FD:  rts                                     ; A5FD 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR type $4B — second wall borer: waits $A0 frames, then runs
+; the same carving engine stamping tile $00 (shares LA66B/LA6A3/LA6BC).
+; =============================================================================
         inc     $0468,x                         ; A5FE FE 68 04                 .h.
         lda     $0468,x                         ; A601 BD 68 04                 .h.
         cmp     #$A0                            ; A604 C9 A0                    ..
@@ -944,101 +1008,28 @@ LA776:  lda     #$FF                            ; A776 A9 FF                    
 LA77C:  rts                                     ; A77C 60                       `
 
 ; ----------------------------------------------------------------------------
-LA77D:  .byte   $02                             ; A77D 02                       .
-LA77E:  php                                     ; A77E 08                       .
-        ora     #$01                            ; A77F 09 01                    ..
-        .byte   $02                             ; A781 02                       .
-        php                                     ; A782 08                       .
-        asl     $01                             ; A783 06 01                    ..
-        ora     ($08,x)                         ; A785 01 08                    ..
-        ora     $01                             ; A787 05 01                    ..
-        .byte   $03                             ; A789 03                       .
-        php                                     ; A78A 08                       .
-        .byte   $02                             ; A78B 02                       .
-        ora     ($02,x)                         ; A78C 01 02                    ..
-        .byte   $04                             ; A78E 04                       .
-        ora     $0401                           ; A78F 0D 01 04                 ...
-        .byte   $04                             ; A792 04                       .
-        .byte   $07                             ; A793 07                       .
-LA794:  ora     ($04,x)                         ; A794 01 04                    ..
-        php                                     ; A796 08                       .
-        .byte   $02                             ; A797 02                       .
-        ora     ($04,x)                         ; A798 01 04                    ..
-        .byte   $04                             ; A79A 04                       .
-        .byte   $07                             ; A79B 07                       .
-        ora     ($04,x)                         ; A79C 01 04                    ..
-        php                                     ; A79E 08                       .
-        asl     a                               ; A79F 0A                       .
-        ora     (L0000,x)                       ; A7A0 01 00                    ..
-        brk                                     ; A7A2 00                       .
-        .byte   $02                             ; A7A3 02                       .
-        php                                     ; A7A4 08                       .
-        ora     $01                             ; A7A5 05 01                    ..
-        .byte   $02                             ; A7A7 02                       .
-        php                                     ; A7A8 08                       .
-        php                                     ; A7A9 08                       .
-        ora     ($02,x)                         ; A7AA 01 02                    ..
-        .byte   $04                             ; A7AC 04                       .
-        .byte   $03                             ; A7AD 03                       .
-        ora     ($01,x)                         ; A7AE 01 01                    ..
-        php                                     ; A7B0 08                       .
-        .byte   $02                             ; A7B1 02                       .
-        ora     ($03,x)                         ; A7B2 01 03                    ..
-        php                                     ; A7B4 08                       .
-        .byte   $03                             ; A7B5 03                       .
-        ora     ($02,x)                         ; A7B6 01 02                    ..
-        .byte   $04                             ; A7B8 04                       .
-        .byte   $04                             ; A7B9 04                       .
-        ora     ($02,x)                         ; A7BA 01 02                    ..
-        php                                     ; A7BC 08                       .
-        .byte   $02                             ; A7BD 02                       .
-        ora     ($01,x)                         ; A7BE 01 01                    ..
-        .byte   $04                             ; A7C0 04                       .
-        .byte   $01                             ; A7C1 01                       .
-LA7C2:  ora     ($03,x)                         ; A7C2 01 03                    ..
-        php                                     ; A7C4 08                       .
-        .byte   $03                             ; A7C5 03                       .
-        ora     ($02,x)                         ; A7C6 01 02                    ..
-        .byte   $04                             ; A7C8 04                       .
-        ora     ($01,x)                         ; A7C9 01 01                    ..
-        .byte   $07                             ; A7CB 07                       .
-        .byte   $04                             ; A7CC 04                       .
-        brk                                     ; A7CD 00                       .
-        brk                                     ; A7CE 00                       .
-LA7CF:  brk                                     ; A7CF 00                       .
-        ora     ($02,x)                         ; A7D0 01 02                    ..
-        .byte   $03                             ; A7D2 03                       .
-        ora     L0006                           ; A7D3 05 06                    ..
-        .byte   $07                             ; A7D5 07                       .
-        php                                     ; A7D6 08                       .
-        .byte   $0E                             ; A7D7 0E                       .
-LA7D8:  brk                                     ; A7D8 00                       .
-        ora     ($02,x)                         ; A7D9 01 02                    ..
-        .byte   $04                             ; A7DB 04                       .
-        ora     L0006                           ; A7DC 05 06                    ..
-        .byte   $07                             ; A7DE 07                       .
-        ora     #$0A                            ; A7DF 09 0A                    ..
-        .byte   $0B                             ; A7E1 0B                       .
-        .byte   $0C                             ; A7E2 0C                       .
-        ora     $F70E                           ; A7E3 0D 0E F7                 ...
-        .byte   $FF                             ; A7E6 FF                       .
-        cmp     $3F,x                           ; A7E7 D5 3F                    .?
-        .byte   $F7                             ; A7E9 F7                       .
-        .byte   $BB                             ; A7EA BB                       .
-        eor     $15EF,y                         ; A7EB 59 EF 15                 Y..
-        .byte   $F7                             ; A7EE F7                       .
-        adc     $35AF,x                         ; A7EF 7D AF 35                 }.5
-        .byte   $4F                             ; A7F2 4F                       O
-        adc     $7E,x                           ; A7F3 75 7E                    u~
-        .byte   $D7                             ; A7F5 D7                       .
-        .byte   $F7                             ; A7F6 F7                       .
-        dec     $BD                             ; A7F7 C6 BD                    ..
-        .byte   $E7                             ; A7F9 E7                       .
-        .byte   $FF                             ; A7FA FF                       .
-        .byte   $72                             ; A7FB 72                       r
-        .byte   $FB                             ; A7FC FB                       .
-        bit     $FB                             ; A7FD 24 FB                    $.
-        .byte   $34                             ; A7FF 34                       4
+; Wall-borer movement program: (duration, dir) pairs, 0 = end; then the
+; PPU-queue index remap tables used at screen seams (LA737/LA751).
+LA77D:  .byte   $02 ; A77D  program: duration
+LA77E:  .byte   $08,$09,$01,$02,$08,$06,$01,$01 ; A77E  dir (interleaved pairs)
+        .byte   $08,$05,$01,$03,$08,$02,$01,$02 ; A786
+        .byte   $04,$0D,$01,$04,$04,$07,$01,$04 ; A78E
+        .byte   $08,$02,$01,$04,$04,$07,$01,$04 ; A796
+        .byte   $08,$0A,$01,$00,$00,$02,$08,$05 ; A79E
+        .byte   $01,$02,$08,$08,$01,$02,$04,$03 ; A7A6
+        .byte   $01,$01,$08,$02,$01,$03,$08,$03 ; A7AE
+        .byte   $01,$02,$04,$04,$01,$02,$08,$02 ; A7B6
+        .byte   $01,$01,$04,$01,$01,$03,$08,$03 ; A7BE
+        .byte   $01,$02,$04,$01,$01,$07,$04,$00 ; A7C6
+        .byte   $00 ; A7CE
+LA7CF:  .byte   $00,$01,$02,$03,$05,$06,$07,$08 ; A7CF  queue remap A
+        .byte   $0E ; A7D7
+LA7D8:  .byte   $00,$01,$02,$04,$05,$06,$07,$09 ; A7D8  queue remap B
+        .byte   $0A,$0B,$0C,$0D,$0E ; A7E0
+        .byte   $F7,$FF,$D5,$3F,$F7,$BB,$59,$EF ; A7E5  (unreferenced tail)
+        .byte   $15,$F7,$7D,$AF,$35,$4F,$75,$7E ; A7ED
+        .byte   $D7,$F7,$C6,$BD,$E7,$FF,$72,$FB ; A7F5
+        .byte   $24,$FB,$34 ; A7FD
         brk                                     ; A800 00                       .
         brk                                     ; A801 00                       .
         brk                                     ; A802 00                       .
@@ -3575,7 +3566,7 @@ LB4BB:  dec     $DADA                           ; B4BB CE DA DA                 
         cld                                     ; B4FC D8                       .
         cmp     $F3F2,y                         ; B4FD D9 F2 F3                 ...
         .byte   $EB                             ; B500 EB                       .
-        sta     LA1EB,y                         ; B501 99 EB A1                 ...
+        .byte   $99,$EB,$A1                     ; B501 99 EB A1                 ...
         bit     $DF2C                           ; B504 2C 2C DF                 ,,.
         .byte   $D7                             ; B507 D7                       .
         cmp     ($F0,x)                         ; B508 C1 F0                    ..
@@ -3683,7 +3674,7 @@ LB551:  sta     $9595                           ; B551 8D 95 95                 
         cpx     $ECEC                           ; B5A9 EC EC EC                 ...
         cmp     $F5,x                           ; B5AC D5 F5                    ..
         cmp     $FD,x                           ; B5AE D5 FD                    ..
-        sta     LA12C,y                         ; B5B0 99 2C A1                 .,.
+        .byte   $99,$2C,$A1                     ; B5B0 99 2C A1                 .,.
         .byte   $DF                             ; B5B3 DF                       .
         sbc     $E6                             ; B5B4 E5 E6                    ..
         .byte   $EB                             ; B5B6 EB                       .
@@ -4301,7 +4292,7 @@ LB8F9:  lda     LADAD                           ; B8F9 AD AD AD                 
         ldx     #$B0                            ; B919 A2 B0                    ..
         lda     ($B1),y                         ; B91B B1 B1                    ..
         .byte   $B2                             ; B91D B2                       .
-        sta     LA2A2,x                         ; B91E 9D A2 A2                 ...
+        .byte   $9D,$A2,$A2                     ; B91E 9D A2 A2                 ...
         sta     LB4B3,x                         ; B921 9D B3 B4                 ...
         ldy     $B4,x                           ; B924 B4 B4                    ..
         ldx     #$B5                            ; B926 A2 B5                    ..
@@ -4351,7 +4342,7 @@ LB8F9:  lda     LADAD                           ; B8F9 AD AD AD                 
         tax                                     ; B970 AA                       .
         .byte   $AB                             ; B971 AB                       .
         ldy     LABAA                           ; B972 AC AA AB                 ...
-        ldy     LA7C2                           ; B975 AC C2 A7                 ...
+        .byte   $AC,$C2,$A7                     ; B975 AC C2 A7
         lda     LAEAD                           ; B978 AD AD AE                 ...
         lda     LAEAD                           ; B97B AD AD AE                 ...
         lda     $44AD                           ; B97E AD AD 44                 ..D
@@ -4415,7 +4406,7 @@ LB9D5:  .byte   $9F                             ; B9D5 9F                       
         .byte   $9F                             ; B9DE 9F                       .
         ldy     #$CE                            ; B9DF A0 CE                    ..
         .byte   $CF                             ; B9E1 CF                       .
-        ror     LA680,x                         ; B9E2 7E 80 A6                 ~..
+        .byte   $7E,$80,$A6                     ; B9E2 7E 80 A6                 ~..
         .byte   $9F                             ; B9E5 9F                       .
         .byte   $9F                             ; B9E6 9F                       .
         .byte   $A3                             ; B9E7 A3                       .
@@ -4487,7 +4478,7 @@ LB9D5:  .byte   $9F                             ; B9D5 9F                       
         sta     $C5BD,x                         ; BA5F 9D BD C5                 ...
         ldx     #$A3                            ; BA62 A2 A3                    ..
         ldx     #$9D                            ; BA64 A2 9D                    ..
-        sta     LA4A2,x                         ; BA66 9D A2 A4                 ...
+        .byte   $9D,$A2,$A4                     ; BA66 9D A2 A4                 ...
 LBA69:  lda     $9D                             ; BA69 A5 9D                    ..
         ldx     $D3                             ; BA6B A6 D3                    ..
         .byte   $D4                             ; BA6D D4                       .
@@ -4888,7 +4879,7 @@ LBCA4:  .byte   $9F                             ; BCA4 9F                       
         lda     $9D                             ; BCAA A5 9D                    ..
         .byte   $9F                             ; BCAC 9F                       .
         ldx     $9F                             ; BCAD A6 9F                    ..
-        inc     LA794                           ; BCAF EE 94 A7                 ...
+        .byte   $EE,$94,$A7                     ; BCAF EE 94 A7                 ...
         tay                                     ; BCB2 A8                       .
         lda     #$AA                            ; BCB3 A9 AA                    ..
         .byte   $AB                             ; BCB5 AB                       .

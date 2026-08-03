@@ -154,7 +154,10 @@ gravity         := $A1          ; gravity per frame ($40 default; cf. MM4 $99)
 ; Player state machine (bank $1B)
 iframe_timer    := $33          ; invulnerability flash timer
 iframe_sub_ofs  := $34          ; sub_type offset restored when flash ends
-weapon_fired    := $37          ; cleared each frame by the state dispatcher
+ride_slot       := $37          ; slot of the carrier the player rides (0 =
+                                ; none; cleared each frame by the state
+                                ; dispatcher, set by platform AI; checked by
+                                ; scroll/section code at $CD66/$CE96)
 hit_freeze      := $54          ; damage/weapon-get freeze counter
 
 ; Spawn engine (bank $1B $988A)
