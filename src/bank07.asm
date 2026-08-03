@@ -75,6 +75,19 @@ LE979           := $E979
 LE999           := $E999
 LEA29           := $EA29
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR type $81 — GRAVITY MAN (boss of stage $00). Script-driven:
+; state index $0468 steps 0-$0B through the tables at LA245-LA274
+; (dir, sub_type, xvel) and dispatches through LA281/LA284 to three
+; handlers: $A032 FLIP — at the anim beat, toggles gravity_flip and
+; the player's vflip, then floats himself to the ceiling ($A051, Y
+; < $70 = ceiling half) or drops to the floor ($A082); $A0D0 WALK to
+; the per-state target X (LA275); $A0FF FIRE — pauses, then his shot
+; anim ($1C:850B in LA1D0) spawns a type $82 bullet at the throw
+; frame ($A1EA, aimed 16-dir, speed preset $07 sped up on the
+; ceiling). Jump states use yvel $FB.1A up / $04.79 down by gravity
+; side ($A126). Fire cadence from LA287.
+; =============================================================================
         ldy     $0468,x                         ; A000 BC 68 04                 .h.
         lda     LA25D,y                         ; A003 B9 5D A2                 .].
         sta     $03A8,x                         ; A006 9D A8 03                 ...
@@ -111,11 +124,9 @@ LEA29           := $EA29
         and     #$40                            ; A04D 29 40                    )@
         beq     LA082                           ; A04F F0 31                    .1
         lda     #$5E                            ; A051 A9 5E                    .^
-        .byte   $9D                             ; A053 9D                       .
-LA054:  dey                                     ; A054 88                       .
-        ora     $A9                             ; A055 05 A9                    ..
-        ldy     #$9D                            ; A057 A0 9D                    ..
-        ldy     #$05                            ; A059 A0 05                    ..
+        sta     $0588,x                         ; A053 9D 88 05
+        lda     #$A0                            ; A056 A9 A0
+        sta     $05A0,x                         ; A058 9D A0 05 behavior PC := $A05E
         jsr     entity_stop_y                           ; A05B 20 1E EA                  ..
         lda     $0378,x                         ; A05E BD 78 03                 .x.
         cmp     #$70                            ; A061 C9 70                    .p
@@ -295,8 +306,7 @@ LA1EA:  stx     $0F                             ; A1EA 86 0F                    
         bcs     LA244                           ; A1EF B0 53                    .S
         lda     #$87                            ; A1F1 A9 87                    ..
         sta     $0408,y                         ; A1F3 99 08 04                 ...
-        .byte   $A9                             ; A1F6 A9                       .
-LA1F7:  .byte   $82                             ; A1F7 82                       .
+        lda     #$82                            ; A1F6 A9 82    Gravity Man's bullet
         sta     $0300,y                         ; A1F8 99 00 03                 ...
         lda     #$40                            ; A1FB A9 40                    .@
         sta     $10                             ; A1FD 85 10                    ..
@@ -335,69 +345,33 @@ LA23A:  dec     $0498,x                         ; A23A DE 98 04                 
 LA244:  rts                                     ; A244 60                       `
 
 ; ----------------------------------------------------------------------------
-LA245:  php                                     ; A245 08                       .
-        .byte   $02                             ; A246 02                       .
-        .byte   $04                             ; A247 04                       .
-        .byte   $02                             ; A248 02                       .
-        php                                     ; A249 08                       .
-        ora     (L0004,x)                       ; A24A 01 04                    ..
-        .byte   $02                             ; A24C 02                       .
-        php                                     ; A24D 08                       .
-        ora     (L0004,x)                       ; A24E 01 04                    ..
-        .byte   $01                             ; A250 01                       .
-LA251:  .byte   $04                             ; A251 04                       .
-        .byte   $02                             ; A252 02                       .
-        .byte   $04                             ; A253 04                       .
-        .byte   $02                             ; A254 02                       .
-        .byte   $04                             ; A255 04                       .
-        ora     (L0004,x)                       ; A256 01 04                    ..
-        ora     (L0004,x)                       ; A258 01 04                    ..
-        .byte   $02                             ; A25A 02                       .
-        .byte   $04                             ; A25B 04                       .
-        .byte   $02                             ; A25C 02                       .
-LA25D:  brk                                     ; A25D 00                       .
-        brk                                     ; A25E 00                       .
-        brk                                     ; A25F 00                       .
-        brk                                     ; A260 00                       .
-        brk                                     ; A261 00                       .
-        bpl     LA264                           ; A262 10 00                    ..
-LA264:  .byte   $3C                             ; A264 3C                       <
-        brk                                     ; A265 00                       .
-        brk                                     ; A266 00                       .
-        brk                                     ; A267 00                       .
-        brk                                     ; A268 00                       .
-LA269:  brk                                     ; A269 00                       .
-        .byte   $02                             ; A26A 02                       .
-        brk                                     ; A26B 00                       .
-        .byte   $02                             ; A26C 02                       .
-        brk                                     ; A26D 00                       .
-        .byte   $03                             ; A26E 03                       .
-        brk                                     ; A26F 00                       .
-        .byte   $02                             ; A270 02                       .
-        brk                                     ; A271 00                       .
-        .byte   $02                             ; A272 02                       .
-        brk                                     ; A273 00                       .
-        .byte   $02                             ; A274 02                       .
-LA275:  bne     LA1F7                           ; A275 D0 80                    ..
-        .byte   $80                             ; A277 80                       .
-        bmi     LA2AA                           ; A278 30 30                    00
-        tay                                     ; A27A A8                       .
-        tay                                     ; A27B A8                       .
-        cli                                     ; A27C 58                       X
-        cli                                     ; A27D 58                       X
-        .byte   $80                             ; A27E 80                       .
-        .byte   $80                             ; A27F 80                       .
-        .byte   $D0                             ; A280 D0                       .
-LA281:  .byte   $FF                             ; A281 FF                       .
-        bne     LA2B6                           ; A282 D0 32                    .2
-LA284:  ldy     #$A0                            ; A284 A0 A0                    ..
-        .byte   $A0                             ; A286 A0                       .
-LA287:  bvc     LA29D                           ; A287 50 14                    P.
-        .byte   $14                             ; A289 14                       .
+LA245:  .byte   $08,$02,$04,$02,$08,$01,$04,$02,$08,$01,$04,$01 ; A245  dir per state
+LA251:  .byte   $04,$02,$04,$02,$04,$01,$04,$01,$04,$02,$04,$02 ; A251  sub_type per state
+LA25D:  .byte   $00,$00,$00,$00,$00,$10,$00,$3C,$00,$00,$00,$00 ; A25D  xvel sub per state
+LA269:  .byte   $00,$02,$00,$02,$00,$03,$00,$02,$00,$02,$00,$02 ; A269  xvel px per state
+LA275:  .byte   $D0,$80,$80,$30,$30,$A8,$A8,$58,$58,$80,$80,$D0 ; A275  target X per state
+LA281:  .byte   $FF,$D0,$32 ; A281  handler PC lo
+LA284:  .byte   $A0,$A0,$A0 ; A284  handler PC hi
+LA287:  .byte   $50,$14,$14 ; A287  fire cadence
+; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR types $82/$85 — straight projectile (Gravity Man's bullet /
+; Crystal Man's aimed eye): velocity as set by the spawner.
+; =============================================================================
         jsr     entity_vert_dispatch_raw                           ; A28A 20 86 EA                  ..
         jmp     entity_facing_dispatch                           ; A28D 4C 65 EA                 Le.
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR type $83 — CRYSTAL MAN (boss of stage $07). On each anim
+; start, picks far/near mode by distance ($50 px): index 0 = big slow
+; bound, 1 = quick short hops (vel/PC tables LA428-LA433). While
+; rising he may switch to the fire pose (sub $25, RNG for near mode):
+; $A394 fires at the throw frames — far mode scatters four type $84
+; crystal balls in the diagonal dirs ($A3C7, only one volley on
+; screen), near mode snipes one aimed type $85 ($A403). Landing gives
+; up to 3 chained re-hops ($A34A).
+; =============================================================================
         lda     $0540,x                         ; A290 BD 40 05                 .@.
         beq     LA244                           ; A293 F0 AF                    ..
         jsr     entity_set_facing                           ; A295 20 16 EC                  ..
@@ -595,15 +569,18 @@ LA403:  jsr     entity_distance_calc                           ; A403 20 C2 EC  
 LA427:  rts                                     ; A427 60                       `
 
 ; ----------------------------------------------------------------------------
-LA428:  cmp     ($0B),y                         ; A428 D1 0B                    ..
-LA42A:  ldx     #$A3                            ; A42A A2 A3                    ..
-LA42C:  .byte   $ED                             ; A42C ED                       .
-        tay                                     ; A42D A8                       .
-LA42E:  asl     $05                             ; A42E 06 05                    ..
-LA430:  clv                                     ; A430 B8                       .
-        .byte   $E2                             ; A431 E2                       .
-LA432:  brk                                     ; A432 00                       .
-        brk                                     ; A433 00                       .
+LA428:  .byte   $D1,$0B                         ; A428  Crystal PC lo (far/near)
+LA42A:  .byte   $A2,$A3                         ; A42A  Crystal PC hi
+LA42C:  .byte   $ED,$A8                         ; A42C  yvel sub
+LA42E:  .byte   $06,$05                         ; A42E  yvel px
+LA430:  .byte   $B8,$E2                         ; A430  xvel sub
+LA432:  .byte   $00,$00                         ; A432  xvel px
+; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR type $84 — Crystal Eye ball (spread volley): bounces off
+; floors and walls ($1C:8538/$851A/$852F), hurting on touch, and
+; evaporates when its $F0-frame lifetime runs out.
+; =============================================================================
         ldy     #$13                            ; A434 A0 13                    ..
         jsr     entity_vert_dispatch                           ; A436 20 52 EA                  R.
         bcc     LA441                           ; A439 90 06                    ..
@@ -623,6 +600,14 @@ LA44B:  dec     $0468,x                         ; A44B DE 68 04                 
 LA458:  jmp     entity_wipe_x                           ; A458 4C C4 F2                 L..
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR type $86 — WAVE MAN (boss of stage $01). Notes the
+; player's X at his anim beat ($A46D), then raises a type $88 water
+; spout under/near it ($A474: X = mark + LA585/LA58D offset, first
+; on-screen candidate wins, at floor Y=$BC); while the spout lives he
+; poses ($A4DA), then either fires the type $87 harpoon (preset $2F,
+; $A524) or hops (L854D by RNG, sub $29, $A50D); lands and repeats.
+; =============================================================================
         jsr     entity_set_facing                           ; A45B 20 16 EC                  ..
         jsr     entity_facing_to_flags                           ; A45E 20 30 EC                  0.
         lda     $0540,x                         ; A461 BD 40 05                 .@.
@@ -650,9 +635,8 @@ LA474:  cmp     #$03                            ; A474 C9 03                    
         sta     $0498,x                         ; A48F 9D 98 04                 ...
         lda     #$88                            ; A492 A9 88                    ..
         sta     $0300,y                         ; A494 99 00 03                 ...
-        .byte   $A9                             ; A497 A9                       .
-LA498:  bit     $A420                           ; A498 2C 20 A4                 , .
-        nop                                     ; A49B EA                       .
+        lda     #$2C                            ; A497 A9 2C
+        jsr     entity_init_pos                 ; A499 20 A4 EA
         lda     #$BC                            ; A49C A9 BC                    ..
         sta     $0378,y                         ; A49E 99 78 03                 .x.
         lda     $0480,x                         ; A4A1 BD 80 04                 ...
@@ -763,21 +747,19 @@ LA56E:  lda     $0570,x                         ; A56E BD 70 05                 
 LA584:  rts                                     ; A584 60                       `
 
 ; ----------------------------------------------------------------------------
-LA585:  jsr     L10F0                           ; A585 20 F0 10                  ..
-        cpx     #$20                            ; A588 E0 20                    . 
-        cpy     #$40                            ; A58A C0 40                    .@
-        .byte   $F0                             ; A58C F0                       .
-LA58D:  brk                                     ; A58D 00                       .
-        .byte   $FF                             ; A58E FF                       .
-        brk                                     ; A58F 00                       .
-        .byte   $FF                             ; A590 FF                       .
-        brk                                     ; A591 00                       .
-        .byte   $FF                             ; A592 FF                       .
-        brk                                     ; A593 00                       .
-        .byte   $FF                             ; A594 FF                       .
+LA585:  .byte   $20,$F0,$10,$E0,$20,$C0,$40,$F0 ; A585  spout X offsets
+LA58D:  .byte   $00,$FF,$00,$FF,$00,$FF,$00,$FF ; A58D  offset sign (screen carry)
+; =============================================================================
+; BEHAVIOR type $87 — Wave Man's harpoon: straight flight.
+; =============================================================================
         jmp     entity_facing_dispatch                           ; A595 4C 65 EA                 Le.
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; BEHAVIOR types $88/$BB — water spout column: grows in steps (shape
+; per anim phase via LA605, then sub $2D full column, sub $2E crest,
+; shapes LA608), holding $3C frames at full height before collapsing.
+; =============================================================================
         lda     $0570,x                         ; A598 BD 70 05                 .p.
         cmp     #$02                            ; A59B C9 02                    ..
         bne     LA584                           ; A59D D0 E5                    ..
@@ -825,312 +807,72 @@ LA58D:  brk                                     ; A58D 00                       
 LA604:  rts                                     ; A604 60                       `
 
 ; ----------------------------------------------------------------------------
-LA605:  sta     ($9B,x)                         ; A605 81 9B                    ..
-        .byte   $9C                             ; A607 9C                       .
-LA608:  sta     ($87,x)                         ; A608 81 87                    ..
-        brk                                     ; A60A 00                       .
-        eor     $15FD                           ; A60B 4D FD 15                 M..
-        .byte   $9F                             ; A60E 9F                       .
-        eor     $F7,x                           ; A60F 55 F7                    U.
-        .byte   $7F                             ; A611 7F                       .
-        .byte   $CF                             ; A612 CF                       .
-        eor     #$93                            ; A613 49 93                    I.
-        adc     $BE,x                           ; A615 75 BE                    u.
-        cmp     $F7,x                           ; A617 D5 F7                    ..
-        .byte   $47                             ; A619 47                       G
-        .byte   $EF                             ; A61A EF                       .
-        adc     ($EE,x)                         ; A61B 61 EE                    a.
-        .byte   $74                             ; A61D 74                       t
-        dec     $777D,x                         ; A61E DE 7D 77                 .}w
-        .byte   $5F                             ; A621 5F                       _
-        .byte   $DF                             ; A622 DF                       .
-        eor     ($F1),y                         ; A623 51 F1                    Q.
-        eor     $FD,x                           ; A625 55 FD                    U.
-        eor     $FF,x                           ; A627 55 FF                    U.
-        sbc     $DF,x                           ; A629 F5 DF                    ..
-        .byte   $77                             ; A62B 77                       w
-        sbc     $9FD5,y                         ; A62C F9 D5 9F                 ...
-        adc     $6DBE,x                         ; A62F 7D BE 6D                 }.m
-        .byte   $72                             ; A632 72                       r
-        inx                                     ; A633 E8                       .
-        inc     $7F,x                           ; A634 F6 7F                    ..
-        .byte   $CF                             ; A636 CF                       .
-        sbc     $7FBE,y                         ; A637 F9 BE 7F                 ...
-        cmp     $FA25,x                         ; A63A DD 25 FA                 .%.
-        cmp     $77CD                           ; A63D CD CD 77                 ..w
-        .byte   $FF                             ; A640 FF                       .
-        eor     $575F,x                         ; A641 5D 5F 57                 ]_W
-        .byte   $FF                             ; A644 FF                       .
-        cmp     $D5F4,x                         ; A645 DD F4 D5                 ...
-        inc     $EF45                           ; A648 EE 45 EF                 .E.
-        cmp     $D5EB,y                         ; A64B D9 EB D5                 ...
-        ror     a                               ; A64E 6A                       j
-        .byte   $87                             ; A64F 87                       .
-        .byte   $3F                             ; A650 3F                       ?
-        .byte   $5F                             ; A651 5F                       _
-        .byte   $E7                             ; A652 E7                       .
-        eor     $77FB,x                         ; A653 5D FB 77                 ].w
-        ror     $DF51,x                         ; A656 7E 51 DF                 ~Q.
-        eor     $DD                             ; A659 45 DD                    E.
-        adc     $FA,x                           ; A65B 75 FA                    u.
-        .byte   $34                             ; A65D 34                       4
-        ldx     $50,y                           ; A65E B6 50                    .P
-        sbc     $EFF5,y                         ; A660 F9 F5 EF                 ...
-        ora     $54DD,x                         ; A663 1D DD 54                 ..T
-        adc     $F2EC,x                         ; A666 7D EC F2                 }..
-        and     $FF,x                           ; A669 35 FF                    5.
-        .byte   $77                             ; A66B 77                       w
-        .byte   $8F                             ; A66C 8F                       .
-        sta     ($E7),y                         ; A66D 91 E7                    ..
-        .byte   $7F                             ; A66F 7F                       .
-        .byte   $A7                             ; A670 A7                       .
-        .byte   $77                             ; A671 77                       w
-        .byte   $FF                             ; A672 FF                       .
-        .byte   $F3                             ; A673 F3                       .
-        .byte   $5B                             ; A674 5B                       [
-        .byte   $FB                             ; A675 FB                       .
-        .byte   $FF                             ; A676 FF                       .
-        eor     $55FB                           ; A677 4D FB 55                 M.U
-        .byte   $DF                             ; A67A DF                       .
-        dec     $FF,x                           ; A67B D6 FF                    ..
-        .byte   $77                             ; A67D 77                       w
-        inx                                     ; A67E E8                       .
-        lda     $BF,x                           ; A67F B5 BF                    ..
-        eor     $FB                             ; A681 45 FB                    E.
-        .byte   $52                             ; A683 52                       R
-        eor     $58,x                           ; A684 55 58                    UX
-        lsr     $63,x                           ; A686 56 63                    Vc
-        .byte   $77                             ; A688 77                       w
-        cmp     $D5                             ; A689 C5 D5                    ..
-        eor     ($FF),y                         ; A68B 51 FF                    Q.
-        adc     $5DF6,x                         ; A68D 7D F6 5D                 }.]
-        sbc     $D771,x                         ; A690 FD 71 D7                 .q.
-        eor     $55FB,y                         ; A693 59 FB 55                 Y.U
-        ldx     $EFB9,y                         ; A696 BE B9 EF                 ...
-        .byte   $FC                             ; A699 FC                       .
-        .byte   $7F                             ; A69A 7F                       .
-        adc     ($EA),y                         ; A69B 71 EA                    q.
-        .byte   $47                             ; A69D 47                       G
-        sbc     $EF59,x                         ; A69E FD 59 EF                 .Y.
-        .byte   $E7                             ; A6A1 E7                       .
-        .byte   $6F                             ; A6A2 6F                       o
-        .byte   $DD                             ; A6A3 DD                       .
-        .byte   $B7                             ; A6A4 B7                       .
-LA6A5:  adc     $F5F6,x                         ; A6A5 7D F6 F5                 }..
-        sbc     $FFCD,x                         ; A6A8 FD CD FF                 ...
-        .byte   $57                             ; A6AB 57                       W
-        .byte   $EB                             ; A6AC EB                       .
-        .byte   $F7                             ; A6AD F7                       .
-        .byte   $FB                             ; A6AE FB                       .
-        ora     $B7,x                           ; A6AF 15 B7                    ..
-        .byte   $6F                             ; A6B1 6F                       o
-        adc     $FFF5,x                         ; A6B2 7D F5 FF                 }..
-        adc     $FF,x                           ; A6B5 75 FF                    u.
-        .byte   $7F                             ; A6B7 7F                       .
-        lda     $EF5F,x                         ; A6B8 BD 5F EF                 ._.
-        eor     $FB,x                           ; A6BB 55 FB                    U.
-        and     $FB,x                           ; A6BD 35 FB                    5.
-        cmp     $5F,x                           ; A6BF D5 5F                    ._
-        eor     $47,x                           ; A6C1 55 47                    UG
-        sbc     $39F9,x                         ; A6C3 FD F9 39                 ..9
-        sbc     $DF55,y                         ; A6C6 F9 55 DF                 .U.
-        .byte   $5C                             ; A6C9 5C                       \
-        inc     $F77D,x                         ; A6CA FE 7D F7                 .}.
-        sta     ($7B),y                         ; A6CD 91 7B                    .{
-        .byte   $5F                             ; A6CF 5F                       _
-        lda     $FF7F                           ; A6D0 AD 7F FF                 ...
-        .byte   $E7                             ; A6D3 E7                       .
-        .byte   $AF                             ; A6D4 AF                       .
-        sbc     $FF,x                           ; A6D5 F5 FF                    ..
-        sta     $F9,x                           ; A6D7 95 F9                    ..
-        ora     $F8,x                           ; A6D9 15 F8                    ..
-        .byte   $F7                             ; A6DB F7                       .
-        sbc     $FBD5,y                         ; A6DC F9 D5 FB                 ...
-        adc     $FF,x                           ; A6DF 75 FF                    u.
-        ror     $FF,x                           ; A6E1 76 FF                    v.
-        .byte   $7C                             ; A6E3 7C                       |
-        .byte   $F7                             ; A6E4 F7                       .
-        .byte   $9F                             ; A6E5 9F                       .
-        .byte   $7F                             ; A6E6 7F                       .
-        .byte   $54                             ; A6E7 54                       T
-        .byte   $FF                             ; A6E8 FF                       .
-        lsr     $75F7,x                         ; A6E9 5E F7 75                 ^.u
-        inc     $FFF9,x                         ; A6EC FE F9 FF                 ...
-        adc     $EF,x                           ; A6EF 75 EF                    u.
-        adc     $55DF,y                         ; A6F1 79 DF 55                 y.U
-        .byte   $BF                             ; A6F4 BF                       .
-        ror     LA1FF,x                         ; A6F5 7E FF A1                 ~..
-        ldx     LB2F5,y                         ; A6F8 BE F5 B2                 ...
-        adc     $FF,x                           ; A6FB 75 FF                    u.
-        ora     $7F                             ; A6FD 05 7F                    ..
-        adc     $D6BF                           ; A6FF 6D BF D6                 m..
-        .byte   $EF                             ; A702 EF                       .
-        .byte   $9F                             ; A703 9F                       .
-        lsr     $EA51                           ; A704 4E 51 EA                 NQ.
-        .byte   $44                             ; A707 44                       D
-        .byte   $EF                             ; A708 EF                       .
-        .byte   $57                             ; A709 57                       W
-        sbc     $FF94                           ; A70A ED 94 FF                 ...
-        .byte   $5D                             ; A70D 5D                       ]
-LA70E:  .byte   $FB                             ; A70E FB                       .
-        .byte   $77                             ; A70F 77                       w
-        ldx     #$64                            ; A710 A2 64                    .d
-        sed                                     ; A712 F8                       .
-        .byte   $FC                             ; A713 FC                       .
-        .byte   $FF                             ; A714 FF                       .
-        .byte   $C7                             ; A715 C7                       .
-        .byte   $D7                             ; A716 D7                       .
-        .byte   $C3                             ; A717 C3                       .
-        .byte   $FF                             ; A718 FF                       .
-        .byte   $53                             ; A719 53                       S
-        .byte   $FB                             ; A71A FB                       .
-        cmp     $04F5                           ; A71B CD F5 04                 ...
-        .byte   $FF                             ; A71E FF                       .
-        .byte   $EF                             ; A71F EF                       .
-        .byte   $3C                             ; A720 3C                       <
-        .byte   $63                             ; A721 63                       c
-        .byte   $FF                             ; A722 FF                       .
-        bvc     LA70E                           ; A723 50 E9                    P.
-        .byte   $12                             ; A725 12                       .
-        ror     LBF05,x                         ; A726 7E 05 BF                 ~..
-        adc     $75FF,x                         ; A729 7D FF 75                 }.u
-        .byte   $DF                             ; A72C DF                       .
-        eor     $FD                             ; A72D 45 FD                    E.
-        eor     $FB                             ; A72F 45 FB                    E.
-        ora     $9F,x                           ; A731 15 9F                    ..
-        .byte   $5C                             ; A733 5C                       \
-        .byte   $7F                             ; A734 7F                       .
-        .byte   $37                             ; A735 37                       7
-        sbc     $7BBD                           ; A736 ED BD 7B                 ..{
-        .byte   $D7                             ; A739 D7                       .
-        .byte   $F7                             ; A73A F7                       .
-        .byte   $37                             ; A73B 37                       7
-        .byte   $BF                             ; A73C BF                       .
-        .byte   $57                             ; A73D 57                       W
-        inc     $F353,x                         ; A73E FE 53 F3                 .S.
-        .byte   $13                             ; A741 13                       .
-        sbc     $57,x                           ; A742 F5 57                    .W
-        .byte   $BF                             ; A744 BF                       .
-        eor     $457F,x                         ; A745 5D 7F 45                 ].E
-        inc     $FF56,x                         ; A748 FE 56 FF                 .V.
-        eor     $FD,x                           ; A74B 55 FD                    U.
-        .byte   $A7                             ; A74D A7                       .
-        .byte   $6B                             ; A74E 6B                       k
-        sta     $D5,x                           ; A74F 95 D5                    ..
-        .byte   $5F                             ; A751 5F                       _
-LA752:  .byte   $EF                             ; A752 EF                       .
-        and     $FF,x                           ; A753 35 FF                    5.
-        bne     LA752                           ; A755 D0 FB                    ..
-        .byte   $1F                             ; A757 1F                       .
-        inc     $FFCD,x                         ; A758 FE CD FF                 ...
-        ora     $F7,x                           ; A75B 15 F7                    ..
-        sbc     $FF                             ; A75D E5 FF                    ..
-        .byte   $44                             ; A75F 44                       D
-        lda     $F75D,x                         ; A760 BD 5D F7                 .].
-        adc     $FF,x                           ; A763 75 FF                    u.
-        .byte   $5F                             ; A765 5F                       _
-        .byte   $EF                             ; A766 EF                       .
-        lsr     $DE,x                           ; A767 56 DE                    V.
-        cmp     $DB,x                           ; A769 D5 DB                    ..
-        bvc     LA7EC                           ; A76B 50 7F                    P.
-        .byte   $D3                             ; A76D D3                       .
-        .byte   $FB                             ; A76E FB                       .
-        .byte   $DF                             ; A76F DF                       .
-        dec     $FF5E                           ; A770 CE 5E FF                 .^.
-        .byte   $1F                             ; A773 1F                       .
-        .byte   $FF                             ; A774 FF                       .
-        eor     $DE,x                           ; A775 55 DE                    U.
-        cmp     ($BB,x)                         ; A777 C1 BB                    ..
-        adc     $BC,x                           ; A779 75 BC                    u.
-        dec     $B7,x                           ; A77B D6 B7                    ..
-        eor     $FD,x                           ; A77D 55 FD                    U.
-        eor     $B7,x                           ; A77F 55 B7                    U.
-        adc     $AF,x                           ; A781 75 AF                    u.
-        .byte   $77                             ; A783 77                       w
-        .byte   $FF                             ; A784 FF                       .
-        sty     $3B,x                           ; A785 94 3B                    .;
-        .byte   $47                             ; A787 47                       G
-        .byte   $E7                             ; A788 E7                       .
-        .byte   $5C                             ; A789 5C                       \
-        .byte   $E7                             ; A78A E7                       .
-        .byte   $4F                             ; A78B 4F                       O
-        .byte   $3F                             ; A78C 3F                       ?
-        adc     $FD,x                           ; A78D 75 FD                    u.
-        .byte   $DF                             ; A78F DF                       .
-        .byte   $D7                             ; A790 D7                       .
-        cpy     $BA                             ; A791 C4 BA                    ..
-        .byte   $57                             ; A793 57                       W
-        .byte   $FB                             ; A794 FB                       .
-        .byte   $73                             ; A795 73                       s
-        .byte   $FF                             ; A796 FF                       .
-        eor     $74FF,x                         ; A797 5D FF 74                 ].t
-        .byte   $FB                             ; A79A FB                       .
-        sbc     $D9,x                           ; A79B F5 D9                    ..
-        .byte   $F4                             ; A79D F4                       .
-        .byte   $B7                             ; A79E B7                       .
-        brk                                     ; A79F 00                       .
-        .byte   $EF                             ; A7A0 EF                       .
-        .byte   $50                             ; A7A1 50                       P
-LA7A2:  .byte   $FF                             ; A7A2 FF                       .
-        eor     $FB,x                           ; A7A3 55 FB                    U.
-        and     $BD,x                           ; A7A5 35 BD                    5.
-        eor     $FF                             ; A7A7 45 FF                    E.
-        eor     $53BF,x                         ; A7A9 5D BF 53                 ].S
-        .byte   $F7                             ; A7AC F7                       .
-        eor     ($BF,x)                         ; A7AD 41 BF                    A.
-        sbc     $F7,x                           ; A7AF F5 F7                    ..
-        .byte   $57                             ; A7B1 57                       W
-        .byte   $DF                             ; A7B2 DF                       .
-        .byte   $F4                             ; A7B3 F4                       .
-        sbc     $7955,y                         ; A7B4 F9 55 79                 .Uy
-        .byte   $77                             ; A7B7 77                       w
-        inc     $FD4D,x                         ; A7B8 FE 4D FD                 .M.
-        .byte   $37                             ; A7BB 37                       7
-        .byte   $FF                             ; A7BC FF                       .
-        .byte   $7F                             ; A7BD 7F                       .
-        ldx     $8955                           ; A7BE AE 55 89                 .U.
-        .byte   $5B                             ; A7C1 5B                       [
-        sbc     $FF55,x                         ; A7C2 FD 55 FF                 .U.
-        eor     $5DED,y                         ; A7C5 59 ED 5D                 Y.]
-        .byte   $FB                             ; A7C8 FB                       .
-        .byte   $4F                             ; A7C9 4F                       O
-        .byte   $F7                             ; A7CA F7                       .
-        adc     $BC,x                           ; A7CB 75 BC                    u.
-        and     ($DC,x)                         ; A7CD 21 DC                    !.
-        eor     ($7E),y                         ; A7CF 51 7E                    Q~
-        eor     $FE,x                           ; A7D1 55 FE                    U.
-        .byte   $97                             ; A7D3 97                       .
-        .byte   $EF                             ; A7D4 EF                       .
-        .byte   $1C                             ; A7D5 1C                       .
-        .byte   $97                             ; A7D6 97                       .
-        .byte   $5A                             ; A7D7 5A                       Z
-        sbc     $7B,x                           ; A7D8 F5 7B                    .{
-        .byte   $BF                             ; A7DA BF                       .
-        .byte   $D7                             ; A7DB D7                       .
-        .byte   $F7                             ; A7DC F7                       .
-        cmp     $13E2                           ; A7DD CD E2 13                 ...
-        inc     $FAD3,x                         ; A7E0 FE D3 FA                 ...
-        .byte   $7F                             ; A7E3 7F                       .
-        .byte   $FB                             ; A7E4 FB                       .
-        lda     $53FF,x                         ; A7E5 BD FF 53                 ..S
-        dec     $EF55,x                         ; A7E8 DE 55 EF                 .U.
-        .byte   $55                             ; A7EB 55                       U
-LA7EC:  .byte   $FF                             ; A7EC FF                       .
-        .byte   $77                             ; A7ED 77                       w
-        .byte   $FB                             ; A7EE FB                       .
-        adc     $E7FD,x                         ; A7EF 7D FD E7                 }..
-        .byte   $FF                             ; A7F2 FF                       .
-        .byte   $DF                             ; A7F3 DF                       .
-        .byte   $FF                             ; A7F4 FF                       .
-        jmp     L1D7F                           ; A7F5 4C 7F 1D                 L..
-
-; ----------------------------------------------------------------------------
-        .byte   $DF                             ; A7F8 DF                       .
-        sed                                     ; A7F9 F8                       .
-        .byte   $E7                             ; A7FA E7                       .
-        eor     $47FF,y                         ; A7FB 59 FF 47                 Y.G
-        .byte   $97                             ; A7FE 97                       .
-        .byte   $77                             ; A7FF 77                       w
+LA605:  .byte   $81,$9B,$9C                     ; A605  spout shape by phase
+LA608:  .byte   $81,$87,$00                     ; A608  crest shape by phase
+; $A60B-$A7FF: data, TBD (unreferenced in-bank)
+        .byte   $4D,$FD,$15,$9F,$55,$F7,$7F,$CF ; A60B
+        .byte   $49,$93,$75,$BE,$D5,$F7,$47,$EF ; A613
+        .byte   $61,$EE,$74,$DE,$7D,$77,$5F,$DF ; A61B
+        .byte   $51,$F1,$55,$FD,$55,$FF,$F5,$DF ; A623
+        .byte   $77,$F9,$D5,$9F,$7D,$BE,$6D,$72 ; A62B
+        .byte   $E8,$F6,$7F,$CF,$F9,$BE,$7F,$DD ; A633
+        .byte   $25,$FA,$CD,$CD,$77,$FF,$5D,$5F ; A63B
+        .byte   $57,$FF,$DD,$F4,$D5,$EE,$45,$EF ; A643
+        .byte   $D9,$EB,$D5,$6A,$87,$3F,$5F,$E7 ; A64B
+        .byte   $5D,$FB,$77,$7E,$51,$DF,$45,$DD ; A653
+        .byte   $75,$FA,$34,$B6,$50,$F9,$F5,$EF ; A65B
+        .byte   $1D,$DD,$54,$7D,$EC,$F2,$35,$FF ; A663
+        .byte   $77,$8F,$91,$E7,$7F,$A7,$77,$FF ; A66B
+        .byte   $F3,$5B,$FB,$FF,$4D,$FB,$55,$DF ; A673
+        .byte   $D6,$FF,$77,$E8,$B5,$BF,$45,$FB ; A67B
+        .byte   $52,$55,$58,$56,$63,$77,$C5,$D5 ; A683
+        .byte   $51,$FF,$7D,$F6,$5D,$FD,$71,$D7 ; A68B
+        .byte   $59,$FB,$55,$BE,$B9,$EF,$FC,$7F ; A693
+        .byte   $71,$EA,$47,$FD,$59,$EF,$E7,$6F ; A69B
+        .byte   $DD,$B7,$7D,$F6,$F5,$FD,$CD,$FF ; A6A3
+        .byte   $57,$EB,$F7,$FB,$15,$B7,$6F,$7D ; A6AB
+        .byte   $F5,$FF,$75,$FF,$7F,$BD,$5F,$EF ; A6B3
+        .byte   $55,$FB,$35,$FB,$D5,$5F,$55,$47 ; A6BB
+        .byte   $FD,$F9,$39,$F9,$55,$DF,$5C,$FE ; A6C3
+        .byte   $7D,$F7,$91,$7B,$5F,$AD,$7F,$FF ; A6CB
+        .byte   $E7,$AF,$F5,$FF,$95,$F9,$15,$F8 ; A6D3
+        .byte   $F7,$F9,$D5,$FB,$75,$FF,$76,$FF ; A6DB
+        .byte   $7C,$F7,$9F,$7F,$54,$FF,$5E,$F7 ; A6E3
+        .byte   $75,$FE,$F9,$FF,$75,$EF,$79,$DF ; A6EB
+        .byte   $55,$BF,$7E,$FF,$A1,$BE,$F5,$B2 ; A6F3
+        .byte   $75,$FF,$05,$7F,$6D,$BF,$D6,$EF ; A6FB
+        .byte   $9F,$4E,$51,$EA,$44,$EF,$57,$ED ; A703
+        .byte   $94,$FF,$5D,$FB,$77,$A2,$64,$F8 ; A70B
+        .byte   $FC,$FF,$C7,$D7,$C3,$FF,$53,$FB ; A713
+        .byte   $CD,$F5,$04,$FF,$EF,$3C,$63,$FF ; A71B
+        .byte   $50,$E9,$12,$7E,$05,$BF,$7D,$FF ; A723
+        .byte   $75,$DF,$45,$FD,$45,$FB,$15,$9F ; A72B
+        .byte   $5C,$7F,$37,$ED,$BD,$7B,$D7,$F7 ; A733
+        .byte   $37,$BF,$57,$FE,$53,$F3,$13,$F5 ; A73B
+        .byte   $57,$BF,$5D,$7F,$45,$FE,$56,$FF ; A743
+        .byte   $55,$FD,$A7,$6B,$95,$D5,$5F,$EF ; A74B
+        .byte   $35,$FF,$D0,$FB,$1F,$FE,$CD,$FF ; A753
+        .byte   $15,$F7,$E5,$FF,$44,$BD,$5D,$F7 ; A75B
+        .byte   $75,$FF,$5F,$EF,$56,$DE,$D5,$DB ; A763
+        .byte   $50,$7F,$D3,$FB,$DF,$CE,$5E,$FF ; A76B
+        .byte   $1F,$FF,$55,$DE,$C1,$BB,$75,$BC ; A773
+        .byte   $D6,$B7,$55,$FD,$55,$B7,$75,$AF ; A77B
+        .byte   $77,$FF,$94,$3B,$47,$E7,$5C,$E7 ; A783
+        .byte   $4F,$3F,$75,$FD,$DF,$D7,$C4,$BA ; A78B
+        .byte   $57,$FB,$73,$FF,$5D,$FF,$74,$FB ; A793
+        .byte   $F5,$D9,$F4,$B7,$00,$EF,$50,$FF ; A79B
+        .byte   $55,$FB,$35,$BD,$45,$FF,$5D,$BF ; A7A3
+        .byte   $53,$F7,$41,$BF,$F5,$F7,$57,$DF ; A7AB
+        .byte   $F4,$F9,$55,$79,$77,$FE,$4D,$FD ; A7B3
+        .byte   $37,$FF,$7F,$AE,$55,$89,$5B,$FD ; A7BB
+        .byte   $55,$FF,$59,$ED,$5D,$FB,$4F,$F7 ; A7C3
+        .byte   $75,$BC,$21,$DC,$51,$7E,$55,$FE ; A7CB
+        .byte   $97,$EF,$1C,$97,$5A,$F5,$7B,$BF ; A7D3
+        .byte   $D7,$F7,$CD,$E2,$13,$FE,$D3,$FA ; A7DB
+        .byte   $7F,$FB,$BD,$FF,$53,$DE,$55,$EF ; A7E3
+        .byte   $55,$FF,$77,$FB,$7D,$FD,$E7,$FF ; A7EB
+        .byte   $DF,$FF,$4C,$7F,$1D,$DF,$F8,$E7 ; A7F3
+        .byte   $59,$FF,$47,$97,$77 ; A7FB
         brk                                     ; A800 00                       .
         brk                                     ; A801 00                       .
         brk                                     ; A802 00                       .
@@ -3719,9 +3461,9 @@ LB4E3:  brk                                     ; B4E3 00                       
         .byte   $AB                             ; B523 AB                       .
         ldy     #$91                            ; B524 A0 91                    ..
         tay                                     ; B526 A8                       .
-        sta     LA498,y                         ; B527 99 98 A4                 ...
+        .byte   $99,$98,$A4                     ; B527 99 98 A4
         tya                                     ; B52A 98                       .
-        sta     LA6A5,y                         ; B52B 99 A5 A6                 ...
+        .byte   $99,$A5,$A6                     ; B52B 99 A5 A6
         txs                                     ; B52E 9A                       .
         .byte   $9B                             ; B52F 9B                       .
         ldx     $B7,y                           ; B530 B6 B7                    ..
@@ -4387,7 +4129,7 @@ LB8E6:  sta     $1F9A,y                         ; B8E6 99 9A 1F                 
         .byte   $1F                             ; B8F8 1F                       .
         and     $3D1B,x                         ; B8F9 3D 1B 3D                 =.=
         ora     $1F41,x                         ; B8FC 1D 41 1F                 .A.
-        sta     LA054                           ; B8FF 8D 54 A0                 .T.
+        .byte   $8D,$54,$A0                     ; B8FF 8D 54 A0
         lda     (L00A0,x)                       ; B902 A1 A0                    ..
         ldx     #$A3                            ; B904 A2 A3                    ..
         ldy     $A5                             ; B906 A4 A5                    ..
