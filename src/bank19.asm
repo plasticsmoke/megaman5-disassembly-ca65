@@ -7,8 +7,14 @@
 .segment "BANK19"
 
 ; =============================================================================
-; BANK $19 — unclassified (raw dump)
-; SKELETON — raw ROM bytes, not yet classified as code or data.
+; BANK $19 — SOUND DATA ($A000-$BFFF)
+;
+; Song/SFX streams for the bank $18 driver, continuing the data that
+; starts at $18:8D13 (directory at $18:8A43, instruments at $18:8ADB).
+; The driver keeps this bank at MMC3 R7 while it runs; stream
+; addresses >= $C000 spill into bank $1A (fetched at addr-$2000 via
+; the driver's far-fetch, $18:803A). Track bytes: < $20 opcodes,
+; >= $20 length|note — see the bank $18 header.
 ; =============================================================================
     .byte $96,$60,$03,$8A,$02,$88,$87,$60,$85,$60,$43,$02,$60,$AC,$60,$02   ; $A000
     .byte $8B,$89,$60,$87,$86,$80,$01,$B0,$08,$0B,$02,$01,$D0,$18,$40,$30   ; $A010

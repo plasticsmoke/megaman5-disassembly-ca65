@@ -7,8 +7,39 @@
 .segment "BANK18"
 
 ; =============================================================================
-; BANK $18 (mapped at $8000) — raw da65 disassembly, annotation in progress
-; SKELETON — raw ROM bytes, not yet classified as code or data.
+; BANK $18 (mapped at $8000) — SOUND DRIVER
+;
+; Channel indexing: x = 0-3 = noise/triangle/pulse2/pulse1 (APU regs at
+; $4000 + (x^3)*4). Two parallel state blocks share the same field
+; offsets: SFX uses x = ch (fields at $0700+ch), music uses x = ch+$28
+; (fields at $0728+ch). Fields (stride 4 per channel):
+;   +$0700 instrument index        +$0704 flags (b0-2 envelope phase,
+;   +$0708 envelope level                 b3 env active, b5 portamento
+;   +$070C duty|volume shadow             pending, b6-7 phase carry)
+;   +$0710 current volume          +$0714 vibrato/detune depth
+;   +$0718 portamento speed        +$071C portamento current note
+;   +$0720/$0724 period lo/hi      +$0728/$072C track pointer
+;   +$0730 track flags (b0-2 octave, b3 stac, b4 dot latch, b6 tie,
+;          b7 rest)                +$0734 channel transpose
+;   +$0738 note length counter     +$073C gate fraction
+;   +$0740 gate counter            +$0744.. loop counters (4 slots)
+;   $077C-$077F last period-hi written per APU channel (reload guard)
+;
+; Driver zp: $C0 flags (b0 in-play mutex, b1 paused), $C1-$C6 temps
+; ($C5/$C6 = instrument ptr), $C7 ticks this frame, $C8-$CA tempo
+; accumulator/step, $CB global transpose, $CC/$CD master fade
+; speed/level, $CE active SFX priority, $CF channel-claim mask (SFX-
+; owned channels mute their music voice; b7 = temp busy flag),
+; $D0/$D1 SFX stream ptr, $D2 SFX transpose, $D3/$D5 SFX note/frame
+; counters, $D4 SFX volume, $D6/$D7 SFX mode + chain latch, $D8 SFX
+; pitch offset (control op $F7).
+;
+; Sound data: instruments at $8ADB (8 bytes: attack/decay rate idx,
+; sustain level, release rate idx, env-speed|b7, vibrato, tremolo,
+; duty (noise mode), see L86BA/$875B/$87B3), song/SFX streams from
+; $8D13 filling the rest of this bank, then bank $19 ($A000-$BFFF)
+; and bank $1A (fetched as virtual $C000-$DFFF — L803A temporarily
+; remaps MMC3 R7 to bank $1A and reads at addr-$2000).
 ; =============================================================================
 L0000           := $0000
 L0018           := $0018
@@ -50,6 +81,7 @@ L8001:  jmp     ($4C80)                         ; 8001 6C 80 4C                 
 ; ----------------------------------------------------------------------------
         .byte   $FE                             ; 8004 FE                       .
         .byte   $80                             ; 8005 80                       .
+; --- L8006: 8x8 multiply: $C1:$C2 = $C1 * $C4 (volume/duration scaling).
 L8006:  lda     #$00                            ; 8006 A9 00                    ..
         sta     $C2                             ; 8008 85 C2                    ..
         ldy     #$08                            ; 800A A0 08                    ..
@@ -69,6 +101,8 @@ L801F:  dey                                     ; 801F 88                       
         rts                                     ; 8022 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L8023: dispatch A into the address table that follows the caller's
+; jsr (pulls the return address, indexes table entry A, jumps).
 L8023:  asl     a                               ; 8023 0A                       .
         tay                                     ; 8024 A8                       .
         iny                                     ; 8025 C8                       .
@@ -86,6 +120,9 @@ L8023:  asl     a                               ; 8023 0A                       
         jmp     (L00C1)                         ; 8037 6C C1 00                 l..
 
 ; ----------------------------------------------------------------------------
+; --- L803A: far fetch, ptr A(hi)/Y(lo): addresses < $C000 read straight
+; from this bank pair; >= $C000 temporarily remap MMC3 R7 from bank $19
+; to bank $1A and read at addr-$2000 (sound data overflow bank).
 L803A:  sty     L00C1                           ; 803A 84 C1                    ..
         ldy     #$00                            ; 803C A0 00                    ..
         cmp     #$C0                            ; 803E C9 C0                    ..
@@ -116,6 +153,12 @@ L8047:  sec                                     ; 8047 38                       
         rts                                     ; 806B 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- snd_update ($806C): per-frame tick. Starts a pending SFX ($D0/$D1
+; via L8252), advances the tempo accumulator ($C8 += $CA -> $C7 = whole
+; ticks this frame), then per channel x=3..0: SFX voice (L82DE) and,
+; unless SFX-paused ($C0 b1), music voice (L8393); channels claimed in
+; $CF get their music voice muted (b7 marks the pass). Finally applies
+; the master fade: level $CD ramps by $CC<<4, saturating at $FF.
 snd_update:  lda     $C0                             ; 806C A5 C0                    ..
         lsr     a                               ; 806E 4A                       J
         bcs     L80D7                           ; 806F B0 66                    .f
@@ -178,6 +221,8 @@ L80D5:  sta     $CD                             ; 80D5 85 CD                    
 L80D7:  rts                                     ; 80D7 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L80D8: silence channel x: $30 to its APU vol reg ($00 for the
+; triangle's linear counter).
 L80D8:  txa                                     ; 80D8 8A                       .
         and     #$03                            ; 80D9 29 03                    ).
         eor     #$03                            ; 80DB 49 03                    I.
@@ -192,6 +237,7 @@ L80E8:  sta     $4000,y                         ; 80E8 99 00 40                 
         rts                                     ; 80EB 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L80EC: write A to APU register Y of channel x ($4000+(x^3)*4+Y).
 L80EC:  pha                                     ; 80EC 48                       H
         txa                                     ; 80ED 8A                       .
         and     #$03                            ; 80EE 29 03                    ).
@@ -206,12 +252,20 @@ L80EC:  pha                                     ; 80EC 48                       
         rts                                     ; 80FD 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- snd_play ($8003 vector): queue-driven entry, A = sound id (the $C0
+; b0 mutex keeps the NMI-side pump from re-entering the update).
 snd_play:  inc     $C0                             ; 80FE E6 C0                    ..
         jsr     L8106                           ; 8100 20 06 81                  ..
         dec     $C0                             ; 8103 C6 C0                    ..
         rts                                     ; 8105 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L8106: ids >= $F0 are control ops (snd_control); others wrap mod
+; snd_song_count and look up snd_song_dir (2 bytes/entry, hi/lo). The
+; entry's first data byte is its priority: $00 = music track (starts
+; now, L816F), else SFX — started only if >= the active priority $CE
+; (b7 of the id byte = uninterruptible, b6 = chained/looping via $D7);
+; accepted SFX latch their stream ptr into $D0/$D1 for next update.
 L8106:  cmp     #$F0                            ; 8106 C9 F0                    ..
         bcc     L810D                           ; 8108 90 03                    ..
         jmp     snd_control                           ; 810A 4C AE 81                 L..
@@ -269,6 +323,10 @@ L8168:  sta     $0700,y                         ; 8168 99 00 07                 
 L816E:  rts                                     ; 816E 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L816F: start music: default tempo $0199, clear fade and both
+; music state blocks, read the 4 channel track pointers (hi, lo per
+; channel) from the song header into $0754/$0750 (= $072C/$0728 for
+; x=ch+$28).
 L816F:  ldx     #$01                            ; 816F A2 01                    ..
         stx     $C9                             ; 8171 86 C9                    ..
         ldx     #$99                            ; 8173 A2 99                    ..
@@ -301,6 +359,11 @@ L819F:  ldy     L00C1                           ; 819F A4 C1                    
         dex                                     ; 81A9 CA                       .
         bpl     L8189                           ; 81AA 10 DD                    ..
         bmi     L81F1                           ; 81AC 30 43                    0C
+; --- snd_control: ops $F0-$F7, Y = param (from queue_sound_param):
+;   $F0 stop everything      $F1 stop SFX (release claimed channels)
+;   $F2 stop music           $F3 pause music  $F4 resume music
+;   $F5 set master fade speed ($CC/$CD)  $F6 fade variant
+;   $F7 SFX pitch offset $D8 = -Y (engine-pitch effects)
 snd_control:  sty     $C3                             ; 81AE 84 C3                    ..
         and     #$07                            ; 81B0 29 07                    ).
         jsr     L8023                           ; 81B2 20 23 80                  #.
@@ -337,6 +400,9 @@ L81E8:  sta     $0754,x                         ; 81E8 9D 54 07                 
         sta     $0750,x                         ; 81EB 9D 50 07                 .P.
         dex                                     ; 81EE CA                       .
         bpl     L81E8                           ; 81EF 10 F7                    ..
+; --- L81F1: release SFX-claimed channels: silence them, flag a period
+; reload ($077C = $FF) for channels whose music track lives on, restore
+; sweep-off/$4015 defaults.
 L81F1:  lda     $CF                             ; 81F1 A5 CF                    ..
         pha                                     ; 81F3 48                       H
         ldx     #$03                            ; 81F4 A2 03                    ..
@@ -360,6 +426,8 @@ L820A:  dex                                     ; 820A CA                       
         rts                                     ; 821D 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- $821E: op $F3: pause music ($C0 b1) + silence; $8226: op $F4
+; resume.
         lda     $C0                             ; 821E A5 C0                    ..
         ora     #$02                            ; 8220 09 02                    ..
         sta     $C0                             ; 8222 85 C0                    ..
@@ -370,6 +438,8 @@ L820A:  dex                                     ; 820A CA                       
         rts                                     ; 822C 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- $822D: op $F5: master fade speed $CC (b7 = direction), reset
+; level $CD; $8234: op $F6 variant also clears mode bits of $C0.
         asl     $C3                             ; 822D 06 C3                    ..
         beq     L8234                           ; 822F F0 03                    ..
         sec                                     ; 8231 38                       8
@@ -388,6 +458,7 @@ L8247:  sty     $CD                             ; 8247 84 CD                    
 L8249:  rts                                     ; 8249 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- $824A: op $F7: SFX pitch offset $D8 = -param.
         lda     #$00                            ; 824A A9 00                    ..
         sec                                     ; 824C 38                       8
         sbc     $C3                             ; 824D E5 C3                    ..
@@ -395,6 +466,12 @@ L8249:  rts                                     ; 8249 60                       
         rts                                     ; 8251 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L8252: pending-SFX starter. After the start delay $D3, parse the
+; SFX header via L8386: flags byte — b7 end/chain (restart via $D7 or
+; stop), b6 alternate-part pointer follows, b5 volume byte $D4 follows,
+; b4 transpose byte $D2 follows — then note length $D3 (frames via the
+; tempo multiply -> $D5), and the channel-claim mask into $CF (newly
+; claimed channels are silenced through L81D4).
 L8252:  lda     $D3                             ; 8252 A5 D3                    ..
         beq     L825B                           ; 8254 F0 05                    ..
         dec     $D3                             ; 8256 C6 D3                    ..
@@ -474,6 +551,14 @@ L82DA:  pla                                     ; 82DA 68                       
         rts                                     ; 82DD 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L82DE: SFX voice tick (x = 0-3, fields at $0700+): run envelope
+; (L8684/L86BA); during snd_play ($C0 b0) instead parse the SFX stream:
+; L830A reads a bit-flagged parameter header (each set bit pulls a
+; param byte through the L8326 op table: instrument, volume, duty,
+; vibrato, portamento), then the note byte at L8333 ($00 = channel
+; done -> silence; b7 set = no retrigger/tie; else key-on L85AE and
+; pitch from note + SFX transpose $D2). Noise notes load the noise
+; mode directly; expired notes key off into release (L85A3).
 L82DE:  ldy     $0700,x                         ; 82DE BC 00 07                 ...
         beq     L82E6                           ; 82E1 F0 03                    ..
         jsr     L8684                           ; 82E3 20 84 86                  ..
@@ -565,6 +650,7 @@ L837F:  tya                                     ; 837F 98                       
         jmp     L85DE                           ; 8383 4C DE 85                 L..
 
 ; ----------------------------------------------------------------------------
+; --- L8386: fetch next SFX stream byte ($D0/$D1 ptr, far fetch).
 L8386:  ldy     $D0                             ; 8386 A4 D0                    ..
         lda     $D1                             ; 8388 A5 D1                    ..
         inc     $D0                             ; 838A E6 D0                    ..
@@ -573,6 +659,14 @@ L8386:  ldy     $D0                             ; 8386 A4 D0                    
 L8390:  jmp     L803A                           ; 8390 4C 3A 80                 L:.
 
 ; ----------------------------------------------------------------------------
+; --- L8393: music voice tick (x |= $28 -> fields at $0728+ch): idle if
+; no track ptr; count down the note length $0738 by $C7 ticks (key-off
+; via L85A3 when the gate counter $0740 expires first), then at note
+; end read track bytes: < $20 = opcode (L8497), else b5-7 = length
+; index (L8915 straight / L891C dotted, b4 of $0730 latches the dot),
+; b0-4 = note (0 = rest): pitch = note + octave offset (L8923) +
+; global $CB + channel transpose $0734 -> L85DE; gate counter = length
+; * gate fraction $073C; key-on unless resting/tied.
 L8393:  txa                                     ; 8393 8A                       .
         ora     #$28                            ; 8394 09 28                    .(
         tax                                     ; 8396 AA                       .
@@ -713,6 +807,15 @@ L8491:  lda     #$FF                            ; 8491 A9 FF                    
 L8496:  rts                                     ; 8496 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L8497: music opcode dispatch (ops >= $04 pull a parameter byte
+; into $C3 first). Table follows the jsr: $00/$01/$02 toggle track
+; flags $40 tie / $10 dot / $08 staccato, $03 set octave, then: tempo
+; ($84F1, 2 params), gate fraction ($84FF), octave set ($8505), global
+; transpose ($8510), channel transpose ($8515), loop ops ($851B/1F/23/
+; 27 select one of 4 loop-counter slots: count N, jump target follows;
+; variant >= $12 = loop-with-alternate-ending via $8547), end-of-track
+; ($8580: kill channel), instrument ($866F), vibrato ($86A1),
+; portamento speed ($86A7), duty/volume ($86AD, noise variant $865A).
 L8497:  cmp     #$04                            ; 8497 C9 04                    ..
         bcc     L84A4                           ; 8499 90 09                    ..
         sta     $C4                             ; 849B 85 C4                    ..
@@ -757,6 +860,7 @@ L84ED:  sta     $0730,x                         ; 84ED 9D 30 07                 
         rts                                     ; 84F0 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- $84F1: op: set tempo ($C9/$CA from 2 params).
         lda     #$00                            ; 84F1 A9 00                    ..
         sta     $C8                             ; 84F3 85 C8                    ..
         jsr     L8592                           ; 84F5 20 92 85                  ..
@@ -766,11 +870,13 @@ L84ED:  sta     $0730,x                         ; 84ED 9D 30 07                 
         rts                                     ; 84FE 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- $84FF: op: set gate fraction $073C.
         lda     $C3                             ; 84FF A5 C3                    ..
         sta     $073C,x                         ; 8501 9D 3C 07                 .<.
         rts                                     ; 8504 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- $8505: op: set octave (track flags b0-2).
         lda     $0730,x                         ; 8505 BD 30 07                 .0.
         and     #$F8                            ; 8508 29 F8                    ).
         ora     $C3                             ; 850A 05 C3                    ..
@@ -778,16 +884,19 @@ L84ED:  sta     $0730,x                         ; 84ED 9D 30 07                 
         rts                                     ; 850F 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- $8510: op: set global transpose $CB.
         lda     $C3                             ; 8510 A5 C3                    ..
         sta     $CB                             ; 8512 85 CB                    ..
         rts                                     ; 8514 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- $8515: op: set channel transpose $0734.
         lda     $C3                             ; 8515 A5 C3                    ..
         sta     $0734,x                         ; 8517 9D 34 07                 .4.
         rts                                     ; 851A 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- $851B/1F/23/27: loop ops, one per counter slot; see L8497.
         lda     #$00                            ; 851B A9 00                    ..
         beq     L8529                           ; 851D F0 0A                    ..
         lda     #$04                            ; 851F A9 04                    ..
@@ -826,6 +935,7 @@ L8555:  jsr     L8592                           ; 8555 20 92 85                 
         rts                                     ; 8565 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L8566: loop not taken: skip the 2-byte jump target.
 L8566:  lda     #$02                            ; 8566 A9 02                    ..
         clc                                     ; 8568 18                       .
         adc     $0728,x                         ; 8569 7D 28 07                 }(.
@@ -844,6 +954,8 @@ L8575:  lda     $0730,x                         ; 8575 BD 30 07                 
         rts                                     ; 857F 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- $8580: op: end of track — abandon the opcode loop, clear the
+; track pointer, silence the channel unless SFX holds it.
         pla                                     ; 8580 68                       h
         pla                                     ; 8581 68                       h
         lda     #$00                            ; 8582 A9 00                    ..
@@ -857,6 +969,7 @@ L8575:  lda     $0730,x                         ; 8575 BD 30 07                 
 L8591:  rts                                     ; 8591 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L8592: fetch next music track byte (ptr $0728/$072C, far fetch).
 L8592:  ldy     $0728,x                         ; 8592 BC 28 07                 .(.
         lda     $072C,x                         ; 8595 BD 2C 07                 .,.
         inc     $0728,x                         ; 8598 FE 28 07                 .(.
@@ -865,6 +978,7 @@ L8592:  ldy     $0728,x                         ; 8592 BC 28 07                 
 L85A0:  jmp     L803A                           ; 85A0 4C 3A 80                 L:.
 
 ; ----------------------------------------------------------------------------
+; --- L85A3: key off: envelope phase = 3 (release).
 L85A3:  lda     $0704,x                         ; 85A3 BD 04 07                 ...
         and     #$F8                            ; 85A6 29 F8                    ).
         ora     #$03                            ; 85A8 09 03                    ..
@@ -872,6 +986,8 @@ L85A3:  lda     $0704,x                         ; 85A3 BD 04 07                 
         rts                                     ; 85AD 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L85AE: key on: envelope phase = 0 (or 2 = sustain for the
+; triangle, whose gate scales the linear counter via the multiply).
 L85AE:  tya                                     ; 85AE 98                       .
         pha                                     ; 85AF 48                       H
         ldy     #$00                            ; 85B0 A0 00                    ..
@@ -898,6 +1014,10 @@ L85D7:  tya                                     ; 85D7 98                       
         rts                                     ; 85DD 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L85DE: set pitch from note A (clamped to $5F): music channels run
+; portamento bookkeeping ($0718 speed toward target $071C, flag b5),
+; then period from the L8959/L895A table into $0720/$0724; instrument
+; b7 of byte 4 also restarts the envelope on retrigger.
 L85DE:  cmp     #$60                            ; 85DE C9 60                    .`
         bcc     L85E4                           ; 85E0 90 02                    ..
         lda     #$5F                            ; 85E2 A9 5F                    ._
@@ -956,6 +1076,7 @@ L864C:  lda     #$00                            ; 864C A9 00                    
         rts                                     ; 8659 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- $865A: op: set volume (noise/triangle variants keep b6-7).
         cpx     #$01                            ; 865A E0 01                    ..
         bne     L8662                           ; 865C D0 04                    ..
         lda     $C3                             ; 865E A5 C3                    ..
@@ -968,6 +1089,8 @@ L866B:  sta     $070C,x                         ; 866B 9D 0C 07                 
         rts                                     ; 866E 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- $866F: op: set instrument: $C5/$C6 = instr table + (n-1)*8
+; (L8684 = recompute entry, shared with the envelope tick).
         inc     $C3                             ; 866F E6 C3                    ..
         lda     $C3                             ; 8671 A5 C3                    ..
         cmp     $0700,x                         ; 8673 DD 00 07                 ...
@@ -996,16 +1119,19 @@ L8684:  dey                                     ; 8684 88                       
 L86A0:  rts                                     ; 86A0 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- $86A1: op: set vibrato/detune depth $0714.
         lda     $C3                             ; 86A1 A5 C3                    ..
         sta     $0714,x                         ; 86A3 9D 14 07                 ...
         rts                                     ; 86A6 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- $86A7: op: set portamento speed $0718.
         lda     $C3                             ; 86A7 A5 C3                    ..
         sta     $0718,x                         ; 86A9 9D 18 07                 ...
         rts                                     ; 86AC 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- $86AD: op: set duty (volume shadow high nibble).
         lda     $070C,x                         ; 86AD BD 0C 07                 ...
         and     #$0F                            ; 86B0 29 0F                    ).
         ora     $C3                             ; 86B2 05 C3                    ..
@@ -1014,6 +1140,10 @@ L86A0:  rts                                     ; 86A0 60                       
         rts                                     ; 86B9 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L86BA: envelope tick: phase 0-3 handlers via L8023 (attack to $F0
+; cap, decay to sustain level, sustain, release to 0) using instrument
+; rate indexes into the L8933 step table; updates volume $0710 and
+; phase in $0704.
 L86BA:  lda     $0710,x                         ; 86BA BD 10 07                 ...
         sta     $C4                             ; 86BD 85 C4                    ..
         lda     $0704,x                         ; 86BF BD 04 07                 ...
@@ -1097,6 +1227,15 @@ L8752:  lda     $0710,x                         ; 8752 BD 10 07                 
         beq     L87AA                           ; 8755 F0 53                    .S
         lda     #$FF                            ; 8757 A9 FF                    ..
         bne     L87AA                           ; 8759 D0 4F                    .O
+; --- $875B: write volume: 4-bit level from envelope (SFX capped by
+; $D4, music scaled by master fade $CD), tremolo from instrument byte
+; 6 (>= 5: depth * envelope via the multiply), then vol|duty to the
+; APU; $87B3: vibrato from instrument byte 5 scales into a period
+; offset; noise ($8835) packs period-4-bit | instrument noise mode;
+; pitched channels normalize through the octave thresholds L8953,
+; add the track vibrato/detune $0714, write period lo, and rewrite
+; period hi (+ length reload) only when it changed ($077C guard);
+; $8814 adds the $D8 control-op pitch offset to SFX periods.
 L875B:  cmp     $0710,x                         ; 875B DD 10 07                 ...
         bcc     L8763                           ; 875E 90 03                    ..
 L8760:  lda     $0710,x                         ; 8760 BD 10 07                 ...
@@ -1270,6 +1409,9 @@ L8885:  .byte   $02                             ; 8885 02                       
         ora     #$08                            ; 8899 09 08                    ..
         ldy     #$03                            ; 889B A0 03                    ..
         jsr     L80EC                           ; 889D 20 EC 80                  ..
+; --- L88A0: portamento glide: step period by $0718 toward the target
+; note's period each frame, snapping (and clearing b5) on arrival;
+; then $88FA advances the envelope level by instrument env speed.
 L88A0:  lda     $0704,x                         ; 88A0 BD 04 07                 ...
         and     #$20                            ; 88A3 29 20                    ) 
         beq     L88FA                           ; 88A5 F0 53                    .S
@@ -1329,6 +1471,10 @@ L8912:  .byte   $04                             ; 8912 04                       
 L8914:  rts                                     ; 8914 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L8915/L891C: note length tables (straight / dotted+latch),
+; indexed by note b5-7. L8923: octave base offsets. L8933: envelope
+; rate steps. L8953: octave thresholds for period normalization.
+; L8959: period table, 2 bytes/note.
 L8915:  .byte   $02                             ; 8915 02                       .
         .byte   $04                             ; 8916 04                       .
         php                                     ; 8917 08                       .
@@ -1569,6 +1715,13 @@ L8A35:  brk                                     ; 8A35 00                       
         brk                                     ; 8A3D 00                       .
         brk                                     ; 8A3E 00                       .
         brk                                     ; 8A3F 00                       .
+; =============================================================================
+; SOUND DATA DIRECTORY
+;   $8A40 snd_song_count ($4C ids), $8A41/$8A42 instrument table ptr
+;   ($8ADB, hi/lo), $8A43 snd_song_dir: $4C entries x 2 (hi/lo).
+;   $8ADB-$8D12 instruments (8 bytes each), $8D13+ song/SFX streams
+;   (continue through bank $19 and, as virtual $C000+, bank $1A).
+; =============================================================================
 snd_song_count:  .byte   $4C                             ; 8A40 4C                       L
 L8A41:  txa                                     ; 8A41 8A                       .
 L8A42:  .byte   $DB                             ; 8A42 DB                       .

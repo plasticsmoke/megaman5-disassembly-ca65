@@ -7,8 +7,12 @@
 .segment "BANK1A"
 
 ; =============================================================================
-; BANK $1A — unclassified (raw dump)
-; SKELETON — raw ROM bytes, not yet classified as code or data.
+; BANK $1A — SOUND DATA OVERFLOW (virtual $C000-$DFFF)
+;
+; Continuation of the song/SFX streams from bank $19: the sound driver
+; addresses this bank as $C000-$DFFF — its far-fetch ($18:803A)
+; temporarily remaps MMC3 R7 from bank $19 to $1A and reads at
+; addr-$2000 whenever a stream pointer crosses $C000.
 ; =============================================================================
     .byte $65,$6E,$65,$69,$71,$6F,$69,$65,$69,$12,$00,$C0,$24,$6F,$67,$6A   ; $8000
     .byte $8F,$6A,$6C,$6A,$67,$6A,$6F,$06,$F0,$08,$07,$07,$07,$91,$8F,$6A   ; $8010
