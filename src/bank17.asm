@@ -7,8 +7,19 @@
 .segment "BANK17"
 
 ; =============================================================================
-; BANK $17 (mapped at $8000) — raw da65 disassembly, annotation in progress
-; SKELETON — raw ROM bytes, not yet classified as code or data.
+; BANK $17 (mapped at $8000) — TITLE SCREEN / MENUS / CASTLE MAPS
+;
+; The whole between-stages game flow: copyright + title screen (with the
+; bank $0C:A000 story intro as attract mode), stage select, password
+; entry/decode/display, death & game-over checkpoint handling, weapon-get,
+; and the Proto/Wily castle map interludes (including the post-Proto-4
+; escape cutscene). Entered at $8000 from the fixed-bank boot/respawn
+; task ($DE15 maps the $17/$0C pair); returns with $26 = stage to load.
+; Screens are drawn via LDAFC/LDB23 from the menu pseudo-stage ($26=$10,
+; whose layout data lives in PRG bank $10).
+;
+; Code: $8000-$8B73 (menus) and $91C9-$9821 (castle maps/cutscene).
+; Data: $8B74-$91C8 (menu tables) and $9822-$9FFF (castle map tables).
 ; =============================================================================
 L0000           := $0000
 L0004           := $0004
@@ -155,6 +166,10 @@ L801F:  lda     #$00                            ; 801F A9 00                    
         jmp     L8860                           ; 8026 4C 60 88                 L`.
 
 ; ----------------------------------------------------------------------------
+; --- L8029: TITLE SCREEN. Draw the two title nametables (menu pseudo-stage
+; screens $01/$00), palette set $4C, logo alone for $96 frames, then loop:
+; play the bank $0C story intro (attract, Start skippable), come back,
+; show the GAME START / PASSWORD menu for $05A0 frames, repeat on timeout.
 L8029:  lda     #$F0                            ; 8029 A9 F0                    ..
         jsr     queue_sound_param                           ; 802B 20 5B EC                  [.
         jsr     L91C9                           ; 802E 20 C9 91                  ..
@@ -189,6 +204,8 @@ L8029:  lda     #$F0                            ; 8029 A9 F0                    
         jsr     palette_fade_in                           ; 8075 20 EB C3                  ..
         lda     #$96                            ; 8078 A9 96                    ..
         jsr     LFF24                           ; 807A 20 24 FF                  $.
+; --- L807D: attract loop point — story intro, then menu sprites (L8C96
+; block $00), title music ($49), $05A0-frame menu timeout in $10/$11.
 L807D:  jsr     LA000                           ; 807D 20 00 A0                  ..
         ldy     #$00                            ; 8080 A0 00                    ..
         jsr     L89FC                           ; 8082 20 FC 89                  ..
@@ -204,6 +221,8 @@ L807D:  jsr     LA000                           ; 807D 20 00 A0                 
         lda     #$05                            ; 8099 A9 05                    ..
         sta     $11                             ; 809B 85 11                    ..
         jsr     palette_fade_in                           ; 809D 20 EB C3                  ..
+; --- L80A0: title menu input. Start/A = confirm; Select/Up/Down = toggle
+; cursor ($0200 sprite Y ^= $10: $A7 GAME START / $B7 PASSWORD).
 L80A0:  jsr     frame_wait                           ; 80A0 20 22 FF                  ".
         jsr     read_controllers                           ; 80A3 20 E5 C2                  ..
         lda     $14                             ; 80A6 A5 14                    ..
@@ -235,6 +254,10 @@ L80D2:  lda     #$28                            ; 80D2 A9 28                    
         jmp     L83BA                           ; 80DE 4C BA 83                 L..
 
 ; ----------------------------------------------------------------------------
+; --- L80E1: STAGE SELECT. Draw grid screens ($23=$02 top / $04 bottom),
+; palette set $26, mugshot sprites (L8C96 block $10), blank already-beaten
+; portraits (L8A94), reveal the center castle door if all 8 beaten (L8AF1),
+; stage select music ($0D). Cursor: $10 = column, $11 = row (0-2 each).
 L80E1:  jsr     palette_fade_out                           ; 80E1 20 F1 C3                  ..
         jsr     entity_clear_all                           ; 80E4 20 9D C3                  ..
         jsr     oam_clear                           ; 80E7 20 8F C3                  ..
@@ -274,6 +297,9 @@ L80E1:  jsr     palette_fade_out                           ; 80E1 20 F1 C3      
         lda     #$00                            ; 813A A9 00                    ..
         sta     $14                             ; 813C 85 14                    ..
         sta     $9D                             ; 813E 85 9D                    ..
+; --- L8140: stage select input loop. D-pad moves cursor with wraparound
+; (L8D90 step / L8D92 wrap); 8-sprite cursor frame rebuilt from L8D8A/L8D8D
+; pixel origins + L8D94/L8D9C offsets, blinking on $9D bit 3.
 L8140:  lda     $14                             ; 8140 A5 14                    ..
         and     #$90                            ; 8142 29 90                    ).
         beq     L8149                           ; 8144 F0 03                    ..
@@ -348,6 +374,9 @@ L81C2:  inc     $9D                             ; 81C2 E6 9D                    
         jmp     L8140                           ; 81CA 4C 40 81                 L@.
 
 ; ----------------------------------------------------------------------------
+; --- L81CD: confirm — grid index = $10*3 + $11, stage id from L8DA4 into
+; $26/$6C. Center entry ($08 = Proto castle 1, shown as Wily's castle)
+; is refused unless all 8 bosses are beaten ($6E == $FF).
 L81CD:  lda     $10                             ; 81CD A5 10                    ..
         asl     a                               ; 81CF 0A                       .
         adc     $10                             ; 81D0 65 10                    e.
@@ -367,6 +396,11 @@ L81CD:  lda     $10                             ; 81CD A5 10                    
         jmp     L9272                           ; 81ED 4C 72 92                 Lr.
 
 ; ----------------------------------------------------------------------------
+; --- L81F0: stage picked: flash the screen 8 times (BG palette ^= $3F),
+; then wipe the grid palette columns dark left-to-right (L8C8A delay /
+; L8C90 threshold), leaving only the picked mugshot lit (L8B2E enlarges
+; it). If this boss is already beaten ($F2B2 stage mask & $6E) return to
+; the caller — the fixed-bank task proceeds straight to stage_load.
 L81F0:  lda     #$28                            ; 81F0 A9 28                    .(
         jsr     queue_sound                           ; 81F2 20 5D EC                  ].
         ldx     #$08                            ; 81F5 A2 08                    ..
@@ -423,6 +457,13 @@ L824D:  sta     $0600,y                         ; 824D 99 00 06                 
         rts                                     ; 8264 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L8265: first visit: boss intro screen ($23=$03) over the starfield
+; (L8A3A/L8A4A), boss teleports in as menu-actor type $6D sub L8DB3
+; (falls until anim phase $06), strikes his pose (phase strobe from L8DC3,
+; done at phase L8DBB; Charge Man's intro, sub $20, adds a companion
+; actor sub $21 at Y=$48 — his steam burst — and waits it out), then his
+; name is typed one letter per 8 frames from L8DD0 (+$26*16) into the
+; $0780 nametable buffer. $B4 frames, rts.
 L8265:  jsr     disable_rendering                           ; 8265 20 D1 C2                  ..
         lda     #$00                            ; 8268 A9 00                    ..
         sta     $10                             ; 826A 85 10                    ..
@@ -577,6 +618,9 @@ L83AA:  iny                                     ; 83AA C8                       
         jmp     L8A7D                           ; 83B7 4C 7D 8A                 L}.
 
 ; ----------------------------------------------------------------------------
+; --- L83BA: PASSWORD ENTRY screen. Common setup L866A, 4-sprite cursor
+; from L9024, password music ($13). Top-level cursor $10: 0 = red dot,
+; 1 = gray dot, 2 = END.
 L83BA:  jsr     L866A                           ; 83BA 20 6A 86                  j.
         ldy     #$0F                            ; 83BD A0 0F                    ..
 L83BF:  lda     L9024,y                         ; 83BF B9 24 90                 .$.
@@ -589,6 +633,9 @@ L83BF:  lda     L9024,y                         ; 83BF B9 24 90                 
 L83D0:  lda     #$00                            ; 83D0 A9 00                    ..
         sta     $10                             ; 83D2 85 10                    ..
         beq     L840F                           ; 83D4 F0 39                    .9
+; --- L83D6: password top-row input: left/right toggles red/gray dot,
+; up/down jumps to END ($10 ^= 2), Start/A on END validates (L86AB),
+; on a dot color enters the grid (L8441).
 L83D6:  lda     $14                             ; 83D6 A5 14                    ..
         and     #$90                            ; 83D8 29 90                    ).
         beq     L83E5                           ; 83DA F0 09                    ..
@@ -651,6 +698,10 @@ L8441:  lda     #$00                            ; 8441 A9 00                    
         jmp     L84EB                           ; 8447 4C EB 84                 L..
 
 ; ----------------------------------------------------------------------------
+; --- L844A: password grid input. B = back to dot select; Start = jump
+; to END; A = place dot of the current color (L906F/L9071 tiles) at cell
+; $12/$13, or erase it if the same color is already there (16 dot sprites
+; live at $0210+); d-pad moves in the 6x6 grid (A-F rows, 1-6 cols).
 L844A:  lda     $14                             ; 844A A5 14                    ..
         and     #$40                            ; 844C 29 40                    )@
         bne     L83D0                           ; 844E D0 80                    ..
@@ -756,6 +807,8 @@ L84FD:  lda     L903D,x                         ; 84FD BD 3D 90                 
         jmp     L844A                           ; 851B 4C 4A 84                 LJ.
 
 ; ----------------------------------------------------------------------------
+; --- L851E: password frame tick: blink the 4 cursor sprites on $9D bit 3,
+; frame_wait + read_controllers.
 L851E:  lda     $9D                             ; 851E A5 9D                    ..
         inc     $9D                             ; 8520 E6 9D                    ..
         lsr     a                               ; 8522 4A                       J
@@ -771,6 +824,10 @@ L8535:  jsr     frame_wait                           ; 8535 20 22 FF            
         jmp     read_controllers                           ; 8538 4C E5 C2                 L..
 
 ; ----------------------------------------------------------------------------
+; --- L853B: PASSWORD DISPLAY + prompt (after weapon-get): shows the
+; password encoding $6E/$6D (L87B9) with prompt string 3, cursor picks
+; STAGE SELECT ($0200=$AF -> L80E1) or CONTINUE ($BF -> return with
+; $26 = $6C, straight back into the current stage path).
 L853B:  jsr     L866A                           ; 853B 20 6A 86                  j.
         jsr     L87B9                           ; 853E 20 B9 87                  ..
         ldx     #$03                            ; 8541 A2 03                    ..
@@ -815,6 +872,11 @@ L8597:  lda     $6C                             ; 8597 A5 6C                    
         rts                                     ; 859B 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L859C: DEATH ($30=$07). With lives left ($BF): consume one and
+; restore the furthest checkpoint from L9169 — two 3-byte records per
+; stage (checkpoint screen, section, spawn latch); a record applies once
+; furthest-screen $69 has reached its screen, which then becomes
+; scroll_x_hi $F9 (+ $29/$68). Returns with $26=$6C to reload the stage.
 L859C:  lda     $BF                             ; 859C A5 BF                    ..
         beq     L85E2                           ; 859E F0 42                    .B
         dec     $BF                             ; 85A0 C6 BF                    ..
@@ -849,6 +911,11 @@ L859C:  lda     $BF                             ; 859C A5 BF                    
         jmp     L8597                           ; 85DF 4C 97 85                 L..
 
 ; ----------------------------------------------------------------------------
+; --- L85E2: GAME OVER (no lives): reset progress screen $69, lives back
+; to 2, clear the killed-enemy bitmap, then show the password display
+; (game over music $12, string 2 banner). After a wait or button: on a
+; robot master stage offer STAGE SELECT/CONTINUE (string 3); in the
+; castles ($6C >= 8) CONTINUE only (string 4, cursor forced to $B7).
 L85E2:  lda     #$00                            ; 85E2 A9 00                    ..
         sta     $69                             ; 85E4 85 69                    .i
         lda     #$02                            ; 85E6 A9 02                    ..
@@ -903,6 +970,8 @@ L864B:  jsr     read_controllers                           ; 864B 20 E5 C2      
         jmp     L8590                           ; 8657 4C 90 85                 L..
 
 ; ----------------------------------------------------------------------------
+; --- L865A: refill all owned weapon energy: any $B0-$BC entry with bit 7
+; set (owned) is topped up to $9C (owned + 28 units).
 L865A:  ldy     #$0C                            ; 865A A0 0C                    ..
 L865C:  lda     $B0,y                           ; 865C B9 B0 00                 ...
         bpl     L8666                           ; 865F 10 05                    ..
@@ -913,6 +982,9 @@ L8666:  dey                                     ; 8666 88                       
         rts                                     ; 8669 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L866A: common menu screen setup: fade/clear/reset, mirroring, menu
+; pseudo-stage $26=$10 (alt $27=$0F), draw screen $23=$01 (password grid
+; backdrop), palette set $72, rendering back on.
 L866A:  jsr     palette_fade_out                           ; 866A 20 F1 C3                  ..
         jsr     scroll_irq_reset                           ; 866D 20 B8 C3                  ..
         jsr     entity_clear_all                           ; 8670 20 9D C3                  ..
@@ -940,6 +1012,12 @@ L866A:  jsr     palette_fade_out                           ; 866A 20 F1 C3      
         jmp     enable_rendering                           ; 86A8 4C DB C2                 L..
 
 ; ----------------------------------------------------------------------------
+; --- L86AB: PASSWORD VALIDATION. Count the 16 dot sprites: exactly 6
+; visible, 3 of them red (tile $8B) and 3 gray ($8C) or fail. For each of
+; the 3 red and 3 gray dot groups (base L90E0, group sizes L90E3), find
+; the dot's cell in the group's cell list (L90E4 straight / L90FB shifted
+; row) — the position encodes 3 bits; the three groups assemble into
+; $6E (bosses beaten, red) and $6D (items, gray). Failure -> L878E.
 L86AB:  ldy     #$10                            ; 86AB A0 10                    ..
         lda     #$00                            ; 86AD A9 00                    ..
         sta     L0000                           ; 86AF 85 00                    ..
@@ -1016,6 +1094,10 @@ L872F:  ldy     L0000                           ; 872F A4 00                    
         lda     #$28                            ; 873F A9 28                    .(
         jsr     queue_sound                           ; 8741 20 5D EC                  ].
         ldy     #$06                            ; 8744 A0 06                    ..
+; --- L8746: password accepted: shift the 3-bit group values into place,
+; grant the matching weapons (bit -> weapon ids via L9111/L9112, energy
+; $9C), latch $67 = $6E, and Beat ($BC) if $6D == $FF; then straight to
+; stage select.
 L8746:  asl     L0004                           ; 8746 06 04                    ..
         asl     $07                             ; 8748 06 07                    ..
         cpy     #$04                            ; 874A C0 04                    ..
@@ -1054,6 +1136,9 @@ L8775:  iny                                     ; 8775 C8                       
 L878B:  jmp     L80E1                           ; 878B 4C E1 80                 L..
 
 ; ----------------------------------------------------------------------------
+; --- L878E: password rejected: error buzz ($2E), “PASSWORD ERROR”
+; (string 1), blink the dots until a button, restore banner (string 0),
+; back to the entry loop.
 L878E:  lda     #$2E                            ; 878E A9 2E                    ..
         jsr     queue_sound                           ; 8790 20 5D EC                  ].
         ldx     #$01                            ; 8793 A2 01                    ..
@@ -1073,6 +1158,10 @@ L8798:  lda     #$73                            ; 8798 A9 73                    
         jmp     L83D0                           ; 87B6 4C D0 83                 L..
 
 ; ----------------------------------------------------------------------------
+; --- L87B9: draw the password for the current $6E/$6D: split each into
+; three 3-bit groups (inverse of L86AB), place a red dot at each group's
+; L90E4 cell and a gray dot at its L90FB (or L90E4) cell — red and gray
+; dots colliding on one cell use the shifted-row variant to coexist.
 L87B9:  lda     $6E                             ; 87B9 A5 6E                    .n
         sta     L0004                           ; 87BB 85 04                    ..
         sta     $05                             ; 87BD 85 05                    ..
@@ -1145,6 +1234,9 @@ L882C:  tay                                     ; 882C A8                       
         rts                                     ; 8849 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L884A: write prompt string X (offsets L9073, text L9078) into the
+; $0780 nametable buffer. 0 blank banner / 1 PASSWORD ERROR / 2 password
+; banner / 3 STAGE SELECT+CONTINUE / 4 CONTINUE.
 L884A:  ldy     L9073,x                         ; 884A BC 73 90                 .s.
         ldx     #$00                            ; 884D A2 00                    ..
 L884F:  lda     L9078,y                         ; 884F B9 78 90                 .x.
@@ -1158,6 +1250,9 @@ L885D:  sta     $19                             ; 885D 85 19                    
         rts                                     ; 885F 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L8860: STAGE CLEAR ($30=$10, arrives with $69/no-respawn cleared).
+; $6C < $08 robot master -> weapon get; $08-$0A -> Proto castle map;
+; $0B -> Proto-4 escape cutscene (L9331); $0C+ -> Wily castle map.
 L8860:  lda     #$00                            ; 8860 A9 00                    ..
         sta     $95                             ; 8862 85 95                    ..
         lda     $6C                             ; 8864 A5 6C                    .l
@@ -1176,6 +1271,8 @@ L8875:  jmp     L92CD                           ; 8875 4C CD 92                 
 L8878:  jmp     L9331                           ; 8878 4C 31 93                 L1.
 
 ; ----------------------------------------------------------------------------
+; --- L887B: WEAPON GET. Repeat visit (bit already in $67) skips straight
+; back to stage select. Otherwise latch $67 = $6E and run the ceremony:
 L887B:  ldy     $6C                             ; 887B A4 6C                    .l
         lda     $F2B2,y                         ; 887D B9 B2 F2                 ...
         and     $67                             ; 8880 25 67                    %g
@@ -1183,6 +1280,9 @@ L887B:  ldy     $6C                             ; 887B A4 6C                    
         jmp     L80E1                           ; 8884 4C E1 80                 L..
 
 ; ----------------------------------------------------------------------------
+; --- L8887: weapon-get screen ($23=$03/$04): Mega Man poses as menu actor
+; type $1B over the starfield; scroll crawls up 3px/frame ($FA/$9B);
+; weapon-get music ($14).
 L8887:  lda     $6E                             ; 8887 A5 6E                    .n
         sta     $67                             ; 8889 85 67                    .g
         jsr     palette_fade_out                           ; 888B 20 F1 C3                  ..
@@ -1233,6 +1333,12 @@ L8887:  lda     $6E                             ; 8887 A5 6E                    
         lda     #$14                            ; 88F9 A9 14                    ..
         jsr     queue_sound_param                           ; 88FB 20 5B EC                  [.
         jsr     palette_fade_in                           ; 88FE 20 EB C3                  ..
+; --- L8901: crawl the scroll to rest, dim the backdrop palette rows in
+; 4 steps, then type the “YOU GOT ...” text: rows lit up from L8ED7
+; palette + L8EFB, then the per-stage string (L8EFF offset into L8F07;
+; $5C = move to nametable address, ‘.’ = done) one letter per 8 frames.
+; At the terminator, grant the weapon(s) L8F08/L8F09 (energy $9C), wait
+; $B4 frames, and fall into the password display screen (L853B).
 L8901:  inc     $95                             ; 8901 E6 95                    ..
         dec     $FA                             ; 8903 C6 FA                    ..
         dec     $FA                             ; 8905 C6 FA                    ..
@@ -1352,6 +1458,9 @@ L89F4:  lda     #$B4                            ; 89F4 A9 B4                    
         jmp     L853B                           ; 89F9 4C 3B 85                 L;.
 
 ; ----------------------------------------------------------------------------
+; --- L89FC: palette set loader: record at L8B74+Y = 6 CHR banks for
+; $EA-$EF + 32 palette bytes into $0620 (sets $4C title / $26 stage
+; select / $72 password / $98 weapon get).
 L89FC:  lda     L8B74,y                         ; 89FC B9 74 8B                 .t.
         sta     $EA                             ; 89FF 85 EA                    ..
         lda     L8B75,y                         ; 8A01 B9 75 8B                 .u.
@@ -1374,6 +1483,8 @@ L8A1C:  lda     L8B7A,y                         ; 8A1C B9 7A 8B                 
         rts                                     ; 8A28 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L8A29: copy A bytes of OAM sprite data from L8C96+Y to $0200
+; ($00 title menu cursor+text, $10 stage select mugshot sprites).
 L8A29:  sta     L0000                           ; 8A29 85 00                    ..
         ldx     #$00                            ; 8A2B A2 00                    ..
 L8A2D:  lda     L8C96,y                         ; 8A2D B9 96 8C                 ...
@@ -1385,6 +1496,8 @@ L8A2D:  lda     L8C96,y                         ; 8A2D B9 96 8C                 
         rts                                     ; 8A39 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L8A3A: init the drifting starfield: 16 sprites from L8FE0 into
+; $02C0, star CHR bank into $ED.
 L8A3A:  ldy     #$3F                            ; 8A3A A0 3F                    .?
 L8A3C:  lda     L8FE0,y                         ; 8A3C B9 E0 8F                 ...
         sta     $02C0,y                         ; 8A3F 99 C0 02                 ...
@@ -1395,6 +1508,9 @@ L8A3C:  lda     L8FE0,y                         ; 8A3C B9 E0 8F                 
         rts                                     ; 8A49 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L8A4A: starfield tick: stars drift down-left (first 8 at double
+; speed), wrap at Y=$F0, then render via render_tick_menu (OAM $00-$BF
+; rebuilt, starfield sprites at $02C0+ persist).
 L8A4A:  ldx     #$3C                            ; 8A4A A2 3C                    .<
 L8A4C:  dec     $02C3,x                         ; 8A4C DE C3 02                 ...
         inc     $02C0,x                         ; 8A4F FE C0 02                 ...
@@ -1420,6 +1536,7 @@ L8A74:  dex                                     ; 8A74 CA                       
         jmp     LF391                           ; 8A7A 4C 91 F3                 L..
 
 ; ----------------------------------------------------------------------------
+; --- L8A7D: run the starfield for A frames (X/Y preserved).
 L8A7D:  sta     $08                             ; 8A7D 85 08                    ..
         stx     $09                             ; 8A7F 86 09                    ..
         sty     $0A                             ; 8A81 84 0A                    ..
@@ -1433,6 +1550,9 @@ L8A83:  lda     #$00                            ; 8A83 A9 00                    
         rts                                     ; 8A93 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L8A94: stage select: for each beaten boss (bit in $6E) blank his
+; portrait — 4 rows of $07 tiles via the L8E52 template at nametable
+; address L8E6F, and hide his sprites (L8E7F start / L8E80 count).
 L8A94:  ldy     #$1C                            ; 8A94 A0 1C                    ..
 L8A96:  lda     L8E52,y                         ; 8A96 B9 52 8E                 .R.
         sta     $0780,y                         ; 8A99 99 80 07                 ...
@@ -1477,6 +1597,9 @@ L8AEA:  dec     $01                             ; 8AEA C6 01                    
         rts                                     ; 8AF0 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L8AF1: all 8 bosses beaten: flash the screen 16 times, then draw
+; the castle door in the center cell (nametable text L8E8F + sprites
+; L8EB1 at $0220).
 L8AF1:  lda     $6E                             ; 8AF1 A5 6E                    .n
         cmp     #$FF                            ; 8AF3 C9 FF                    ..
         bne     L8B2D                           ; 8AF5 D0 36                    .6
@@ -1508,6 +1631,9 @@ L8B21:  lda     L8EB1,y                         ; 8B21 B9 B1 8E                 
 L8B2D:  rts                                     ; 8B2D 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L8B2E: enlarge the picked boss's portrait: rebuild the center cell
+; frame rows from the L8E52 template + L8ED1 corner tiles (3 strips at
+; $0780/$079C/$07B8).
 L8B2E:  ldy     #$1C                            ; 8B2E A0 1C                    ..
 L8B30:  lda     L8E52,y                         ; 8B30 B9 52 8E                 .R.
         sta     $0780,y                         ; 8B33 99 80 07                 ...
@@ -1542,6 +1668,35 @@ L8B43:  lda     L8ED1,y                         ; 8B43 B9 D1 8E                 
         rts                                     ; 8B73 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; MENU DATA — $8B74-$91C8
+;   $8B74 palette set records for L89FC (Y-indexed: 6 CHR banks + 32 pal
+;         bytes; $4C title, $26 stage select, $72 password, $98 weapon get)
+;   $8C32 password-screen palette, $8C42 stage-select flash row
+;   $8C4A per-stage lit palette rows (8 bytes * stage) for the boss intro
+;   $8C8A/$8C90 palette column-wipe delay/threshold pairs
+;   $8C96 OAM blocks for L8A29 (+$00 title menu, +$10 stage select)
+;   $8D8A/$8D8D stage-select cursor pixel origins (X cols / Y rows)
+;   $8D90/$8D92 cursor step/wraparound pairs, $8D94/$8D9C cursor sprite
+;         offsets (8 sprites), $8DA4 grid -> stage id (center = $08)
+;   $8DB3 boss menu-actor sub_types, $8DBB pose-done anim phase,
+;   $8DC3 pose flag strobe, $8DCB name-typing header, $8DD0 boss names
+;         (16 bytes/stage, $20 = skip)
+;   $8E50 stage-select Mega Man sub_types, $8E52 blank-strip template,
+;   $8E6F portrait nametable addrs, $8E7F/$8E80 portrait sprite ranges
+;   $8E8F/$8EB1 castle door text + sprites, $8ED1 big-frame corner tiles
+;   $8ED7 weapon-get palette rows (+$6C*4), $8EFB letter palette,
+;   $8EFF/$8F07 “YOU GOT ...” strings ($5C = addr escape, ‘.’ = end,
+;         then L8F08/L8F09 weapon ids), $8FDB typing header
+;   $8FE0 starfield OAM, $9024 password cursor OAM
+;   $9034-$9071 password cursor/grid tables (L9063/L9069 cell pixel
+;         coords, L906F/L9071 red/gray dot tiles)
+;   $9073/$9078 prompt strings, $90E0-$9122 password encode/decode
+;         tables (groups, cell lists, dot pixel coords), $9111/$9112
+;         password bit -> weapon grants
+;   $9169 checkpoints: per stage 2 x 3 bytes (screen, section, spawn
+;         latch) — see L859C
+; =============================================================================
 L8B74:  .byte   $C4                             ; 8B74 C4                       .
 L8B75:  .byte   $C6                             ; 8B75 C6                       .
 L8B76:  brk                                     ; 8B76 00                       .
@@ -2654,6 +2809,8 @@ L91A5:  asl     L0F07                           ; 91A5 0E 07 0F                 
         brk                                     ; 91C6 00                       .
         brk                                     ; 91C7 00                       .
         brk                                     ; 91C8 00                       .
+; --- L91C9: copyright screen (boot): “CAPCOM CO.,LTD.” / license text
+; from L9213, palette L9262, shown $78 frames.
 L91C9:  jsr     palette_fade_out                           ; 91C9 20 F1 C3                  ..
         jsr     entity_clear_all                           ; 91CC 20 9D C3                  ..
         jsr     oam_clear                           ; 91CF 20 8F C3                  ..
@@ -2734,6 +2891,12 @@ L9262:  .byte   $0F                             ; 9262 0F                       
         jsr     L0F0F                           ; 926B 20 0F 0F                  ..
         .byte   $0F                             ; 926E 0F                       .
         jsr     L0F0F                           ; 926F 20 0F 0F                  ..
+; --- L9272: PROTO CASTLE MAP. Castle exterior ($23=$01, palette record
+; L9822+$00), entrance flash + fanfare (L965D), then $26=$6C=$08 and the
+; approach path: one segment per cleared stage (bits of $6F low nibble)
+; drawn instantly via L97A3 — each also inc $26/$6C to the next stage —
+; then the newest segment animated dot-by-dot (L97EA). Returns with $26 =
+; next castle stage for stage_load. Music $0F.
 L9272:  jsr     palette_fade_out                           ; 9272 20 F1 C3                  ..
         jsr     oam_clear                           ; 9275 20 8F C3                  ..
         jsr     scroll_irq_reset                           ; 9278 20 B8 C3                  ..
@@ -2772,6 +2935,9 @@ L9272:  jsr     palette_fade_out                           ; 9272 20 F1 C3      
         jmp     L9614                           ; 92CA 4C 14 96                 L..
 
 ; ----------------------------------------------------------------------------
+; --- L92CD: WILY CASTLE MAP (skull castle, $23=$00, palette record +$12,
+; sprites L985E block $20). Same scheme from $26=$6C=$0C using the $6F
+; high nibble. Music $10. L92FD is the entry used by the L9331 cutscene.
 L92CD:  jsr     palette_fade_out                           ; 92CD 20 F1 C3                  ..
         jsr     oam_clear                           ; 92D0 20 8F C3                  ..
         jsr     scroll_irq_reset                           ; 92D3 20 B8 C3                  ..
@@ -2816,6 +2982,15 @@ L92FD:  lda     #$10                            ; 92FD A9 10                    
         jmp     L9614                           ; 932E 4C 14 96                 L..
 
 ; ----------------------------------------------------------------------------
+; --- L9331: PROTO-4 ESCAPE CUTSCENE ($6C=$0B, after Dark Man 4). On the
+; darkened castle screen ($23=$06 via column loader LDB23) three dialog
+; pages run in the message window (L96DB teletype + L976F frame). Then
+; the castle screen is redrawn and Wily's escape plays out with menu
+; actors: the saucer stack (slots 1-3, kept aligned by L959D) emerges
+; (sub $5D drops in), hovers $B4 frames, dips, then flies the scripted
+; L9935 path (speed/dir/frames/shape records, morphing to sub $60 at the
+; end) while the castle quakes (L95B6) and the palette dims (L95D8);
+; when the script ends the scene chains into the Wily castle map (L92FD).
 L9331:  jsr     L96BB                           ; 9331 20 BB 96                  ..
         sty     $18                             ; 9334 84 18                    ..
         lda     #$B4                            ; 9336 A9 B4                    ..
@@ -3074,6 +3249,8 @@ L958A:  ldy     #$12                            ; 958A A0 12                    
         jmp     L92FD                           ; 959A 4C FD 92                 L..
 
 ; ----------------------------------------------------------------------------
+; --- L959D: sync the saucer's two shadow slots: copy slot 3 X to slots
+; 1/2 and stack their Y positions 4/20 px above it.
 L959D:  lda     $0333                           ; 959D AD 33 03                 .3.
         sta     $0331                           ; 95A0 8D 31 03                 .1.
         sta     $0332                           ; 95A3 8D 32 03                 .2.
@@ -3087,6 +3264,8 @@ L959D:  lda     $0333                           ; 959D AD 33 03                 
         rts                                     ; 95B5 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L95B6: quake tick: render frame + rumble sound ($19) every 16
+; frames of $48.
 L95B6:  lda     #$00                            ; 95B6 A9 00                    ..
         sta     $9D                             ; 95B8 85 9D                    ..
         sta     $0572                           ; 95BA 8D 72 05                 .r.
@@ -3100,6 +3279,7 @@ L95BD:  jsr     render_tick_frame                           ; 95BD 20 63 F3     
 L95CD:  rts                                     ; 95CD 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L95CE: A frames of quake.
 L95CE:  sta     $0F                             ; 95CE 85 0F                    ..
 L95D0:  jsr     L95B6                           ; 95D0 20 B6 95                  ..
         dec     $0F                             ; 95D3 C6 0F                    ..
@@ -3107,6 +3287,8 @@ L95D0:  jsr     L95B6                           ; 95D0 20 B6 95                 
         rts                                     ; 95D7 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L95D8: darken the whole palette in 4 steps of $0E (start step $0E,
+; increment $0D), 4 quake frames apart.
 L95D8:  lda     #$04                            ; 95D8 A9 04                    ..
         sta     $0C                             ; 95DA 85 0C                    ..
 L95DC:  ldy     #$1F                            ; 95DC A0 1F                    ..
@@ -3130,6 +3312,8 @@ L95E8:  sta     $0600,y                         ; 95E8 99 00 06                 
         rts                                     ; 9600 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L9601: init the castle-map palette/sprite animator: per-map record
+; ptr from L9B22 (+$6C*2) into $08/$09.
 L9601:  lda     $6C                             ; 9601 A5 6C                    .l
         asl     a                               ; 9603 0A                       .
         tay                                     ; 9604 A8                       .
@@ -3142,6 +3326,9 @@ L9601:  lda     $6C                             ; 9601 A5 6C                    
         rts                                     ; 9613 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L9614: run the map for A frames while cycling the animated sprites:
+; frame index from $9D via the L9B42 sequence table, sprite tile/attr
+; strips from L9B43 -> L9B50 records into $0200+ (torch flames etc.).
 L9614:  sta     $0C                             ; 9614 85 0C                    ..
         stx     $0D                             ; 9616 86 0D                    ..
         sty     $0E                             ; 9618 84 0E                    ..
@@ -3182,6 +3369,8 @@ L9639:  lda     L9B51,x                         ; 9639 BD 51 9B                 
         rts                                     ; 965C 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L965D: castle-arrival flash: 8 screen flashes (BG palette ^= $3F)
+; with fanfare ($17).
 L965D:  lda     #$00                            ; 965D A9 00                    ..
         jsr     LFF24                           ; 965F 20 24 FF                  $.
         lda     #$00                            ; 9662 A9 00                    ..
@@ -3204,6 +3393,8 @@ L9674:  lda     $0610                           ; 9674 AD 10 06                 
         rts                                     ; 9689 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L968A: castle map palette record loader (L9822+Y: 2 CHR banks +
+; 16 BG colors, sprite rows fixed from L9846).
 L968A:  lda     L9822,y                         ; 968A B9 22 98                 .".
         sta     $EA                             ; 968D 85 EA                    ..
         lda     L9823,y                         ; 968F B9 23 98                 .#.
@@ -3228,6 +3419,7 @@ L969A:  lda     L9824,y                         ; 969A B9 24 98                 
         rts                                     ; 96BA 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L96BB: load the 8-color row L9856 (dialog/dark rows) into $0610/$0630.
 L96BB:  ldy     #$07                            ; 96BB A0 07                    ..
 L96BD:  lda     L9856,y                         ; 96BD B9 56 98                 .V.
         sta     $0610,y                         ; 96C0 99 10 06                 ...
@@ -3237,6 +3429,7 @@ L96BD:  lda     L9856,y                         ; 96BD B9 56 98                 
         rts                                     ; 96C9 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L96CA: copy A bytes of OAM data from L985E+Y to $0200.
 L96CA:  sta     L0000                           ; 96CA 85 00                    ..
         ldx     #$00                            ; 96CC A2 00                    ..
 L96CE:  lda     L985E,y                         ; 96CE B9 5E 98                 .^.
@@ -3248,6 +3441,10 @@ L96CE:  lda     L985E,y                         ; 96CE B9 5E 98                 
         rts                                     ; 96DA 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L96DB: teletype dialog writer, page Y (ptrs L9B7A/L9B7D): chars
+; into the message window at PPU $28E4+, one per 8 frames; $DE takes a
+; second glyph byte, $00 = skip a column, $FE = next line (+$40),
+; $FF = end of page.
 L96DB:  lda     #$28                            ; 96DB A9 28                    .(
         ldx     #$E4                            ; 96DD A2 E4                    ..
         sta     $0780                           ; 96DF 8D 80 07                 ...
@@ -3306,6 +3503,7 @@ L973B:  jsr     L9769                           ; 973B 20 69 97                 
 L9753:  rts                                     ; 9753 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L9754: run the scene A frames (render_tick_frame, Y preserved).
 L9754:  sty     $0B                             ; 9754 84 0B                    ..
         sta     $0A                             ; 9756 85 0A                    ..
 L9758:  lda     #$00                            ; 9758 A9 00                    ..
@@ -3324,6 +3522,7 @@ L9769:  iny                                     ; 9769 C8                       
         rts                                     ; 976E 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L976F: draw the message window frame (L98DA rows + corner fixups).
 L976F:  ldy     #$5B                            ; 976F A0 5B                    .[
 L9771:  lda     L98DA,y                         ; 9771 B9 DA 98                 ...
         sta     $0780,y                         ; 9774 99 80 07                 ...
@@ -3348,6 +3547,10 @@ L9771:  lda     L98DA,y                         ; 9771 B9 DA 98                 
         rts                                     ; 97A2 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L97A3: draw castle-path progress: A = cleared-stage bitmask; for
+; each set bit draw path segment $11's sprite run (ptr L99D6/L99DE:
+; count + OAM bytes appended at $9F cursor) and inc $26/$6C to the next
+; stage; then light the path palette rows (L98B6).
 L97A3:  sta     $10                             ; 97A3 85 10                    ..
         sty     $11                             ; 97A5 84 11                    ..
 L97A7:  lda     L99D6,y                         ; 97A7 B9 D6 99                 ...
@@ -3385,6 +3588,8 @@ L97DB:  lda     L98B6,y                         ; 97DB B9 B6 98                 
         rts                                     ; 97E9 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- L97EA: animate the next path segment (index $11): its sprites appear
+; 4 at a time with the step sound ($18), 4 animated frames between bursts.
 L97EA:  ldy     $11                             ; 97EA A4 11                    ..
         lda     L99D6,y                         ; 97EC B9 D6 99                 ...
         sta     $02                             ; 97EF 85 02                    ..
@@ -3416,6 +3621,21 @@ L980A:  lda     ($02),y                         ; 980A B1 02                    
 L9821:  rts                                     ; 9821 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; CASTLE MAP DATA — $9822-$9FFF
+;   $9822 palette records for L968A (+$00 Proto castle, +$12 Wily skull)
+;   $9846/$9856 fixed sprite/dialog palette rows
+;   $985E OAM blocks for L96CA (+$00 Proto castle base, +$20 skull)
+;   $98B6 lit path palette (32 bytes), $98D5/$98D7 saucer actor types/Y
+;   $98DA message window frame rows
+;   $9935 saucer flight script: 4-byte steps (speed preset, dir, frames,
+;         shape), $00 = end
+;   $99D6/$99DE castle path segment sprite-run pointers, runs follow
+;   $9B22 map animator records (L9601): $9B42 sequence + $9B43/$9B50
+;         sprite strip records
+;   $9B7A/$9B7D dialog page pointers, ASCII pages follow ($9B80-$9E05)
+;   $9E06-$9FFF castle map screen patches / sprite runs for the cutscene
+; =============================================================================
 L9822:  cld                                     ; 9822 D8                       .
 L9823:  .byte   $DA                             ; 9823 DA                       .
 L9824:  .byte   $0F                             ; 9824 0F                       .

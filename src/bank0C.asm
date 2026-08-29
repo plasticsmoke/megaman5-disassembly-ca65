@@ -7,8 +7,18 @@
 .segment "BANK0C"
 
 ; =============================================================================
-; BANK $0C (mapped at $A000) — raw da65 disassembly, annotation in progress
-; SKELETON — raw ROM bytes, not yet classified as code or data.
+; BANK $0C (mapped at $A000) — STORY INTRO + WILY 1 STAGE DATA
+;
+; $A000-$A625: the attract-mode story intro, run from the title screen
+; (bank $17:807D calls $A000 with the $17/$0C pair mapped). A scripted
+; slideshow: story text pages, city/lab scenes drawn from the menu
+; pseudo-stage ($26=$10) with menu-actor entities (type $6D/etc.) hopping
+; and pacing through them. Start skips at any wait (LA1D4 checks).
+;
+; $A626-$BFFF: Wily 1 stage data — this IS stage $0C's data bank (mapped
+; at $A000 during play; screen table at $A900 via screen_layout_ptr,
+; metatile strips from $B600+). Format documentation belongs to the
+; stage-data pass with banks $10-$16.
 ; =============================================================================
 L0000           := $0000
 L0002           := $0002
@@ -54,6 +64,12 @@ L8C6C           := $8C6C
 LDAFC           := $DAFC
 LE620           := $E620
 ; ----------------------------------------------------------------------------
+; --- $A000: STORY INTRO entry. Intro music ($0B), then the scene list;
+; each step is draw screen / spawn actors / timed wait, and any nonzero
+; return from a wait means Start was pressed -> abort via LA1C6.
+;   page 0 text -> city scene -> robot parade -> whistler close-up ->
+;   page 1 -> city again -> highlights blacked out -> page 2 -> attack
+;   scene -> lab scene (pacing actor) -> finale card -> long fade, rts.
         lda     #$0B                            ; A000 A9 0B                    ..
         jsr     queue_sound_param                           ; A002 20 5B EC                  [.
         lda     #$00                            ; A005 A9 00                    ..
@@ -71,6 +87,8 @@ LA014:  jsr     LA2F7                           ; A014 20 F7 A2                 
         jmp     LA1C6                           ; A01E 4C C6 A1                 L..
 
 ; ----------------------------------------------------------------------------
+; --- LA021: robot parade: palette record 4, 9 actors from record $01
+; (the robot masters' rampage), hop loop LA315 until all despawn.
 LA021:  jsr     palette_fade_out                           ; A021 20 F1 C3                  ..
         jsr     oam_clear                           ; A024 20 8F C3                  ..
         lda     #$00                            ; A027 A9 00                    ..
@@ -92,6 +110,8 @@ LA043:  ldx     #$1E                            ; A043 A2 1E                    
         jmp     LA1C6                           ; A04A 4C C6 A1                 L..
 
 ; ----------------------------------------------------------------------------
+; --- LA04D: whistler close-up: screen $01, one actor (record $0A);
+; LA516 blows the whistle ($2B) on each anim phase $0C.
 LA04D:  jsr     palette_fade_out                           ; A04D 20 F1 C3                  ..
         jsr     frame_wait                           ; A050 20 22 FF                  ".
         jsr     disable_rendering                           ; A053 20 D1 C2                  ..
@@ -126,6 +146,8 @@ LA089:  jsr     LA2F7                           ; A089 20 F7 A2                 
         jmp     LA1C6                           ; A093 4C C6 A1                 L..
 
 ; ----------------------------------------------------------------------------
+; --- LA096: black out the palette highlight entries (5/7/B/F of both
+; rows) and hold the darkened city $B4 frames.
 LA096:  lda     #$0F                            ; A096 A9 0F                    ..
         sta     $0605                           ; A098 8D 05 06                 ...
         sta     $0625                           ; A09B 8D 25 06                 .%.
@@ -144,6 +166,9 @@ LA0BA:  .byte   $03                             ; A0BA 03                       
         jmp     LA1C6                           ; A0BB 4C C6 A1                 L..
 
 ; ----------------------------------------------------------------------------
+; --- LA0BE: story page 2, then the attack scene: screen $00, sprite
+; palette row $1F, 3 actors from record $0B; slot 2 charges in from the
+; left under gravity (LA21A script).
 LA0BE:  lda     #$02                            ; A0BE A9 02                    ..
         jsr     LA53F                           ; A0C0 20 3F A5                  ?.
         ldx     #$78                            ; A0C3 A2 78                    .x
@@ -191,6 +216,8 @@ LA11A:  ldx     #$1E                            ; A11A A2 1E                    
         jmp     LA1C6                           ; A121 4C C6 A1                 L..
 
 ; ----------------------------------------------------------------------------
+; --- LA124: lab scene: screen $03, actor record $0E paces — walks $33
+; frames, pauses, turns (dir ^= 3), 3 lengths (LA1E3).
 LA124:  jsr     palette_fade_out                           ; A124 20 F1 C3                  ..
         jsr     frame_wait                           ; A127 20 22 FF                  ".
         jsr     disable_rendering                           ; A12A 20 D1 C2                  ..
@@ -224,6 +251,9 @@ LA124:  jsr     palette_fade_out                           ; A124 20 F1 C3      
         jmp     LA1C6                           ; A172 4C C6 A1                 L..
 
 ; ----------------------------------------------------------------------------
+; --- LA175: finale: palette record 5 over a cleared screen, actor
+; record $11 holds $EC frames, then everything fades and the palette is
+; forced dark ($A9=$10, $27=$0F restored) before returning to the title.
 LA175:  ldx     #$0C                            ; A175 A2 0C                    ..
         jsr     LA50A                           ; A177 20 0A A5                  ..
         beq     LA17F                           ; A17A F0 03                    ..
@@ -263,6 +293,8 @@ LA1A2:  ldx     #$01                            ; A1A2 A2 01                    
         rts                                     ; A1C5 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- LA1C6: abort (Start pressed): fade, clear sprites/entities,
+; restore $27=$0F, back to the title loop.
 LA1C6:  jsr     palette_fade_out                           ; A1C6 20 F1 C3                  ..
         jsr     oam_clear                           ; A1C9 20 8F C3                  ..
         jsr     entity_clear_all                           ; A1CC 20 9D C3                  ..
@@ -271,6 +303,8 @@ LA1C6:  jsr     palette_fade_out                           ; A1C6 20 F1 C3      
         rts                                     ; A1D3 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- LA1D4: scene frame tick: read pads + render; returns NZ if Start
+; was newly pressed.
 LA1D4:  lda     #$01                            ; A1D4 A9 01                    ..
         sta     $9D                             ; A1D6 85 9D                    ..
         jsr     read_controllers                           ; A1D8 20 E5 C2                  ..
@@ -280,6 +314,8 @@ LA1D4:  lda     #$01                            ; A1D4 A9 01                    
         rts                                     ; A1E2 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- LA1E3: pacing-actor animator: move $33 frames, pause $19 frames
+; while facing flips (dir ^= 3), repeat 3 times or until Start.
 LA1E3:  lda     $0499                           ; A1E3 AD 99 04                 ...
         beq     LA1ED                           ; A1E6 F0 05                    ..
         dec     $0499                           ; A1E8 CE 99 04                 ...
@@ -304,6 +340,10 @@ LA20F:  jsr     LA1D4                           ; A20F 20 D4 A1                 
 LA219:  rts                                     ; A219 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- LA21A: attack-scene script: slot 2 bounds in rightward under
+; gravity (floor at Y=$93), morphs to sub $A4 on arrival; slot 1 (sub
+; $17) launches upward off-screen, then re-enters as sub $04 sliding
+; right along Y=$93 until X=$64, ending on sub $01.
 LA21A:  ldx     #$02                            ; A21A A2 02                    ..
         jsr     entity_gravity_collide                           ; A21C 20 B7 E7                  ..
         jsr     entity_move_right_collide                           ; A21F 20 E6 E8                  ..
@@ -397,6 +437,7 @@ LA2E6:  lda     $0331                           ; A2E6 AD 31 03                 
 LA2F6:  rts                                     ; A2F6 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- LA2F7: draw the city scene: screen $02 + palette record 2.
 LA2F7:  jsr     palette_fade_out                           ; A2F7 20 F1 C3                  ..
         jsr     frame_wait                           ; A2FA 20 22 FF                  ".
         jsr     disable_rendering                           ; A2FD 20 D1 C2                  ..
@@ -410,6 +451,9 @@ LA2F7:  jsr     palette_fade_out                           ; A2F7 20 F1 C3      
         jmp     palette_fade_in                           ; A312 4C EB C3                 L..
 
 ; ----------------------------------------------------------------------------
+; --- LA315: hop parade: 9 actors leap on staggered 16-frame cycles
+; (dir from $0480 advanced by the LA501 step table, velocity preset
+; $28), until every slot has despawned or Start.
 LA315:  ldx     #$08                            ; A315 A2 08                    ..
 LA317:  lda     $0468,x                         ; A317 BD 68 04                 .h.
         bne     LA335                           ; A31A D0 19                    ..
@@ -443,6 +487,8 @@ LA335:  dec     $0468,x                         ; A335 DE 68 04                 
 LA363:  rts                                     ; A363 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- LA364: draw intro screen A ($23) via LDAFC ($27=$0B while drawing)
+; and fall through to load palette record A.
 LA364:  sta     $23                             ; A364 85 23                    .#
         lda     #$0B                            ; A366 A9 0B                    ..
         sta     $27                             ; A368 85 27                    .'
@@ -450,6 +496,8 @@ LA364:  sta     $23                             ; A364 85 23                    
         sta     $10                             ; A36C 85 10                    ..
         jsr     LDAFC                           ; A36E 20 FC DA                  ..
         lda     $23                             ; A371 A5 23                    .#
+; --- LA373: palette record loader: LA3FB + A*$12 = 2 CHR banks ($EA/$EB)
+; + 16 BG colors; sprite rows fixed from LA467.
 LA373:  asl     a                               ; A373 0A                       .
         sta     L0000                           ; A374 85 00                    ..
         asl     a                               ; A376 0A                       .
@@ -473,6 +521,7 @@ LA388:  lda     LA3FD,y                         ; A388 B9 FD A3                 
         rts                                     ; A39A 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- LA39B: load 16 sprite-palette bytes from LA467+Y.
 LA39B:  ldx     #$0F                            ; A39B A2 0F                    ..
 LA39D:  lda     LA467,y                         ; A39D B9 67 A4                 .g.
         .byte   $9D                             ; A3A0 9D                       .
@@ -483,6 +532,9 @@ LA3A2:  asl     $88                             ; A3A2 06 88                    
         rts                                     ; A3A7 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- LA3A8: spawn X scene actors from record Y: per-actor type LA4A7,
+; sub_type LA4B9, X LA4CB, Y LA4DD, hop phase LA4EF -> $0480; $0498
+; keeps the record index; all other fields cleared.
 LA3A8:  stx     L0000                           ; A3A8 86 00                    ..
         ldx     #$00                            ; A3AA A2 00                    ..
 LA3AC:  lda     LA4A7,y                         ; A3AC B9 A7 A4                 ...
@@ -517,6 +569,9 @@ LA3AC:  lda     LA4A7,y                         ; A3AC B9 A7 A4                 
         jmp     render_tick_frame                           ; A3F8 4C 63 F3                 Lc.
 
 ; ----------------------------------------------------------------------------
+; --- LA3FB: intro data: palette records (LA373), LA467 sprite rows,
+; LA4A7/LA4B9/LA4CB/LA4DD/LA4EF actor spawn records (LA3A8),
+; LA501 hop-direction step table.
 LA3FB:  .byte   $D4                             ; A3FB D4                       .
 LA3FC:  .byte   $D6                             ; A3FC D6                       .
 LA3FD:  .byte   $0F                             ; A3FD 0F                       .
@@ -707,6 +762,7 @@ LA501:  .byte   $FF                             ; A501 FF                       
         brk                                     ; A505 00                       .
         ora     ($01,x)                         ; A506 01 01                    ..
         ora     ($01,x)                         ; A508 01 01                    ..
+; --- LA50A: wait X frames; returns NZ if Start pressed.
 LA50A:  stx     $0F                             ; A50A 86 0F                    ..
 LA50C:  jsr     LA1D4                           ; A50C 20 D4 A1                  ..
         bne     LA515                           ; A50F D0 04                    ..
@@ -715,6 +771,8 @@ LA50C:  jsr     LA1D4                           ; A50C 20 D4 A1                 
 LA515:  rts                                     ; A515 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- LA516: wait X frames, whistling: each time the actor's anim phase
+; reaches $0C, bump its sub_type and play the whistle ($2B).
 LA516:  stx     $0F                             ; A516 86 0F                    ..
 LA518:  jsr     LA1D4                           ; A518 20 D4 A1                  ..
         bne     LA53E                           ; A51B D0 21                    .!
@@ -737,6 +795,9 @@ LA53A:  dec     $0F                             ; A53A C6 0F                    
 LA53E:  rts                                     ; A53E 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- LA53F: story text page A: full clear to tile $28 on NT $2800,
+; dialog palette LA59C, page text from LA5A3 (offsets LA5A0) flushed in
+; one go, fade in.
 LA53F:  pha                                     ; A53F 48                       H
         jsr     palette_fade_out                           ; A540 20 F1 C3                  ..
         jsr     oam_clear                           ; A543 20 8F C3                  ..
@@ -785,6 +846,8 @@ LA59C:  .byte   $0F                             ; A59C 0F                       
 LA5A0:  brk                                     ; A5A0 00                       .
         .byte   $1A                             ; A5A1 1A                       .
         .byte   $5C                             ; A5A2 5C                       \
+; --- LA5A3: story page text (ASCII), 3 pages, $FF-terminated:
+; "IN THE YEAR 20XX..".
 LA5A3:  and     #$A6                            ; A5A3 29 A6                    ).
         ora     $49,x                           ; A5A5 15 49                    .I
         lsr     $5420                           ; A5A7 4E 20 54                 N T
@@ -858,6 +921,10 @@ LA5CF:  ldx     $13                             ; A5CF A6 13                    
         .byte   $53                             ; A621 53                       S
         rol     $2E2E                           ; A622 2E 2E 2E                 ...
         .byte   $FF                             ; A625 FF                       .
+; =============================================================================
+; WILY 1 STAGE DATA — $A626-$BFFF (stage $0C's data bank; screen table
+; at $A900, metatile strips $B600+; see the stage-data format pass)
+; =============================================================================
         sbc     $C7D1,x                         ; A626 FD D1 C7                 ...
         adc     $FF,x                           ; A629 75 FF                    u.
         eor     $FF,x                           ; A62B 55 FF                    U.
