@@ -7,8 +7,14 @@
 .segment "BANK0E"
 
 ; =============================================================================
-; BANK $0E (mapped at $A000) — raw da65 disassembly, annotation in progress
-; SKELETON — raw ROM bytes, not yet classified as code or data.
+; BANK $0E (mapped at $A000) — ENDING SEQUENCE + WILY 3 STAGE DATA
+;
+; $A000-$A8FF: the ending cutscene program ($30=$23, entered from the
+; game-flow hub with the $17/$0E pair mapped — bank $17 stays at $8000,
+; so the roll-call reuses its boss-intro tables directly, and credits
+; text is fetched by briefly mapping bank $0F at $8000).
+; $A900-$BFFF: Wily 3 stage data (stage $0E's data bank: screen table
+; at $A900; boss-rush screens $08-$0F) — stage-data format pass.
 ; =============================================================================
 L0000           := $0000
 L0008           := $0008
@@ -78,17 +84,19 @@ LF36F           := $F36F
 LFF24           := $FF24
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; ENDING SEQUENCE — $0E:A000 (jumped to by the game-flow hub, bank
-; $17, when the player reaches state $23 after the Wily Capsule). A
-; linear cutscene program, not entity AI: stops the music ($F0),
-; fades, and steps through the ending tableaux using pseudo-stage
-; nametables (banks $10/$0F at $A000 via LDAFC loads), IRQ split
-; modes 2/3/5, OAM tableaux copied straight into $0200 (e.g. LA57C),
-; palette programs (LA486), timed waits (LA47C / $FF24), and the
-; ending-cast spawner at $A490 (type table LA51E: effect actors) for
-; the castle-collapse and epilogue scenes. Beat-by-beat annotation
-; belongs with the menu/cutscene pass — structure noted here so the
-; stage-AI survey is complete.
+; ENDING SEQUENCE — $A000 (from bank $17:$8014 on $30=$23). Beats:
+;  1. $A000 aftermath scene: menu pseudo-stage screens $02/$03, palette
+;     program 0, cast from LA51E records; IRQ mode $05 split at $2200,
+;     camera starts at scroll Y $EF; Mega Man walks a scripted path
+;     (LA432) while the view pans up, a second actor floats away
+;     (LA3DC), and the palette steps to black (LA3FF) — nightfall.
+;  2. $A077 roll-call backdrop: screen $05 (alt $27=$0F) + starfield
+;     tableau LA57C (star CHR into $ED), header text LA56A, ending
+;     music ($0C), then LA2A3: the eight-boss roll call.
+;  3. $A0F1 credits flight: both nametables cleared, Mega-Man-on-Beat
+;     tableau LA5C0 + palette LA6C4, then LA1AA scrolls 24 credit
+;     pages past; finally LA152 types THE END as the flyer crosses,
+;     and LA14C spins forever (the game halts here).
 ; =============================================================================
         lda     #$F0                            ; A000 A9 F0                    ..
         jsr     queue_sound_param                           ; A002 20 5B EC                  [.
@@ -232,6 +240,10 @@ LA14C:  jsr     LA3BB                           ; A14C 20 BB A3                 
         jmp     LA14C                           ; A14F 4C 4C A1                 LL.
 
 ; ----------------------------------------------------------------------------
+; --- LA152: THE END. Slot 0 (spawned from cast record 6) glides right
+; (xvel 1); as its X crosses each LA738 mark, the next chunk of the
+; "THE END" logo is written (PPU addr lo LA73E, tile LA744, base row
+; $2940). At X=$58 the flyer morphs to sub $9C and drops behind the BG.
 LA152:  lda     #$29                            ; A152 A9 29                    .)
         sta     $0780                           ; A154 8D 80 07                 ...
         lda     #$40                            ; A157 A9 40                    .@
@@ -271,6 +283,15 @@ LA190:  jsr     LA3BB                           ; A190 20 BB A3                 
         rts                                     ; A1A9 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- LA1AA: CREDITS SCROLLER (runs until 24 pages have passed and the
+; scroll rests at $D0). Scroll Y $FA advances 1px every other frame,
+; toggling the nametable at $F0; every 8px the row entering from the
+; bottom is rebuilt: blank row template LA6D4, row PPU address from
+; LA6F8/LA718 (NT bit folded in via $FD), and when the row counter hits
+; the next LA6AB threshold the next credits page is typed into it —
+; bank $0F is mapped at $8000 for the text (ptr tables $0F:8000/$8028,
+; page index $6C), then bank $17 restored. Scroller rows are column offset +
+; length + chars ($20 = keep blank).
 LA1AA:  lda     $9D                             ; A1AA A5 9D                    ..
         and     #$01                            ; A1AC 29 01                    ).
         beq     LA1B3                           ; A1AE F0 03                    ..
@@ -358,6 +379,9 @@ LA250:  jmp     LA1AA                           ; A250 4C AA A1                 
 LA253:  rts                                     ; A253 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- LA254: type credits page Y from bank $0F (mapped at $8000 in
+; place of $17, restored at the end): records of PPU addr hi/lo + text
+; ($00 = next record, $FF = end of page), one char per 5 frames.
 LA254:  lda     #$0F                            ; A254 A9 0F                    ..
         sta     $F5                             ; A256 85 F5                    ..
         jsr     bank_load_shadow                           ; A258 20 43 FF                  C.
@@ -396,6 +420,13 @@ LA278:  lda     (L0008),y                       ; A278 B1 08                    
 ; ----------------------------------------------------------------------------
 LA2A0:  iny                                     ; A2A0 C8                       .
         bne     LA267                           ; A2A1 D0 C4                    ..
+; --- LA2A3: BOSS ROLL CALL, one boss per $6C = 0-7. Each teleports in
+; as a menu actor (cast record 5) and replays his stage-select intro
+; using bank $17's tables directly at $8000 ($8DB3 sub_types, $8DC3
+; pose strobe, $8DBB done phase, $8C42/$8C4A lit palette rows; Charge
+; Man's steam companion included), then his credits page — DWN. number,
+; name, and the fan designer credit — is typed via LA254, $B4 frames,
+; sprite rows fade (LA50E), next boss.
 LA2A3:  ldx     #$00                            ; A2A3 A2 00                    ..
         ldy     #$05                            ; A2A5 A0 05                    ..
         jsr     LA4A3                           ; A2A7 20 A3 A4                  ..
@@ -496,6 +527,9 @@ LA36D:  lda     LA50E,y                         ; A36D B9 0E A5                 
         jmp     LA2A3                           ; A380 4C A3 A2                 L..
 
 ; ----------------------------------------------------------------------------
+; --- LA383: after the bosses, pages 8-$0F (staff credits) are typed on
+; the same backdrop, $B4 frames each, separated by the LA646 wipe
+; block, until $6C reaches $10; back to the caller for the flight scene.
 LA383:  ldy     $6C                             ; A383 A4 6C                    .l
         jsr     LA254                           ; A385 20 54 A2                  T.
         lda     #$B4                            ; A388 A9 B4                    ..
@@ -514,6 +548,8 @@ LA38F:  lda     LA646,y                         ; A38F B9 46 A6                 
         rts                                     ; A3A5 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- LA3A6: drift the tableau sprites left (first 8 at 2px/frame —
+; cloud parallax), OAM $0200-$0243.
 LA3A6:  ldx     #$00                            ; A3A6 A2 00                    ..
 LA3A8:  dec     $0203,x                         ; A3A8 DE 03 02                 ...
         cpx     #$20                            ; A3AB E0 20                    . 
@@ -528,6 +564,8 @@ LA3B2:  inx                                     ; A3B2 E8                       
         rts                                     ; A3BA 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- LA3BB / LA3BD: run the scene 1 / A frames (drift + render via
+; render_tick_hud, which preserves the tableau OAM).
 LA3BB:  lda     #$01                            ; A3BB A9 01                    ..
 LA3BD:  sta     $0F                             ; A3BD 85 0F                    ..
 LA3BF:  jsr     LA3A6                           ; A3BF 20 A6 A3                  ..
@@ -537,6 +575,8 @@ LA3BF:  jsr     LA3A6                           ; A3BF 20 A6 A3                 
         rts                                     ; A3C9 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- LA3CA: same as LA3BD but also pins the roll-call actor's anim
+; hold ($0570 = 0) each frame.
 LA3CA:  sta     $0F                             ; A3CA 85 0F                    ..
 LA3CC:  lda     #$00                            ; A3CC A9 00                    ..
         sta     $0570                           ; A3CE 8D 70 05                 .p.
@@ -547,6 +587,8 @@ LA3CC:  lda     #$00                            ; A3CC A9 00                    
         rts                                     ; A3DB 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- LA3DC: scene 1: slot 1 floats upward ($40 subpixels/frame) until
+; it leaves the screen (Y=$F0) and despawns.
 LA3DC:  lda     $0361                           ; A3DC AD 61 03                 .a.
         clc                                     ; A3DF 18                       .
         adc     #$40                            ; A3E0 69 40                    i@
@@ -564,6 +606,8 @@ LA3F6:  jsr     render_tick_frame                           ; A3F6 20 63 F3     
         rts                                     ; A3FE 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- LA3FF: nightfall: darken all 32 palette entries by $10 every 16
+; frames, 5 steps to black.
 LA3FF:  lda     #$00                            ; A3FF A9 00                    ..
         sta     $9D                             ; A401 85 9D                    ..
         sta     $10                             ; A403 85 10                    ..
@@ -592,6 +636,10 @@ LA426:  inc     $9D                             ; A426 E6 9D                    
         rts                                     ; A431 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- LA432: scene 1 walk script for slot 0: direction/duration steps
+; from LA53A/LA552 (speed preset $38), camera panning up 1px per 4
+; frames toward scroll Y $A0 with a step cue ($2B) every 4px; ends when
+; the walk's move flag ($0390) sets — he has walked off.
 LA432:  ldx     #$00                            ; A432 A2 00                    ..
         lda     $0468                           ; A434 AD 68 04                 .h.
         bne     LA44E                           ; A437 D0 15                    ..
@@ -627,6 +675,7 @@ LA475:  jsr     render_tick_frame                           ; A475 20 63 F3     
 LA47B:  rts                                     ; A47B 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- LA47C: plain A-frame wait (render_tick_frame).
 LA47C:  sta     $0F                             ; A47C 85 0F                    ..
 LA47E:  jsr     render_tick_frame                           ; A47E 20 63 F3                  c.
         dec     $0F                             ; A481 C6 0F                    ..
@@ -634,6 +683,7 @@ LA47E:  jsr     render_tick_frame                           ; A47E 20 63 F3     
         rts                                     ; A485 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- LA486: palette program Y from LA4DA: 2 CHR banks + 32 colors.
 LA486:  lda     LA4DA,y                         ; A486 B9 DA A4                 ...
         sta     $EA                             ; A489 85 EA                    ..
         lda     LA4DB,y                         ; A48B B9 DB A4                 ...
@@ -648,6 +698,8 @@ LA492:  lda     LA4DC,y                         ; A492 B9 DC A4                 
         rts                                     ; A49E 60                       `
 
 ; ----------------------------------------------------------------------------
+; --- LA49F / LA4A3: ending cast spawner — X slots from record Y down:
+; type LA51E / sub_type LA525 / X LA52C / Y LA533, AI vars cleared.
 LA49F:  ldx     #$04                            ; A49F A2 04                    ..
         ldy     #$04                            ; A4A1 A0 04                    ..
 LA4A3:  lda     LA51E,y                         ; A4A3 B9 1E A5                 ...
@@ -673,6 +725,17 @@ LA4A3:  lda     LA51E,y                         ; A4A3 B9 1E A5                 
         rts                                     ; A4D9 60                       `
 
 ; ----------------------------------------------------------------------------
+; =============================================================================
+; ENDING DATA — $A4DA-$A8FF
+;   $A4DA palette programs (LA486), $A50E roll-call sprite fade rows
+;   $A51E-$A539 cast spawn records (type/sub/X/Y, LA4A3)
+;   $A53A/$A552 scene-1 walk script (dirs / durations)
+;   $A56A/$A573 roll-call header text, $A57C starfield tableau OAM
+;   $A5C0 Mega-Man-on-Beat tableau OAM, $A604/$A646 credits wipe blocks
+;   $A6AB per-page row thresholds, $A6C4 flight palette
+;   $A6D4 blank scroll row, $A6F8/$A718 scroll row PPU addresses
+;   $A738/$A73E/$A744 THE END trigger records (X mark / addr / tile)
+; =============================================================================
 LA4DA:  .byte   $E4                             ; A4DA E4                       .
 LA4DB:  .byte   $E6                             ; A4DB E6                       .
 LA4DC:  .byte   $0F                             ; A4DC 0F                       .
@@ -1433,6 +1496,10 @@ LA800:  brk                                     ; A800 00                       
         brk                                     ; A8FD 00                       .
         brk                                     ; A8FE 00                       .
         brk                                     ; A8FF 00                       .
+; =============================================================================
+; WILY 3 STAGE DATA — $A900-$BFFF (stage $0E's data bank; screen table
+; at $A900, boss-rush screens $08-$0F; see the stage-data format pass)
+; =============================================================================
 LA900:  .byte   $02                             ; A900 02                       .
         .byte   $03                             ; A901 03                       .
         .byte   $04                             ; A902 04                       .

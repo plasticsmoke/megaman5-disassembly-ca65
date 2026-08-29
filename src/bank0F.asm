@@ -7,8 +7,19 @@
 .segment "BANK0F"
 
 ; =============================================================================
-; BANK $0F — unclassified (raw dump)
-; SKELETON — raw ROM bytes, not yet classified as code or data.
+; BANK $0F — ENDING CREDITS TEXT + WILY 4 STAGE DATA
+;
+; $8000-$8577 (as mapped at $8000 by the bank $0E ending code): credits
+; text — pointer tables at $8000 (lo) / $8028 (hi), 40 pages. Pages
+; 0-7 are the boss roll-call cards ("DWN.NO-33 GRAVITY MAN DESIGNER
+; YUKIKO MORI", ... — the fan-contest designer credits), 8-$0F the
+; roll-call staff pages, $10-$27 the scrolling credits. Page format:
+; PPU addr hi/lo + chars, $00 = next record, $FF = end (the scroller
+; pages use column offset + length + chars rows). See $0E:A254/$A1AA.
+;
+; Remainder: Wily 4 stage data (stage $0F's data bank, mapped at $A000
+; during play; stage $0F's alternate data bank is $0E) — stage-data
+; format pass.
 ; =============================================================================
     .byte $50,$87,$BE,$F5,$2D,$65,$A0,$DB,$15,$69,$BA,$09,$5A,$A9,$F7,$46   ; $8000
     .byte $99,$A2,$A8,$B9,$C3,$CC,$D1,$DB,$E1,$F2,$FD,$02,$0B,$17,$1C,$21   ; $8010
