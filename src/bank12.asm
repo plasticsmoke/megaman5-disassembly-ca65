@@ -16,7 +16,6 @@
 ;   $8600/$8700 sub_type -> anim descriptor ptr lo/hi
 ; Formats in DATA_REFERENCE.md section 14. Records fill the rest of
 ; the pair.
-; SKELETON — raw ROM bytes, not yet classified as code or data.
 ; =============================================================================
     .byte $62,$62,$77,$8C,$A1,$B8,$CD,$E0,$F7,$0E,$23,$2E,$43,$52,$69,$80   ; $8000
     .byte $99,$B2,$CB,$E4,$FD,$06,$0F,$18,$2D,$3E,$4F,$5C,$71,$86,$9F,$A4   ; $8010

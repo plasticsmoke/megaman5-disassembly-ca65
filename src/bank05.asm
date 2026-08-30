@@ -7,8 +7,8 @@
 .segment "BANK05"
 
 ; =============================================================================
-; BANK $05 (mapped at $A000) — raw da65 disassembly, annotation in progress
-; SKELETON — raw ROM bytes, not yet classified as code or data.
+; BANK $05 (mapped at $A000) — STAGE-GIMMICK DIRECTORS + CHARGE MAN
+; STAGE DATA
 ; Data half (file +$0900 on): stage $05 (Charge Man) stage data —
 ; screen table at $A900 with this bank at $A000; format in
 ; DATA_REFERENCE.md section 11.

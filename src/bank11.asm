@@ -14,7 +14,6 @@
 ; reads while the screen list stays in bank $10. Never mapped
 ; otherwise. Front half ($A000-$A7FF): dense bit table with no known
 ; reader — apparently unused filler.
-; SKELETON — raw ROM bytes, not yet classified as code or data.
 ; =============================================================================
     .byte $FF,$FF,$FF,$FF,$FE,$FF,$FE,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF   ; $A000
     .byte $FF,$FF,$FF,$FF,$FF,$FF,$FB,$FF,$FF,$FF,$FF,$FF,$FB,$FF,$FE,$FF   ; $A010

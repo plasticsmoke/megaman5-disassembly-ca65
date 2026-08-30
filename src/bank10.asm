@@ -15,7 +15,6 @@
 ; $0F, story intro $0B, castle maps $11. Format: DATA_REFERENCE §11.
 ; Front half ($A000-$A7FF): dense bit table with no known reader —
 ; apparently unused filler.
-; SKELETON — raw ROM bytes, not yet classified as code or data.
 ; =============================================================================
     .byte $F7,$FB,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF   ; $A000
     .byte $FF,$FF,$FB,$FF,$FE,$FF,$FF,$FF,$FF,$FF,$FE,$FF,$FF,$FF,$FF,$FF   ; $A010

@@ -7,8 +7,8 @@
 .segment "BANK09"
 
 ; =============================================================================
-; BANK $09 (mapped at $A000) — raw da65 disassembly, annotation in progress
-; SKELETON — raw ROM bytes, not yet classified as code or data.
+; BANK $09 (mapped at $A000) — DARK MAN 1-4 AI + PROTO CASTLE 2 STAGE
+; DATA
 ; Data half (file +$0900 on): stage $09 (Proto castle 2) stage data —
 ; screen table at $A900 with this bank at $A000; format in
 ; DATA_REFERENCE.md section 11.

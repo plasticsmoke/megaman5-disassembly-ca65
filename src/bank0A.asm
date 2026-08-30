@@ -7,8 +7,8 @@
 .segment "BANK0A"
 
 ; =============================================================================
-; BANK $0A (mapped at $A000) — raw da65 disassembly, annotation in progress
-; SKELETON — raw ROM bytes, not yet classified as code or data.
+; BANK $0A (mapped at $A000) — AFTERMATH DIRECTORS, STAGE TRIGGERS +
+; PROTO CASTLE 3 STAGE DATA
 ; Data half (file +$0900 on): stage $0A (Proto castle 3) stage data —
 ; screen table at $A900 with this bank at $A000; format in
 ; DATA_REFERENCE.md section 11.

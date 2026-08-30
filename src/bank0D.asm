@@ -7,8 +7,7 @@
 .segment "BANK0D"
 
 ; =============================================================================
-; BANK $0D (mapped at $A000) — raw da65 disassembly, annotation in progress
-; SKELETON — raw ROM bytes, not yet classified as code or data.
+; BANK $0D (mapped at $A000) — ENDGAME WILY SCENE AI + WILY 2 STAGE DATA
 ; =============================================================================
 L0000           := $0000
 L0008           := $0008
@@ -538,261 +537,22 @@ LA25C:  rts                                     ; A25C 60                       
         .byte   $75,$FF,$55,$FE,$D5,$FF,$67,$FF ; A7F7
         .byte   $75 ; A7FF
         .byte   $00                             ; A800
-        brk                                     ; A801 00                       .
-        brk                                     ; A802 00                       .
-        brk                                     ; A803 00                       .
-        brk                                     ; A804 00                       .
-        brk                                     ; A805 00                       .
-        brk                                     ; A806 00                       .
-        brk                                     ; A807 00                       .
-        brk                                     ; A808 00                       .
-        brk                                     ; A809 00                       .
-        brk                                     ; A80A 00                       .
-        brk                                     ; A80B 00                       .
-        brk                                     ; A80C 00                       .
-        brk                                     ; A80D 00                       .
-        brk                                     ; A80E 00                       .
-        brk                                     ; A80F 00                       .
-        brk                                     ; A810 00                       .
-        brk                                     ; A811 00                       .
-        brk                                     ; A812 00                       .
-        brk                                     ; A813 00                       .
-        brk                                     ; A814 00                       .
-        brk                                     ; A815 00                       .
-        brk                                     ; A816 00                       .
-        brk                                     ; A817 00                       .
-        brk                                     ; A818 00                       .
-        brk                                     ; A819 00                       .
-        brk                                     ; A81A 00                       .
-        brk                                     ; A81B 00                       .
-        brk                                     ; A81C 00                       .
-        brk                                     ; A81D 00                       .
-        brk                                     ; A81E 00                       .
-        brk                                     ; A81F 00                       .
-        brk                                     ; A820 00                       .
-        brk                                     ; A821 00                       .
-        brk                                     ; A822 00                       .
-        brk                                     ; A823 00                       .
-        brk                                     ; A824 00                       .
-        brk                                     ; A825 00                       .
-        brk                                     ; A826 00                       .
-        brk                                     ; A827 00                       .
-        brk                                     ; A828 00                       .
-        brk                                     ; A829 00                       .
-        brk                                     ; A82A 00                       .
-        brk                                     ; A82B 00                       .
-        brk                                     ; A82C 00                       .
-        brk                                     ; A82D 00                       .
-        brk                                     ; A82E 00                       .
-        brk                                     ; A82F 00                       .
-        brk                                     ; A830 00                       .
-        brk                                     ; A831 00                       .
-        brk                                     ; A832 00                       .
-        brk                                     ; A833 00                       .
-        brk                                     ; A834 00                       .
-        brk                                     ; A835 00                       .
-        brk                                     ; A836 00                       .
-        brk                                     ; A837 00                       .
-        brk                                     ; A838 00                       .
-        brk                                     ; A839 00                       .
-        brk                                     ; A83A 00                       .
-        brk                                     ; A83B 00                       .
-        brk                                     ; A83C 00                       .
-        brk                                     ; A83D 00                       .
-        brk                                     ; A83E 00                       .
-        brk                                     ; A83F 00                       .
-        brk                                     ; A840 00                       .
-        brk                                     ; A841 00                       .
-        brk                                     ; A842 00                       .
-        brk                                     ; A843 00                       .
-        brk                                     ; A844 00                       .
-        brk                                     ; A845 00                       .
-        brk                                     ; A846 00                       .
-        brk                                     ; A847 00                       .
-        brk                                     ; A848 00                       .
-        brk                                     ; A849 00                       .
-        brk                                     ; A84A 00                       .
-        brk                                     ; A84B 00                       .
-        brk                                     ; A84C 00                       .
-        brk                                     ; A84D 00                       .
-        brk                                     ; A84E 00                       .
-        brk                                     ; A84F 00                       .
-        brk                                     ; A850 00                       .
-        brk                                     ; A851 00                       .
-        brk                                     ; A852 00                       .
-        brk                                     ; A853 00                       .
-        brk                                     ; A854 00                       .
-        brk                                     ; A855 00                       .
-        brk                                     ; A856 00                       .
-        brk                                     ; A857 00                       .
-        brk                                     ; A858 00                       .
-        brk                                     ; A859 00                       .
-        brk                                     ; A85A 00                       .
-        brk                                     ; A85B 00                       .
-        brk                                     ; A85C 00                       .
-        brk                                     ; A85D 00                       .
-        brk                                     ; A85E 00                       .
-        brk                                     ; A85F 00                       .
-        brk                                     ; A860 00                       .
-        brk                                     ; A861 00                       .
-        brk                                     ; A862 00                       .
-        brk                                     ; A863 00                       .
-        brk                                     ; A864 00                       .
-        brk                                     ; A865 00                       .
-        brk                                     ; A866 00                       .
-        brk                                     ; A867 00                       .
-LA868:  brk                                     ; A868 00                       .
-        brk                                     ; A869 00                       .
-        brk                                     ; A86A 00                       .
-LA86B:  brk                                     ; A86B 00                       .
-        brk                                     ; A86C 00                       .
-        brk                                     ; A86D 00                       .
-        brk                                     ; A86E 00                       .
-        brk                                     ; A86F 00                       .
-        brk                                     ; A870 00                       .
-        brk                                     ; A871 00                       .
-        brk                                     ; A872 00                       .
-        brk                                     ; A873 00                       .
-        brk                                     ; A874 00                       .
-        brk                                     ; A875 00                       .
-        brk                                     ; A876 00                       .
-        brk                                     ; A877 00                       .
-        brk                                     ; A878 00                       .
-        brk                                     ; A879 00                       .
-        brk                                     ; A87A 00                       .
-        brk                                     ; A87B 00                       .
-        brk                                     ; A87C 00                       .
-        brk                                     ; A87D 00                       .
-        brk                                     ; A87E 00                       .
-        brk                                     ; A87F 00                       .
-        brk                                     ; A880 00                       .
-        brk                                     ; A881 00                       .
-        brk                                     ; A882 00                       .
-        brk                                     ; A883 00                       .
-        brk                                     ; A884 00                       .
-        brk                                     ; A885 00                       .
-        brk                                     ; A886 00                       .
-        brk                                     ; A887 00                       .
-        brk                                     ; A888 00                       .
-        brk                                     ; A889 00                       .
-        brk                                     ; A88A 00                       .
-        brk                                     ; A88B 00                       .
-        brk                                     ; A88C 00                       .
-        brk                                     ; A88D 00                       .
-        brk                                     ; A88E 00                       .
-        brk                                     ; A88F 00                       .
-        brk                                     ; A890 00                       .
-        brk                                     ; A891 00                       .
-        brk                                     ; A892 00                       .
-        brk                                     ; A893 00                       .
-        brk                                     ; A894 00                       .
-        brk                                     ; A895 00                       .
-        brk                                     ; A896 00                       .
-        brk                                     ; A897 00                       .
-        brk                                     ; A898 00                       .
-        brk                                     ; A899 00                       .
-        brk                                     ; A89A 00                       .
-        brk                                     ; A89B 00                       .
-        brk                                     ; A89C 00                       .
-        brk                                     ; A89D 00                       .
-        brk                                     ; A89E 00                       .
-        brk                                     ; A89F 00                       .
-        brk                                     ; A8A0 00                       .
-        brk                                     ; A8A1 00                       .
-        brk                                     ; A8A2 00                       .
-        brk                                     ; A8A3 00                       .
-        brk                                     ; A8A4 00                       .
-        brk                                     ; A8A5 00                       .
-        brk                                     ; A8A6 00                       .
-        brk                                     ; A8A7 00                       .
-        brk                                     ; A8A8 00                       .
-        brk                                     ; A8A9 00                       .
-        brk                                     ; A8AA 00                       .
-        brk                                     ; A8AB 00                       .
-        brk                                     ; A8AC 00                       .
-        brk                                     ; A8AD 00                       .
-        brk                                     ; A8AE 00                       .
-        brk                                     ; A8AF 00                       .
-        brk                                     ; A8B0 00                       .
-        brk                                     ; A8B1 00                       .
-        brk                                     ; A8B2 00                       .
-        brk                                     ; A8B3 00                       .
-        brk                                     ; A8B4 00                       .
-        brk                                     ; A8B5 00                       .
-        brk                                     ; A8B6 00                       .
-        brk                                     ; A8B7 00                       .
-        brk                                     ; A8B8 00                       .
-        brk                                     ; A8B9 00                       .
-        brk                                     ; A8BA 00                       .
-        brk                                     ; A8BB 00                       .
-        brk                                     ; A8BC 00                       .
-        brk                                     ; A8BD 00                       .
-        brk                                     ; A8BE 00                       .
-        brk                                     ; A8BF 00                       .
-        brk                                     ; A8C0 00                       .
-        brk                                     ; A8C1 00                       .
-        brk                                     ; A8C2 00                       .
-        brk                                     ; A8C3 00                       .
-        brk                                     ; A8C4 00                       .
-        brk                                     ; A8C5 00                       .
-        brk                                     ; A8C6 00                       .
-        brk                                     ; A8C7 00                       .
-        brk                                     ; A8C8 00                       .
-        brk                                     ; A8C9 00                       .
-        brk                                     ; A8CA 00                       .
-        brk                                     ; A8CB 00                       .
-        brk                                     ; A8CC 00                       .
-        brk                                     ; A8CD 00                       .
-        brk                                     ; A8CE 00                       .
-        brk                                     ; A8CF 00                       .
-        brk                                     ; A8D0 00                       .
-        brk                                     ; A8D1 00                       .
-        brk                                     ; A8D2 00                       .
-        brk                                     ; A8D3 00                       .
-        brk                                     ; A8D4 00                       .
-        brk                                     ; A8D5 00                       .
-        brk                                     ; A8D6 00                       .
-        brk                                     ; A8D7 00                       .
-        brk                                     ; A8D8 00                       .
-        brk                                     ; A8D9 00                       .
-        brk                                     ; A8DA 00                       .
-        brk                                     ; A8DB 00                       .
-        brk                                     ; A8DC 00                       .
-        brk                                     ; A8DD 00                       .
-        brk                                     ; A8DE 00                       .
-        brk                                     ; A8DF 00                       .
-        brk                                     ; A8E0 00                       .
-        brk                                     ; A8E1 00                       .
-        brk                                     ; A8E2 00                       .
-        brk                                     ; A8E3 00                       .
-        brk                                     ; A8E4 00                       .
-        brk                                     ; A8E5 00                       .
-        brk                                     ; A8E6 00                       .
-        brk                                     ; A8E7 00                       .
-        brk                                     ; A8E8 00                       .
-        brk                                     ; A8E9 00                       .
-        brk                                     ; A8EA 00                       .
-        brk                                     ; A8EB 00                       .
-        brk                                     ; A8EC 00                       .
-        brk                                     ; A8ED 00                       .
-        brk                                     ; A8EE 00                       .
-        brk                                     ; A8EF 00                       .
-        brk                                     ; A8F0 00                       .
-        brk                                     ; A8F1 00                       .
-        brk                                     ; A8F2 00                       .
-        brk                                     ; A8F3 00                       .
-        brk                                     ; A8F4 00                       .
-        brk                                     ; A8F5 00                       .
-        brk                                     ; A8F6 00                       .
-        brk                                     ; A8F7 00                       .
-        brk                                     ; A8F8 00                       .
-        brk                                     ; A8F9 00                       .
-        brk                                     ; A8FA 00                       .
-        brk                                     ; A8FB 00                       .
-        brk                                     ; A8FC 00                       .
-        brk                                     ; A8FD 00                       .
-        brk                                     ; A8FE 00                       .
-        brk                                     ; A8FF 00                       .
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A801
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A811
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A821
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A831
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A841
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A851
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A861
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A871
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A881
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A891
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A8A1
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A8B1
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A8C1
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A8D1
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A8E1
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A8F1
 
 ; =============================================================================
 ; WILY 2 STAGE DATA — format: DATA_REFERENCE.md section 11

@@ -736,766 +736,90 @@ LA4A3:  lda     LA51E,y                         ; A4A3 B9 1E A5                 
 ;   $A6D4 blank scroll row, $A6F8/$A718 scroll row PPU addresses
 ;   $A738/$A73E/$A744 THE END trigger records (X mark / addr / tile)
 ; =============================================================================
-LA4DA:  .byte   $E4                             ; A4DA E4                       .
-LA4DB:  .byte   $E6                             ; A4DB E6                       .
-LA4DC:  .byte   $0F                             ; A4DC 0F                       .
-        .byte   $37                             ; A4DD 37                       7
-        .byte   $17                             ; A4DE 17                       .
-        .byte   $07                             ; A4DF 07                       .
-        .byte   $0F                             ; A4E0 0F                       .
-        bmi     LA506                           ; A4E1 30 23                    0#
-        and     ($0F,x)                         ; A4E3 21 0F                    !.
-        bmi     LA50D                           ; A4E5 30 26                    0&
-        and     ($0F,x)                         ; A4E7 21 0F                    !.
-        bmi     LA4FC                           ; A4E9 30 11                    0.
-        and     ($0F,x)                         ; A4EB 21 0F                    !.
-        .byte   $0F                             ; A4ED 0F                       .
-        bit     L0F11                           ; A4EE 2C 11 0F                 ,..
-        .byte   $0F                             ; A4F1 0F                       .
-        jsr     L0F37                           ; A4F2 20 37 0F                  7.
-        .byte   $0F                             ; A4F5 0F                       .
-        jsr     L0F15                           ; A4F6 20 15 0F                  ..
-        .byte   $0F                             ; A4F9 0F                       .
-        .byte   $27                             ; A4FA 27                       '
-        .byte   $15                             ; A4FB 15                       .
-LA4FC:  iny                                     ; A4FC C8                       .
-        dex                                     ; A4FD CA                       .
-        .byte   $0F                             ; A4FE 0F                       .
-        jsr     L1C2C                           ; A4FF 20 2C 1C                  ,.
-        .byte   $0F                             ; A502 0F                       .
-        and     ($1C),y                         ; A503 31 1C                    1.
-        .byte   $27                             ; A505 27                       '
-LA506:  .byte   $0F                             ; A506 0F                       .
-        and     ($1C),y                         ; A507 31 1C                    1.
-        ora     ($0F,x)                         ; A509 01 0F                    ..
-        .byte   $20                             ; A50B 20                        
-        .byte   $0F                             ; A50C 0F                       .
-LA50D:  .byte   $0F                             ; A50D 0F                       .
-LA50E:  .byte   $0F                             ; A50E 0F                       .
-        .byte   $0F                             ; A50F 0F                       .
-        bit     L0F11                           ; A510 2C 11 0F                 ,..
-        .byte   $0F                             ; A513 0F                       .
-        jsr     L0F37                           ; A514 20 37 0F                  7.
-        .byte   $0F                             ; A517 0F                       .
-        jsr     L0F11                           ; A518 20 11 0F                  ..
-        .byte   $0F                             ; A51B 0F                       .
-        .byte   $20                             ; A51C 20                        
-        .byte   $15                             ; A51D 15                       .
-LA51E:  adc     $6D6D                           ; A51E 6D 6D 6D                 mmm
-        adc     $6D01                           ; A521 6D 01 6D                 m.m
-        .byte   $01                             ; A524 01                       .
-LA525:  ror     a                               ; A525 6A                       j
-        adc     #$71                            ; A526 69 71                    iq
-        pla                                     ; A528 68                       h
-        cmp     $5B                             ; A529 C5 5B                    .[
-        .byte   $9B                             ; A52B 9B                       .
-LA52C:  cld                                     ; A52C D8                       .
-        inx                                     ; A52D E8                       .
-        iny                                     ; A52E C8                       .
-        .byte   $1C                             ; A52F 1C                       .
-        .byte   $3C                             ; A530 3C                       <
-        .byte   $80                             ; A531 80                       .
-        .byte   $FC                             ; A532 FC                       .
-LA533:  sei                                     ; A533 78                       x
-        .byte   $DB                             ; A534 DB                       .
-        .byte   $7F                             ; A535 7F                       .
-        .byte   $B3                             ; A536 B3                       .
-        .byte   $BB                             ; A537 BB                       .
-        .byte   $74                             ; A538 74                       t
-        .byte   $74                             ; A539 74                       t
-LA53A:  .byte   $03                             ; A53A 03                       .
-        .byte   $02                             ; A53B 02                       .
-        ora     (L0000,x)                       ; A53C 01 00                    ..
-        .byte   $0F                             ; A53E 0F                       .
-        asl     $0C0D                           ; A53F 0E 0D 0C                 ...
-        ora     $0F0E                           ; A542 0D 0E 0F                 ...
-LA545:  asl     $0C0D                           ; A545 0E 0D 0C                 ...
-        ora     $0F0E                           ; A548 0D 0E 0F                 ...
-        asl     $0C0D                           ; A54B 0E 0D 0C                 ...
-        ora     $0F0E                           ; A54E 0D 0E 0F                 ...
-        .byte   $FF                             ; A551 FF                       .
-LA552:  bpl     LA564                           ; A552 10 10                    ..
-        bpl     LA566                           ; A554 10 10                    ..
-        bpl     LA568                           ; A556 10 10                    ..
-        .byte   $10                             ; A558 10                       .
-LA559:  jsr     L0808                           ; A559 20 08 08                  ..
-        bpl     LA566                           ; A55C 10 08                    ..
-        php                                     ; A55E 08                       .
-        jsr     L0808                           ; A55F 20 08 08                  ..
-        clc                                     ; A562 18                       .
-        php                                     ; A563 08                       .
-LA564:  php                                     ; A564 08                       .
-        clc                                     ; A565 18                       .
-LA566:  php                                     ; A566 08                       .
-        php                                     ; A567 08                       .
-LA568:  .byte   $FF                             ; A568 FF                       .
-        .byte   $FF                             ; A569 FF                       .
-LA56A:  and     ($AD,x)                         ; A56A 21 AD                    !.
-        .byte   $04                             ; A56C 04                       .
-        .byte   $53                             ; A56D 53                       S
-        .byte   $54                             ; A56E 54                       T
-        eor     ($46,x)                         ; A56F 41 46                    AF
-        lsr     $FF                             ; A571 46 FF                    F.
-LA573:  and     ($AD,x)                         ; A573 21 AD                    !.
-        .byte   $04                             ; A575 04                       .
-        ora     ($01,x)                         ; A576 01 01                    ..
-        ora     ($01,x)                         ; A578 01 01                    ..
-LA57A:  ora     ($FF,x)                         ; A57A 01 FF                    ..
-LA57C:  bpl     LA5F4                           ; A57C 10 76                    .v
-        ora     (L0020,x)                       ; A57E 01 20                    . 
-        plp                                     ; A580 28                       (
-        ror     $01,x                           ; A581 76 01                    v.
-        pla                                     ; A583 68                       h
-        clc                                     ; A584 18                       .
-        ror     $01,x                           ; A585 76 01                    v.
-        bcc     LA5A9                           ; A587 90 20                    . 
-        ror     $01,x                           ; A589 76 01                    v.
-        bne     LA545                           ; A58B D0 B8                    ..
-        ror     $01,x                           ; A58D 76 01                    v.
-        bpl     LA559                           ; A58F 10 C8                    ..
-        ror     $01,x                           ; A591 76 01                    v.
-        cli                                     ; A593 58                       X
-        cpy     #$76                            ; A594 C0 76                    .v
-        ora     ($88,x)                         ; A596 01 88                    ..
-        cpx     #$76                            ; A598 E0 76                    .v
-        ora     ($D0,x)                         ; A59A 01 D0                    ..
-        jsr     L0177                           ; A59C 20 77 01                  w.
-        rti                                     ; A59F 40                       @
+LA4DA:  .byte   $E4                             ; A4DA
+LA4DB:  .byte   $E6                             ; A4DB
+LA4DC:  .byte   $0F,$37,$17,$07,$0F,$30,$23,$21,$0F,$30,$26,$21,$0F,$30,$11,$21 ; A4DC
+        .byte   $0F,$0F,$2C,$11,$0F,$0F,$20,$37,$0F,$0F,$20,$15,$0F,$0F,$27,$15 ; A4EC
+        .byte   $C8,$CA,$0F,$20,$2C,$1C,$0F,$31,$1C,$27,$0F,$31,$1C,$01,$0F,$20 ; A4FC
+        .byte   $0F,$0F                         ; A50C
+LA50E:  .byte   $0F,$0F,$2C,$11,$0F,$0F,$20,$37,$0F,$0F,$20,$11,$0F,$0F,$20,$15 ; A50E
+LA51E:  .byte   $6D,$6D,$6D,$6D,$01,$6D,$01     ; A51E
+LA525:  .byte   $6A,$69,$71,$68,$C5,$5B,$9B     ; A525
+LA52C:  .byte   $D8,$E8,$C8,$1C,$3C,$80,$FC     ; A52C
+LA533:  .byte   $78,$DB,$7F,$B3,$BB,$74,$74     ; A533
+LA53A:  .byte   $03,$02,$01,$00,$0F,$0E,$0D,$0C,$0D,$0E,$0F,$0E,$0D,$0C,$0D,$0E ; A53A
+        .byte   $0F,$0E,$0D,$0C,$0D,$0E,$0F,$FF ; A54A
+LA552:  .byte   $10,$10,$10,$10,$10,$10,$10,$20,$08,$08,$10,$08,$08,$20,$08,$08 ; A552
+        .byte   $18,$08,$08,$18,$08,$08,$FF,$FF ; A562
+LA56A:  .byte   $21,$AD,$04,$53,$54,$41,$46,$46,$FF ; A56A
+LA573:  .byte   $21,$AD,$04,$01,$01,$01,$01,$01,$FF ; A573
+LA57C:  .byte   $10,$76,$01,$20,$28,$76,$01,$68,$18,$76,$01,$90,$20,$76,$01,$D0 ; A57C
+        .byte   $B8,$76,$01,$10,$C8,$76,$01,$58,$C0,$76,$01,$88,$E0,$76,$01,$D0 ; A58C
+        .byte   $20,$77,$01,$40                 ; A59C
 
 ; ----------------------------------------------------------------------------
-        bmi     LA619                           ; A5A0 30 77                    0w
-        ora     ($B0,x)                         ; A5A2 01 B0                    ..
-        php                                     ; A5A4 08                       .
-        .byte   $77                             ; A5A5 77                       w
-        ora     ($C8,x)                         ; A5A6 01 C8                    ..
-        .byte   $D0                             ; A5A8 D0                       .
-LA5A9:  .byte   $77                             ; A5A9 77                       w
-        ora     ($28,x)                         ; A5AA 01 28                    .(
-        bcs     LA625                           ; A5AC B0 77                    .w
-        ora     ($40,x)                         ; A5AE 01 40                    .@
-        cpy     #$77                            ; A5B0 C0 77                    .w
-        ora     ($A8,x)                         ; A5B2 01 A8                    ..
-        cpx     #$77                            ; A5B4 E0 77                    .w
-        ora     ($C8,x)                         ; A5B6 01 C8                    ..
-        sed                                     ; A5B8 F8                       .
-        brk                                     ; A5B9 00                       .
-        brk                                     ; A5BA 00                       .
-        iny                                     ; A5BB C8                       .
-        sed                                     ; A5BC F8                       .
-        brk                                     ; A5BD 00                       .
-        brk                                     ; A5BE 00                       .
-        iny                                     ; A5BF C8                       .
-LA5C0:  bpl     LA638                           ; A5C0 10 76                    .v
-        ora     ($10,x)                         ; A5C2 01 10                    ..
-        clc                                     ; A5C4 18                       .
-        ror     $01,x                           ; A5C5 76 01                    v.
-        dey                                     ; A5C7 88                       .
-        bmi     LA640                           ; A5C8 30 76                    0v
-        ora     ($38,x)                         ; A5CA 01 38                    .8
-        bvc     LA644                           ; A5CC 50 76                    Pv
-        ora     ($C8,x)                         ; A5CE 01 C8                    ..
-        bcc     LA648                           ; A5D0 90 76                    .v
-        ora     ($70,x)                         ; A5D2 01 70                    .p
-        bcs     LA64C                           ; A5D4 B0 76                    .v
-        ora     ($E0,x)                         ; A5D6 01 E0                    ..
-        bne     LA650                           ; A5D8 D0 76                    .v
-        ora     ($B8,x)                         ; A5DA 01 B8                    ..
-        cld                                     ; A5DC D8                       .
-        ror     $01,x                           ; A5DD 76 01                    v.
-        clc                                     ; A5DF 18                       .
-        jsr     L0177                           ; A5E0 20 77 01                  w.
-        plp                                     ; A5E3 28                       (
-        plp                                     ; A5E4 28                       (
-        .byte   $77                             ; A5E5 77                       w
-        ora     ($A8,x)                         ; A5E6 01 A8                    ..
-        sec                                     ; A5E8 38                       8
-        .byte   $77                             ; A5E9 77                       w
-        ora     ($C0,x)                         ; A5EA 01 C0                    ..
-        cli                                     ; A5EC 58                       X
-        .byte   $77                             ; A5ED 77                       w
-        ora     ($88,x)                         ; A5EE 01 88                    ..
-        pla                                     ; A5F0 68                       h
-        .byte   $77                             ; A5F1 77                       w
-        ora     ($40,x)                         ; A5F2 01 40                    .@
-LA5F4:  tya                                     ; A5F4 98                       .
-        .byte   $77                             ; A5F5 77                       w
-        ora     ($50,x)                         ; A5F6 01 50                    .P
-        ldy     #$77                            ; A5F8 A0 77                    .w
-        ora     ($C0,x)                         ; A5FA 01 C0                    ..
-        clv                                     ; A5FC B8                       .
-        .byte   $77                             ; A5FD 77                       w
-        ora     ($28,x)                         ; A5FE 01 28                    .(
-        iny                                     ; A600 C8                       .
-        .byte   $77                             ; A601 77                       w
-        ora     ($78,x)                         ; A602 01 78                    .x
-LA604:  and     ($83,x)                         ; A604 21 83                    !.
-        php                                     ; A606 08                       .
-        ora     ($01,x)                         ; A607 01 01                    ..
-        ora     ($01,x)                         ; A609 01 01                    ..
-        ora     ($01,x)                         ; A60B 01 01                    ..
-        ora     ($01,x)                         ; A60D 01 01                    ..
-        ora     ($21,x)                         ; A60F 01 21                    .!
-        cpy     $07                             ; A611 C4 07                    ..
-        ora     ($01,x)                         ; A613 01 01                    ..
-        ora     ($01,x)                         ; A615 01 01                    ..
-        ora     ($01,x)                         ; A617 01 01                    ..
-LA619:  ora     ($01,x)                         ; A619 01 01                    ..
-        and     ($E7,x)                         ; A61B 21 E7                    !.
-        .byte   $03                             ; A61D 03                       .
-        ora     ($01,x)                         ; A61E 01 01                    ..
-        ora     ($01,x)                         ; A620 01 01                    ..
-        and     ($B5,x)                         ; A622 21 B5                    !.
-        .byte   $07                             ; A624 07                       .
-LA625:  ora     ($01,x)                         ; A625 01 01                    ..
-        ora     ($01,x)                         ; A627 01 01                    ..
-        ora     ($01,x)                         ; A629 01 01                    ..
-        ora     ($01,x)                         ; A62B 01 01                    ..
-        and     ($F3,x)                         ; A62D 21 F3                    !.
-        asl     a                               ; A62F 0A                       .
-        ora     ($01,x)                         ; A630 01 01                    ..
-        ora     ($01,x)                         ; A632 01 01                    ..
-        ora     ($01,x)                         ; A634 01 01                    ..
-        ora     ($01,x)                         ; A636 01 01                    ..
-LA638:  ora     ($01,x)                         ; A638 01 01                    ..
-        ora     ($22,x)                         ; A63A 01 22                    ."
-        asl     $06,x                           ; A63C 16 06                    ..
-        ora     ($01,x)                         ; A63E 01 01                    ..
-LA640:  ora     ($01,x)                         ; A640 01 01                    ..
-        ora     ($01,x)                         ; A642 01 01                    ..
-LA644:  ora     ($FF,x)                         ; A644 01 FF                    ..
-LA646:  and     ($64,x)                         ; A646 21 64                    !d
-LA648:  ora     #$01                            ; A648 09 01                    ..
-        ora     ($01,x)                         ; A64A 01 01                    ..
-LA64C:  ora     ($01,x)                         ; A64C 01 01                    ..
-        ora     ($01,x)                         ; A64E 01 01                    ..
-LA650:  ora     ($01,x)                         ; A650 01 01                    ..
-        ora     ($21,x)                         ; A652 01 21                    .!
-        sta     L0008                           ; A654 85 08                    ..
-        ora     ($01,x)                         ; A656 01 01                    ..
-        ora     ($01,x)                         ; A658 01 01                    ..
-        ora     ($01,x)                         ; A65A 01 01                    ..
-        ora     ($01,x)                         ; A65C 01 01                    ..
-        ora     ($21,x)                         ; A65E 01 21                    .!
-        cpx     L0008                           ; A660 E4 08                    ..
-        ora     ($01,x)                         ; A662 01 01                    ..
-        ora     ($01,x)                         ; A664 01 01                    ..
-        ora     ($01,x)                         ; A666 01 01                    ..
-        ora     ($01,x)                         ; A668 01 01                    ..
-        ora     ($22,x)                         ; A66A 01 22                    ."
-        ora     L0008                           ; A66C 05 08                    ..
-        ora     ($01,x)                         ; A66E 01 01                    ..
-        ora     ($01,x)                         ; A670 01 01                    ..
-        ora     ($01,x)                         ; A672 01 01                    ..
-        ora     ($01,x)                         ; A674 01 01                    ..
-        ora     ($21,x)                         ; A676 01 21                    .!
-        .byte   $73                             ; A678 73                       s
-        php                                     ; A679 08                       .
-        ora     ($01,x)                         ; A67A 01 01                    ..
-        ora     ($01,x)                         ; A67C 01 01                    ..
-        ora     ($01,x)                         ; A67E 01 01                    ..
-        ora     ($01,x)                         ; A680 01 01                    ..
-        ora     ($21,x)                         ; A682 01 21                    .!
-        sty     L0008,x                         ; A684 94 08                    ..
-        ora     ($01,x)                         ; A686 01 01                    ..
-        ora     ($01,x)                         ; A688 01 01                    ..
-        ora     ($01,x)                         ; A68A 01 01                    ..
-        ora     ($01,x)                         ; A68C 01 01                    ..
-        ora     ($21,x)                         ; A68E 01 21                    .!
-        .byte   $F3                             ; A690 F3                       .
-        ora     #$01                            ; A691 09 01                    ..
-        ora     ($01,x)                         ; A693 01 01                    ..
-        ora     ($01,x)                         ; A695 01 01                    ..
-        ora     ($01,x)                         ; A697 01 01                    ..
-        ora     ($01,x)                         ; A699 01 01                    ..
-        ora     ($22,x)                         ; A69B 01 22                    ."
-        .byte   $14                             ; A69D 14                       .
-        asl     a                               ; A69E 0A                       .
-        ora     ($01,x)                         ; A69F 01 01                    ..
-        ora     ($01,x)                         ; A6A1 01 01                    ..
-        ora     ($01,x)                         ; A6A3 01 01                    ..
-        ora     ($01,x)                         ; A6A5 01 01                    ..
-        ora     ($01,x)                         ; A6A7 01 01                    ..
-        ora     ($FF,x)                         ; A6A9 01 FF                    ..
-LA6AB:  ora     ($03,x)                         ; A6AB 01 03                    ..
-LA6AD:  asl     L0008                           ; A6AD 06 08                    ..
-        asl     a                               ; A6AF 0A                       .
-        .byte   $0C                             ; A6B0 0C                       .
-        asl     $1310                           ; A6B1 0E 10 13                 ...
-        ora     $17,x                           ; A6B4 15 17                    ..
-        ora     $1D1B,y                         ; A6B6 19 1B 1D                 ...
-        ora     ($04,x)                         ; A6B9 01 04                    ..
-        asl     L0008                           ; A6BB 06 08                    ..
-        asl     a                               ; A6BD 0A                       .
-        .byte   $0C                             ; A6BE 0C                       .
-        asl     $1311                           ; A6BF 0E 11 13                 ...
-        php                                     ; A6C2 08                       .
-        .byte   $FF                             ; A6C3 FF                       .
-LA6C4:  .byte   $0F                             ; A6C4 0F                       .
-        jsr     L0F0F                           ; A6C5 20 0F 0F                  ..
-        .byte   $0F                             ; A6C8 0F                       .
-        jsr     L0F0F                           ; A6C9 20 0F 0F                  ..
-        .byte   $0F                             ; A6CC 0F                       .
-        jsr     L0F0F                           ; A6CD 20 0F 0F                  ..
-        .byte   $0F                             ; A6D0 0F                       .
-        jsr     L0F0F                           ; A6D1 20 0F 0F                  ..
-LA6D4:  jsr     L1F00                           ; A6D4 20 00 1F                  ..
-        brk                                     ; A6D7 00                       .
-        brk                                     ; A6D8 00                       .
-        brk                                     ; A6D9 00                       .
-        brk                                     ; A6DA 00                       .
-        brk                                     ; A6DB 00                       .
-        brk                                     ; A6DC 00                       .
-        brk                                     ; A6DD 00                       .
-        brk                                     ; A6DE 00                       .
-        brk                                     ; A6DF 00                       .
-        brk                                     ; A6E0 00                       .
-        brk                                     ; A6E1 00                       .
-        brk                                     ; A6E2 00                       .
-        brk                                     ; A6E3 00                       .
-        brk                                     ; A6E4 00                       .
-        brk                                     ; A6E5 00                       .
-        brk                                     ; A6E6 00                       .
-        brk                                     ; A6E7 00                       .
-        brk                                     ; A6E8 00                       .
-        brk                                     ; A6E9 00                       .
-        brk                                     ; A6EA 00                       .
-        brk                                     ; A6EB 00                       .
-        brk                                     ; A6EC 00                       .
-        brk                                     ; A6ED 00                       .
-        brk                                     ; A6EE 00                       .
-        brk                                     ; A6EF 00                       .
-        brk                                     ; A6F0 00                       .
-        brk                                     ; A6F1 00                       .
-        brk                                     ; A6F2 00                       .
-        brk                                     ; A6F3 00                       .
-        brk                                     ; A6F4 00                       .
-        brk                                     ; A6F5 00                       .
-        brk                                     ; A6F6 00                       .
-        .byte   $FF                             ; A6F7 FF                       .
-LA6F8:  jsr     L2020                           ; A6F8 20 20 20                    
-        jsr     L2020                           ; A6FB 20 20 20                    
-        jsr     L2120                           ; A6FE 20 20 21                   !
-        and     ($21,x)                         ; A701 21 21                    !!
-        and     ($21,x)                         ; A703 21 21                    !!
-        and     ($21,x)                         ; A705 21 21                    !!
-        and     ($22,x)                         ; A707 21 22                    !"
-        .byte   $22                             ; A709 22                       "
-        .byte   $22                             ; A70A 22                       "
-        .byte   $22                             ; A70B 22                       "
-        .byte   $22                             ; A70C 22                       "
-        .byte   $22                             ; A70D 22                       "
-        .byte   $22                             ; A70E 22                       "
-        .byte   $22                             ; A70F 22                       "
-        .byte   $23                             ; A710 23                       #
-        .byte   $23                             ; A711 23                       #
-        .byte   $23                             ; A712 23                       #
-        .byte   $23                             ; A713 23                       #
-LA714:  .byte   $23                             ; A714 23                       #
-        .byte   $23                             ; A715 23                       #
-        .byte   $23                             ; A716 23                       #
-        .byte   $23                             ; A717 23                       #
-LA718:  brk                                     ; A718 00                       .
-        jsr     L6040                           ; A719 20 40 60                  @`
-        .byte   $80                             ; A71C 80                       .
-        ldy     #$C0                            ; A71D A0 C0                    ..
-        cpx     #$00                            ; A71F E0 00                    ..
-        jsr     L6040                           ; A721 20 40 60                  @`
-        .byte   $80                             ; A724 80                       .
-        ldy     #$C0                            ; A725 A0 C0                    ..
-        cpx     #$00                            ; A727 E0 00                    ..
-        jsr     L6040                           ; A729 20 40 60                  @`
-        .byte   $80                             ; A72C 80                       .
-        ldy     #$C0                            ; A72D A0 C0                    ..
-        cpx     #$00                            ; A72F E0 00                    ..
-        jsr     L6040                           ; A731 20 40 60                  @`
-        .byte   $80                             ; A734 80                       .
-        ldy     #$C0                            ; A735 A0 C0                    ..
-        .byte   $E0                             ; A737 E0                       .
-LA738:  jmp     (L7C74)                         ; A738 6C 74 7C                 lt|
+        .byte   $30,$77,$01,$B0,$08,$77,$01,$C8,$D0,$77,$01,$28,$B0,$77,$01,$40 ; A5A0
+        .byte   $C0,$77,$01,$A8,$E0,$77,$01,$C8,$F8,$00,$00,$C8,$F8,$00,$00,$C8 ; A5B0
+LA5C0:  .byte   $10,$76,$01,$10,$18,$76,$01,$88,$30,$76,$01,$38,$50,$76,$01,$C8 ; A5C0
+        .byte   $90,$76,$01,$70,$B0,$76,$01,$E0,$D0,$76,$01,$B8,$D8,$76,$01,$18 ; A5D0
+        .byte   $20,$77,$01,$28,$28,$77,$01,$A8,$38,$77,$01,$C0,$58,$77,$01,$88 ; A5E0
+        .byte   $68,$77,$01,$40,$98,$77,$01,$50,$A0,$77,$01,$C0,$B8,$77,$01,$28 ; A5F0
+        .byte   $C8,$77,$01,$78                 ; A600
+LA604:  .byte   $21,$83,$08,$01,$01,$01,$01,$01,$01,$01,$01,$01,$21,$C4,$07,$01 ; A604
+        .byte   $01,$01,$01,$01,$01,$01,$01,$21,$E7,$03,$01,$01,$01,$01,$21,$B5 ; A614
+        .byte   $07,$01,$01,$01,$01,$01,$01,$01,$01,$21,$F3,$0A,$01,$01,$01,$01 ; A624
+        .byte   $01,$01,$01,$01,$01,$01,$01,$22,$16,$06,$01,$01,$01,$01,$01,$01 ; A634
+        .byte   $01,$FF                         ; A644
+LA646:  .byte   $21,$64,$09,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$21,$85,$08 ; A646
+        .byte   $01,$01,$01,$01,$01,$01,$01,$01,$01,$21,$E4,$08,$01,$01,$01,$01 ; A656
+        .byte   $01,$01,$01,$01,$01,$22,$05,$08,$01,$01,$01,$01,$01,$01,$01,$01 ; A666
+        .byte   $01,$21,$73,$08,$01,$01,$01,$01,$01,$01,$01,$01,$01,$21,$94,$08 ; A676
+        .byte   $01,$01,$01,$01,$01,$01,$01,$01,$01,$21,$F3,$09,$01,$01,$01,$01 ; A686
+        .byte   $01,$01,$01,$01,$01,$01,$22,$14,$0A,$01,$01,$01,$01,$01,$01,$01 ; A696
+        .byte   $01,$01,$01,$01,$FF             ; A6A6
+LA6AB:  .byte   $01,$03,$06,$08,$0A,$0C,$0E,$10,$13,$15,$17,$19,$1B,$1D,$01,$04 ; A6AB
+        .byte   $06,$08,$0A,$0C,$0E,$11,$13,$08,$FF ; A6BB
+LA6C4:  .byte   $0F,$20,$0F,$0F,$0F,$20,$0F,$0F,$0F,$20,$0F,$0F,$0F,$20,$0F,$0F ; A6C4
+LA6D4:  .byte   $20,$00,$1F,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A6D4
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A6E4
+        .byte   $00,$00,$00,$FF                 ; A6F4
+LA6F8:  .byte   $20,$20,$20,$20,$20,$20,$20,$20,$21,$21,$21,$21,$21,$21,$21,$21 ; A6F8
+        .byte   $22,$22,$22,$22,$22,$22,$22,$22,$23,$23,$23,$23,$23,$23,$23,$23 ; A708
+LA718:  .byte   $00,$20,$40,$60,$80,$A0,$C0,$E0,$00,$20,$40,$60,$80,$A0,$C0,$E0 ; A718
+        .byte   $00,$20,$40,$60,$80,$A0,$C0,$E0,$00,$20,$40,$60,$80,$A0,$C0,$E0 ; A728
+LA738:  .byte   $6C,$74,$7C                     ; A738
 
 ; ----------------------------------------------------------------------------
-        sty     $8C                             ; A73B 84 8C                    ..
-        .byte   $94                             ; A73D 94                       .
-LA73E:  eor     $4F4E                           ; A73E 4D 4E 4F                 MNO
-        bvc     LA794                           ; A741 50 51                    PQ
-        .byte   $52                             ; A743 52                       R
-LA744:  .byte   $43                             ; A744 43                       C
-        eor     ($50,x)                         ; A745 41 50                    AP
-        .byte   $43                             ; A747 43                       C
-        .byte   $4F                             ; A748 4F                       O
-        eor     $15FB                           ; A749 4D FB 15                 M..
-        .byte   $FF                             ; A74C FF                       .
-        .byte   $5F                             ; A74D 5F                       _
-        .byte   $FF                             ; A74E FF                       .
-        eor     $7FFF,x                         ; A74F 5D FF 7F                 ]..
-        sbc     $FF7F,y                         ; A752 F9 7F FF                 ...
-        .byte   $F7                             ; A755 F7                       .
-        .byte   $FF                             ; A756 FF                       .
-        .byte   $FF                             ; A757 FF                       .
-        .byte   $FF                             ; A758 FF                       .
-        .byte   $FF                             ; A759 FF                       .
-        .byte   $FF                             ; A75A FF                       .
-        .byte   $FF                             ; A75B FF                       .
-        .byte   $FF                             ; A75C FF                       .
-        .byte   $7F                             ; A75D 7F                       .
-        .byte   $FF                             ; A75E FF                       .
-        .byte   $FF                             ; A75F FF                       .
-        .byte   $FF                             ; A760 FF                       .
-        cmp     $FA,x                           ; A761 D5 FA                    ..
-        sta     $FA,x                           ; A763 95 FA                    ..
-        sta     $FE,x                           ; A765 95 FE                    ..
-        adc     ($F9),y                         ; A767 71 F9                    q.
-        eor     $15DF,x                         ; A769 5D DF 15                 ]..
-        inc     $DD54,x                         ; A76C FE 54 DD                 .T.
-        adc     $6F,x                           ; A76F 75 6F                    uo
-        eor     ($F7),y                         ; A771 51 F7                    Q.
-        bvs     LA714                           ; A773 70 9F                    p.
-        adc     $54FF,y                         ; A775 79 FF 54                 y.T
-        .byte   $FF                             ; A778 FF                       .
-        .byte   $F7                             ; A779 F7                       .
-        .byte   $BF                             ; A77A BF                       .
-        adc     $77FF,x                         ; A77B 7D FF 77                 }.w
-        .byte   $FF                             ; A77E FF                       .
-        .byte   $77                             ; A77F 77                       w
-        ldx     $FE54,y                         ; A780 BE 54 FE                 .T.
-        eor     $FF,x                           ; A783 55 FF                    U.
-        eor     $FF,x                           ; A785 55 FF                    U.
-        .byte   $F4                             ; A787 F4                       .
-        .byte   $FF                             ; A788 FF                       .
-        .byte   $7C                             ; A789 7C                       |
-        .byte   $FF                             ; A78A FF                       .
-        cmp     $FF,x                           ; A78B D5 FF                    ..
-        .byte   $DF                             ; A78D DF                       .
-        .byte   $FF                             ; A78E FF                       .
-        .byte   $35                             ; A78F 35                       5
-LA790:  .byte   $FF                             ; A790 FF                       .
-        sbc     $7FFF,x                         ; A791 FD FF 7F                 ...
-LA794:  .byte   $FF                             ; A794 FF                       .
-        eor     $FF,x                           ; A795 55 FF                    U.
-        adc     $FFFF,x                         ; A797 7D FF FF                 }..
-        .byte   $FF                             ; A79A FF                       .
-        .byte   $FF                             ; A79B FF                       .
-        .byte   $FF                             ; A79C FF                       .
-        .byte   $FF                             ; A79D FF                       .
-        .byte   $FF                             ; A79E FF                       .
-        sbc     $51EE,x                         ; A79F FD EE 51                 ..Q
-        adc     $45,x                           ; A7A2 75 45                    uE
-        sbc     LBFD1,x                         ; A7A4 FD D1 BF                 ...
-        eor     $D5                             ; A7A7 45 D5                    E.
-        .byte   $D0                             ; A7A9 D0                       .
-LA7AA:  .byte   $FF                             ; A7AA FF                       .
-        asl     $71FF,x                         ; A7AB 1E FF 71                 ..q
-        .byte   $7F                             ; A7AE 7F                       .
-        .byte   $57                             ; A7AF 57                       W
-        .byte   $FF                             ; A7B0 FF                       .
-        eor     $FF,x                           ; A7B1 55 FF                    U.
-        eor     $FF,x                           ; A7B3 55 FF                    U.
-        .byte   $DF                             ; A7B5 DF                       .
-        cmp     $FF7D,x                         ; A7B6 DD 7D FF                 .}.
-        .byte   $7F                             ; A7B9 7F                       .
-        .byte   $FF                             ; A7BA FF                       .
-        .byte   $57                             ; A7BB 57                       W
-        .byte   $FF                             ; A7BC FF                       .
-        .byte   $F7                             ; A7BD F7                       .
-        .byte   $FF                             ; A7BE FF                       .
-        .byte   $FF                             ; A7BF FF                       .
-        .byte   $FF                             ; A7C0 FF                       .
-        ora     $A5,x                           ; A7C1 15 A5                    ..
-        ora     $FF,x                           ; A7C3 15 FF                    ..
-        eor     $75FF,x                         ; A7C5 5D FF 75                 ].u
-        ror     $EF74,x                         ; A7C8 7E 74 EF                 ~t.
-        and     $FF,x                           ; A7CB 35 FF                    5.
-        .byte   $57                             ; A7CD 57                       W
-        inc     $FF75,x                         ; A7CE FE 75 FF                 .u.
-        sbc     $F5FF,x                         ; A7D1 FD FF F5                 ...
-        .byte   $FF                             ; A7D4 FF                       .
-        .byte   $77                             ; A7D5 77                       w
-        .byte   $FF                             ; A7D6 FF                       .
-        sbc     $D7FF,x                         ; A7D7 FD FF D7                 ...
-        .byte   $FF                             ; A7DA FF                       .
-        .byte   $5F                             ; A7DB 5F                       _
-        .byte   $FF                             ; A7DC FF                       .
-        .byte   $FF                             ; A7DD FF                       .
-        .byte   $FF                             ; A7DE FF                       .
-        .byte   $FF                             ; A7DF FF                       .
-        .byte   $F7                             ; A7E0 F7                       .
-        lsr     $DD                             ; A7E1 46 DD                    F.
-        .byte   $54                             ; A7E3 54                       T
-        .byte   $EF                             ; A7E4 EF                       .
-        eor     $51EE,x                         ; A7E5 5D EE 51                 ].Q
-        .byte   $A3                             ; A7E8 A3                       .
-        .byte   $74                             ; A7E9 74                       t
-        .byte   $7F                             ; A7EA 7F                       .
-        .byte   $5C                             ; A7EB 5C                       \
-        cmp     $04                             ; A7EC C5 04                    ..
-        lda     $E711,x                         ; A7EE BD 11 E7                 ...
-        ora     $6B,x                           ; A7F1 15 6B                    .k
-        bne     LA790                           ; A7F3 D0 9B                    ..
-        eor     $77                             ; A7F5 45 77                    Ew
-        .byte   $54                             ; A7F7 54                       T
-        .byte   $FF                             ; A7F8 FF                       .
-        .byte   $53                             ; A7F9 53                       S
-        .byte   $5F                             ; A7FA 5F                       _
-        .byte   $D7                             ; A7FB D7                       .
-        .byte   $FF                             ; A7FC FF                       .
-        sbc     $FF,x                           ; A7FD F5 FF                    ..
-        .byte   $77                             ; A7FF 77                       w
-LA800:  brk                                     ; A800 00                       .
-        brk                                     ; A801 00                       .
-        brk                                     ; A802 00                       .
-        brk                                     ; A803 00                       .
-        brk                                     ; A804 00                       .
-        brk                                     ; A805 00                       .
-        brk                                     ; A806 00                       .
-        brk                                     ; A807 00                       .
-        brk                                     ; A808 00                       .
-        brk                                     ; A809 00                       .
-        brk                                     ; A80A 00                       .
-        brk                                     ; A80B 00                       .
-        brk                                     ; A80C 00                       .
-        brk                                     ; A80D 00                       .
-        brk                                     ; A80E 00                       .
-        brk                                     ; A80F 00                       .
-        brk                                     ; A810 00                       .
-        brk                                     ; A811 00                       .
-        brk                                     ; A812 00                       .
-        brk                                     ; A813 00                       .
-        brk                                     ; A814 00                       .
-        brk                                     ; A815 00                       .
-        brk                                     ; A816 00                       .
-        brk                                     ; A817 00                       .
-        brk                                     ; A818 00                       .
-        brk                                     ; A819 00                       .
-        brk                                     ; A81A 00                       .
-        brk                                     ; A81B 00                       .
-        brk                                     ; A81C 00                       .
-        brk                                     ; A81D 00                       .
-        brk                                     ; A81E 00                       .
-        brk                                     ; A81F 00                       .
-        brk                                     ; A820 00                       .
-        brk                                     ; A821 00                       .
-        brk                                     ; A822 00                       .
-        brk                                     ; A823 00                       .
-        brk                                     ; A824 00                       .
-        brk                                     ; A825 00                       .
-        brk                                     ; A826 00                       .
-        brk                                     ; A827 00                       .
-        brk                                     ; A828 00                       .
-        brk                                     ; A829 00                       .
-        brk                                     ; A82A 00                       .
-        brk                                     ; A82B 00                       .
-        brk                                     ; A82C 00                       .
-        brk                                     ; A82D 00                       .
-        brk                                     ; A82E 00                       .
-        brk                                     ; A82F 00                       .
-        brk                                     ; A830 00                       .
-        brk                                     ; A831 00                       .
-        brk                                     ; A832 00                       .
-        brk                                     ; A833 00                       .
-        brk                                     ; A834 00                       .
-        brk                                     ; A835 00                       .
-        brk                                     ; A836 00                       .
-        brk                                     ; A837 00                       .
-        brk                                     ; A838 00                       .
-        brk                                     ; A839 00                       .
-        brk                                     ; A83A 00                       .
-        brk                                     ; A83B 00                       .
-        brk                                     ; A83C 00                       .
-        brk                                     ; A83D 00                       .
-        brk                                     ; A83E 00                       .
-        brk                                     ; A83F 00                       .
-        brk                                     ; A840 00                       .
-        brk                                     ; A841 00                       .
-        brk                                     ; A842 00                       .
-        brk                                     ; A843 00                       .
-        brk                                     ; A844 00                       .
-        brk                                     ; A845 00                       .
-        brk                                     ; A846 00                       .
-        brk                                     ; A847 00                       .
-        brk                                     ; A848 00                       .
-        brk                                     ; A849 00                       .
-        brk                                     ; A84A 00                       .
-        brk                                     ; A84B 00                       .
-        brk                                     ; A84C 00                       .
-        brk                                     ; A84D 00                       .
-        brk                                     ; A84E 00                       .
-        brk                                     ; A84F 00                       .
-        brk                                     ; A850 00                       .
-        brk                                     ; A851 00                       .
-        brk                                     ; A852 00                       .
-        brk                                     ; A853 00                       .
-        brk                                     ; A854 00                       .
-        brk                                     ; A855 00                       .
-        brk                                     ; A856 00                       .
-        brk                                     ; A857 00                       .
-        brk                                     ; A858 00                       .
-        brk                                     ; A859 00                       .
-        brk                                     ; A85A 00                       .
-        brk                                     ; A85B 00                       .
-        brk                                     ; A85C 00                       .
-        brk                                     ; A85D 00                       .
-        brk                                     ; A85E 00                       .
-        brk                                     ; A85F 00                       .
-        brk                                     ; A860 00                       .
-        brk                                     ; A861 00                       .
-        brk                                     ; A862 00                       .
-        brk                                     ; A863 00                       .
-        brk                                     ; A864 00                       .
-        brk                                     ; A865 00                       .
-        brk                                     ; A866 00                       .
-        brk                                     ; A867 00                       .
-        brk                                     ; A868 00                       .
-        brk                                     ; A869 00                       .
-        brk                                     ; A86A 00                       .
-        brk                                     ; A86B 00                       .
-        brk                                     ; A86C 00                       .
-        brk                                     ; A86D 00                       .
-        brk                                     ; A86E 00                       .
-        brk                                     ; A86F 00                       .
-        brk                                     ; A870 00                       .
-        brk                                     ; A871 00                       .
-        brk                                     ; A872 00                       .
-        brk                                     ; A873 00                       .
-        brk                                     ; A874 00                       .
-        brk                                     ; A875 00                       .
-        brk                                     ; A876 00                       .
-        brk                                     ; A877 00                       .
-        brk                                     ; A878 00                       .
-        brk                                     ; A879 00                       .
-        brk                                     ; A87A 00                       .
-        brk                                     ; A87B 00                       .
-        brk                                     ; A87C 00                       .
-        brk                                     ; A87D 00                       .
-        brk                                     ; A87E 00                       .
-        brk                                     ; A87F 00                       .
-        brk                                     ; A880 00                       .
-        brk                                     ; A881 00                       .
-        brk                                     ; A882 00                       .
-        brk                                     ; A883 00                       .
-        brk                                     ; A884 00                       .
-        brk                                     ; A885 00                       .
-        brk                                     ; A886 00                       .
-        brk                                     ; A887 00                       .
-        brk                                     ; A888 00                       .
-        brk                                     ; A889 00                       .
-        brk                                     ; A88A 00                       .
-        brk                                     ; A88B 00                       .
-        brk                                     ; A88C 00                       .
-        brk                                     ; A88D 00                       .
-        brk                                     ; A88E 00                       .
-        brk                                     ; A88F 00                       .
-        brk                                     ; A890 00                       .
-        brk                                     ; A891 00                       .
-        brk                                     ; A892 00                       .
-        brk                                     ; A893 00                       .
-        brk                                     ; A894 00                       .
-        brk                                     ; A895 00                       .
-        brk                                     ; A896 00                       .
-        brk                                     ; A897 00                       .
-        brk                                     ; A898 00                       .
-        brk                                     ; A899 00                       .
-        brk                                     ; A89A 00                       .
-        brk                                     ; A89B 00                       .
-        brk                                     ; A89C 00                       .
-        brk                                     ; A89D 00                       .
-        brk                                     ; A89E 00                       .
-        brk                                     ; A89F 00                       .
-        brk                                     ; A8A0 00                       .
-        brk                                     ; A8A1 00                       .
-        brk                                     ; A8A2 00                       .
-        brk                                     ; A8A3 00                       .
-        brk                                     ; A8A4 00                       .
-        brk                                     ; A8A5 00                       .
-        brk                                     ; A8A6 00                       .
-        brk                                     ; A8A7 00                       .
-        brk                                     ; A8A8 00                       .
-        brk                                     ; A8A9 00                       .
-        brk                                     ; A8AA 00                       .
-        brk                                     ; A8AB 00                       .
-        brk                                     ; A8AC 00                       .
-        brk                                     ; A8AD 00                       .
-        brk                                     ; A8AE 00                       .
-        brk                                     ; A8AF 00                       .
-        brk                                     ; A8B0 00                       .
-        brk                                     ; A8B1 00                       .
-        brk                                     ; A8B2 00                       .
-        brk                                     ; A8B3 00                       .
-        brk                                     ; A8B4 00                       .
-        brk                                     ; A8B5 00                       .
-        brk                                     ; A8B6 00                       .
-        brk                                     ; A8B7 00                       .
-        brk                                     ; A8B8 00                       .
-        brk                                     ; A8B9 00                       .
-        brk                                     ; A8BA 00                       .
-        brk                                     ; A8BB 00                       .
-        brk                                     ; A8BC 00                       .
-        brk                                     ; A8BD 00                       .
-        brk                                     ; A8BE 00                       .
-        brk                                     ; A8BF 00                       .
-        brk                                     ; A8C0 00                       .
-        brk                                     ; A8C1 00                       .
-        brk                                     ; A8C2 00                       .
-        brk                                     ; A8C3 00                       .
-        brk                                     ; A8C4 00                       .
-        brk                                     ; A8C5 00                       .
-        brk                                     ; A8C6 00                       .
-        brk                                     ; A8C7 00                       .
-        brk                                     ; A8C8 00                       .
-        brk                                     ; A8C9 00                       .
-        brk                                     ; A8CA 00                       .
-        brk                                     ; A8CB 00                       .
-        brk                                     ; A8CC 00                       .
-        brk                                     ; A8CD 00                       .
-        brk                                     ; A8CE 00                       .
-        brk                                     ; A8CF 00                       .
-        brk                                     ; A8D0 00                       .
-        brk                                     ; A8D1 00                       .
-        brk                                     ; A8D2 00                       .
-        brk                                     ; A8D3 00                       .
-        brk                                     ; A8D4 00                       .
-        brk                                     ; A8D5 00                       .
-        brk                                     ; A8D6 00                       .
-        brk                                     ; A8D7 00                       .
-        brk                                     ; A8D8 00                       .
-        brk                                     ; A8D9 00                       .
-        brk                                     ; A8DA 00                       .
-        brk                                     ; A8DB 00                       .
-        brk                                     ; A8DC 00                       .
-        brk                                     ; A8DD 00                       .
-        brk                                     ; A8DE 00                       .
-        brk                                     ; A8DF 00                       .
-        brk                                     ; A8E0 00                       .
-        brk                                     ; A8E1 00                       .
-        brk                                     ; A8E2 00                       .
-        brk                                     ; A8E3 00                       .
-        brk                                     ; A8E4 00                       .
-        brk                                     ; A8E5 00                       .
-        brk                                     ; A8E6 00                       .
-        brk                                     ; A8E7 00                       .
-        brk                                     ; A8E8 00                       .
-        brk                                     ; A8E9 00                       .
-        brk                                     ; A8EA 00                       .
-        brk                                     ; A8EB 00                       .
-        brk                                     ; A8EC 00                       .
-        brk                                     ; A8ED 00                       .
-        brk                                     ; A8EE 00                       .
-        brk                                     ; A8EF 00                       .
-        brk                                     ; A8F0 00                       .
-        brk                                     ; A8F1 00                       .
-        brk                                     ; A8F2 00                       .
-        brk                                     ; A8F3 00                       .
-        brk                                     ; A8F4 00                       .
-        brk                                     ; A8F5 00                       .
-        brk                                     ; A8F6 00                       .
-        brk                                     ; A8F7 00                       .
-        brk                                     ; A8F8 00                       .
-        brk                                     ; A8F9 00                       .
-        brk                                     ; A8FA 00                       .
-        brk                                     ; A8FB 00                       .
-        brk                                     ; A8FC 00                       .
-        brk                                     ; A8FD 00                       .
-        brk                                     ; A8FE 00                       .
-        brk                                     ; A8FF 00                       .
+        .byte   $84,$8C,$94                     ; A73B
+LA73E:  .byte   $4D,$4E,$4F,$50,$51,$52         ; A73E
+LA744:  .byte   $43,$41,$50,$43,$4F,$4D,$FB,$15,$FF,$5F,$FF,$5D,$FF,$7F,$F9,$7F ; A744
+        .byte   $FF,$F7,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$7F,$FF,$FF,$FF,$D5,$FA,$95 ; A754
+        .byte   $FA,$95,$FE,$71,$F9,$5D,$DF,$15,$FE,$54,$DD,$75,$6F,$51,$F7,$70 ; A764
+        .byte   $9F,$79,$FF,$54,$FF,$F7,$BF,$7D,$FF,$77,$FF,$77,$BE,$54,$FE,$55 ; A774
+        .byte   $FF,$55,$FF,$F4,$FF,$7C,$FF,$D5,$FF,$DF,$FF,$35,$FF,$FD,$FF,$7F ; A784
+        .byte   $FF,$55,$FF,$7D,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FD,$EE,$51,$75,$45 ; A794
+        .byte   $FD,$D1,$BF,$45,$D5,$D0,$FF,$1E,$FF,$71,$7F,$57,$FF,$55,$FF,$55 ; A7A4
+        .byte   $FF,$DF,$DD,$7D,$FF,$7F,$FF,$57,$FF,$F7,$FF,$FF,$FF,$15,$A5,$15 ; A7B4
+        .byte   $FF,$5D,$FF,$75,$7E,$74,$EF,$35,$FF,$57,$FE,$75,$FF,$FD,$FF,$F5 ; A7C4
+        .byte   $FF,$77,$FF,$FD,$FF,$D7,$FF,$5F,$FF,$FF,$FF,$FF,$F7,$46,$DD,$54 ; A7D4
+        .byte   $EF,$5D,$EE,$51,$A3,$74,$7F,$5C,$C5,$04,$BD,$11,$E7,$15,$6B,$D0 ; A7E4
+        .byte   $9B,$45,$77,$54,$FF,$53,$5F,$D7,$FF,$F5,$FF,$77,$00,$00,$00,$00 ; A7F4
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A804
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A814
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A824
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A834
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A844
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A854
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A864
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A874
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A884
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A894
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A8A4
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A8B4
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A8C4
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A8D4
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A8E4
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A8F4
 
 ; =============================================================================
 ; WILY 3 STAGE DATA — format: DATA_REFERENCE.md section 11

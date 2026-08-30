@@ -11,7 +11,6 @@
 ; Continuation records for the pair — descriptors, sprite records and
 ; position sets pointed into $Axxx/$Bxxx by the $14 tables. Formats in
 ; DATA_REFERENCE.md section 14.
-; SKELETON — raw ROM bytes, not yet classified as code or data.
 ; =============================================================================
     .byte $03,$D7,$03,$D7,$43,$D6,$43,$4E,$13,$14,$B4,$03,$C6,$03,$C7,$03   ; $A000
     .byte $C8,$03,$D5,$02,$C9,$03,$CA,$03,$CB,$03,$CC,$03,$93,$02,$CD,$03   ; $A010
