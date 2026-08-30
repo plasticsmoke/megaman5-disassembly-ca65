@@ -2227,55 +2227,15 @@ LD0BA:  sta     $060C,y                         ; D0BA 99 0C 06                 
         rts                                     ; D0C5 60                       `
 
 ; ----------------------------------------------------------------------------
-scroll_step_tbl:  .byte   $FF                             ; D0C6 FF                       .
-        .byte   $01                             ; D0C7 01                       .
-LD0C8:  .byte   $1D                             ; D0C8 1D                       .
-        brk                                     ; D0C9 00                       .
-LD0CA:  ora     (L0000,x)                       ; D0CA 01 00                    ..
-LD0CC:  brk                                     ; D0CC 00                       .
-        brk                                     ; D0CD 00                       .
-        brk                                     ; D0CE 00                       .
-        and     #$00                            ; D0CF 29 00                    ).
-        brk                                     ; D0D1 00                       .
-        brk                                     ; D0D2 00                       .
-        brk                                     ; D0D3 00                       .
-        brk                                     ; D0D4 00                       .
-        brk                                     ; D0D5 00                       .
-        brk                                     ; D0D6 00                       .
-        .byte   $80                             ; D0D7 80                       .
-        brk                                     ; D0D8 00                       .
-        brk                                     ; D0D9 00                       .
-        brk                                     ; D0DA 00                       .
-        brk                                     ; D0DB 00                       .
-LD0DC:  brk                                     ; D0DC 00                       .
-        brk                                     ; D0DD 00                       .
-        brk                                     ; D0DE 00                       .
-        asl     L0000,x                         ; D0DF 16 00                    ..
-        brk                                     ; D0E1 00                       .
-        brk                                     ; D0E2 00                       .
-        brk                                     ; D0E3 00                       .
-        brk                                     ; D0E4 00                       .
-        brk                                     ; D0E5 00                       .
-        brk                                     ; D0E6 00                       .
-        .byte   $03                             ; D0E7 03                       .
-        brk                                     ; D0E8 00                       .
-        brk                                     ; D0E9 00                       .
-        brk                                     ; D0EA 00                       .
-        brk                                     ; D0EB 00                       .
-LD0EC:  brk                                     ; D0EC 00                       .
-        brk                                     ; D0ED 00                       .
-        brk                                     ; D0EE 00                       .
-        ora     a:L0000,x                       ; D0EF 1D 00 00                 ...
-        brk                                     ; D0F2 00                       .
-        brk                                     ; D0F3 00                       .
-        brk                                     ; D0F4 00                       .
-        brk                                     ; D0F5 00                       .
-        brk                                     ; D0F6 00                       .
-        .byte   $04                             ; D0F7 04                       .
-        brk                                     ; D0F8 00                       .
-        brk                                     ; D0F9 00                       .
-        brk                                     ; D0FA 00                       .
-        brk                                     ; D0FB 00                       .
+; --- $D0C6: section-transition step/parameter tables ---
+scroll_step_tbl: .byte   $FF,$01,$1D,$00        ; D0C6
+LD0CA:  .byte   $01,$00,$00,$00,$00,$29,$00,$00,$00,$00,$00,$00,$00,$80,$00,$00 ; D0CA
+        .byte   $00,$00                         ; D0DA
+LD0DC:  .byte   $00,$00,$00,$16,$00,$00,$00,$00,$00,$00,$00,$03,$00,$00,$00,$00 ; D0DC
+LD0EC:  .byte   $00,$00,$00,$1D,$00,$00,$00,$00,$00,$00,$00,$04,$00,$00,$00,$00 ; D0EC
+LD0C8           := scroll_step_tbl + 2
+LD0CC           := LD0CA + 2
+
 LD0FC:  lda     #$00                            ; D0FC A9 00                    ..
         sta     $9D                             ; D0FE 85 9D                    ..
         lda     $26                             ; D100 A5 26                    .&
@@ -2428,160 +2388,30 @@ LD207:  dec     $11                             ; D207 C6 11                    
 LD230:  rts                                     ; D230 60                       `
 
 ; ----------------------------------------------------------------------------
-LD231:  .byte   $22                             ; D231 22                       "
-LD232:  .byte   $DE                             ; D232 DE                       .
-LD233:  .byte   $2F                             ; D233 2F                       /
-LD234:  .byte   $03                             ; D234 03                       .
-LD235:  .byte   $E2                             ; D235 E2                       .
-        .byte   $E2                             ; D236 E2                       .
-        .byte   $E3                             ; D237 E3                       .
-        brk                                     ; D238 00                       .
-        .byte   $22                             ; D239 22                       "
-        dec     $032F,x                         ; D23A DE 2F 03                 ./.
-        jmp     (L6F64)                         ; D23D 6C 64 6F                 ldo
+; --- $D231: stage-load PPU init records ---
+LD231:  .byte   $22,$DE,$2F                     ; D231
+LD234:  .byte   $03,$E2,$E2,$E3,$00,$22,$DE,$2F,$03,$6C,$64,$6F,$00,$22,$DE,$2F ; D234
+        .byte   $03,$5F,$5F,$00,$00,$22,$DE,$2F,$03,$00,$00,$00,$00,$22,$DE,$2F ; D244
+        .byte   $03,$C0,$C0,$C1,$00,$22,$DE,$2F,$03,$01,$01,$10,$00,$22,$DE,$2F ; D254
+        .byte   $03,$50,$50,$51,$00,$22,$DE,$2F,$03,$0D,$05,$00,$00,$22,$DE,$2F ; D264
+        .byte   $03,$65,$65,$6D,$00,$22,$DE,$2F,$03,$AA,$AA,$00,$00,$22,$DE,$2F ; D274
+        .byte   $03,$16,$15,$11,$00,$22,$1E,$27,$01,$65,$65,$6D,$00,$22,$DE,$2F ; D284
+        .byte   $03,$21,$24,$2C,$00,$22,$DE,$2F,$03,$8B,$8B,$15,$00,$22,$DE,$2F ; D294
+        .byte   $03,$E2,$E2,$E3,$00,$22,$DE,$2F,$03,$72,$72,$7B,$00 ; D2A4
+LD2B1:  .byte   $22,$41,$20                     ; D2B1
+LD2B4:  .byte   $02,$CA,$22,$41,$20,$02,$02,$22,$41,$20,$02,$17,$22,$41,$20,$02 ; D2B4
+        .byte   $5F,$22,$41,$20,$02,$0A,$22,$41,$20,$02,$F8,$22,$41,$20,$02,$7A ; D2C4
+        .byte   $22,$41,$20,$02,$0E,$22,$41,$20,$02,$0A,$22,$41,$20,$02,$09,$22 ; D2D4
+        .byte   $41,$20,$02,$85,$21,$81,$18,$00,$0A,$22,$41,$20,$02,$07,$22,$41 ; D2E4
+        .byte   $20,$02,$0A,$22,$41,$20,$02,$CA,$22,$41,$20,$02,$41 ; D2F4
+LD301:  .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$1B,$18,$00,$07 ; D301
+LD232           := LD231 + 1
+LD233           := LD231 + 2
+LD235           := LD234 + 1
+LD2B2           := LD2B1 + 1
+LD2B3           := LD2B1 + 2
+LD2B5           := LD2B4 + 1
 
-; ----------------------------------------------------------------------------
-        brk                                     ; D240 00                       .
-        .byte   $22                             ; D241 22                       "
-        dec     $032F,x                         ; D242 DE 2F 03                 ./.
-        .byte   $5F                             ; D245 5F                       _
-        .byte   $5F                             ; D246 5F                       _
-        brk                                     ; D247 00                       .
-        brk                                     ; D248 00                       .
-        .byte   $22                             ; D249 22                       "
-        dec     $032F,x                         ; D24A DE 2F 03                 ./.
-        brk                                     ; D24D 00                       .
-        brk                                     ; D24E 00                       .
-        brk                                     ; D24F 00                       .
-        brk                                     ; D250 00                       .
-        .byte   $22                             ; D251 22                       "
-        dec     $032F,x                         ; D252 DE 2F 03                 ./.
-        cpy     #$C0                            ; D255 C0 C0                    ..
-        cmp     (L0000,x)                       ; D257 C1 00                    ..
-        .byte   $22                             ; D259 22                       "
-        dec     $032F,x                         ; D25A DE 2F 03                 ./.
-        ora     ($01,x)                         ; D25D 01 01                    ..
-        bpl     LD261                           ; D25F 10 00                    ..
-LD261:  .byte   $22                             ; D261 22                       "
-        dec     $032F,x                         ; D262 DE 2F 03                 ./.
-        bvc     LD2B7                           ; D265 50 50                    PP
-        eor     (L0000),y                       ; D267 51 00                    Q.
-        .byte   $22                             ; D269 22                       "
-        dec     $032F,x                         ; D26A DE 2F 03                 ./.
-        ora     a:$05                           ; D26D 0D 05 00                 ...
-        brk                                     ; D270 00                       .
-        .byte   $22                             ; D271 22                       "
-        dec     $032F,x                         ; D272 DE 2F 03                 ./.
-        adc     $65                             ; D275 65 65                    ee
-        adc     $2200                           ; D277 6D 00 22                 m."
-        dec     $032F,x                         ; D27A DE 2F 03                 ./.
-        tax                                     ; D27D AA                       .
-        tax                                     ; D27E AA                       .
-        brk                                     ; D27F 00                       .
-        brk                                     ; D280 00                       .
-        .byte   $22                             ; D281 22                       "
-        dec     $032F,x                         ; D282 DE 2F 03                 ./.
-        asl     $15,x                           ; D285 16 15                    ..
-        ora     (L0000),y                       ; D287 11 00                    ..
-        .byte   $22                             ; D289 22                       "
-        asl     $0127,x                         ; D28A 1E 27 01                 .'.
-        adc     $65                             ; D28D 65 65                    ee
-        adc     $2200                           ; D28F 6D 00 22                 m."
-        dec     $032F,x                         ; D292 DE 2F 03                 ./.
-        and     ($24,x)                         ; D295 21 24                    !$
-        bit     $2200                           ; D297 2C 00 22                 ,."
-        dec     $032F,x                         ; D29A DE 2F 03                 ./.
-        .byte   $8B                             ; D29D 8B                       .
-        .byte   $8B                             ; D29E 8B                       .
-        ora     L0000,x                         ; D29F 15 00                    ..
-        .byte   $22                             ; D2A1 22                       "
-        dec     $032F,x                         ; D2A2 DE 2F 03                 ./.
-        .byte   $E2                             ; D2A5 E2                       .
-        .byte   $E2                             ; D2A6 E2                       .
-        .byte   $E3                             ; D2A7 E3                       .
-        brk                                     ; D2A8 00                       .
-        .byte   $22                             ; D2A9 22                       "
-        dec     $032F,x                         ; D2AA DE 2F 03                 ./.
-        .byte   $72                             ; D2AD 72                       r
-        .byte   $72                             ; D2AE 72                       r
-        .byte   $7B                             ; D2AF 7B                       {
-        brk                                     ; D2B0 00                       .
-LD2B1:  .byte   $22                             ; D2B1 22                       "
-LD2B2:  .byte   $41                             ; D2B2 41                       A
-LD2B3:  .byte   $20                             ; D2B3 20                        
-LD2B4:  .byte   $02                             ; D2B4 02                       .
-LD2B5:  dex                                     ; D2B5 CA                       .
-        .byte   $22                             ; D2B6 22                       "
-LD2B7:  eor     (L0020,x)                       ; D2B7 41 20                    A 
-        .byte   $02                             ; D2B9 02                       .
-        .byte   $02                             ; D2BA 02                       .
-        .byte   $22                             ; D2BB 22                       "
-        eor     (L0020,x)                       ; D2BC 41 20                    A 
-        .byte   $02                             ; D2BE 02                       .
-        .byte   $17                             ; D2BF 17                       .
-        .byte   $22                             ; D2C0 22                       "
-        eor     (L0020,x)                       ; D2C1 41 20                    A 
-        .byte   $02                             ; D2C3 02                       .
-        .byte   $5F                             ; D2C4 5F                       _
-        .byte   $22                             ; D2C5 22                       "
-        eor     (L0020,x)                       ; D2C6 41 20                    A 
-        .byte   $02                             ; D2C8 02                       .
-        asl     a                               ; D2C9 0A                       .
-        .byte   $22                             ; D2CA 22                       "
-        eor     (L0020,x)                       ; D2CB 41 20                    A 
-        .byte   $02                             ; D2CD 02                       .
-        sed                                     ; D2CE F8                       .
-        .byte   $22                             ; D2CF 22                       "
-        eor     (L0020,x)                       ; D2D0 41 20                    A 
-        .byte   $02                             ; D2D2 02                       .
-        .byte   $7A                             ; D2D3 7A                       z
-        .byte   $22                             ; D2D4 22                       "
-        eor     (L0020,x)                       ; D2D5 41 20                    A 
-        .byte   $02                             ; D2D7 02                       .
-        asl     $4122                           ; D2D8 0E 22 41                 ."A
-        jsr     L0A02                           ; D2DB 20 02 0A                  ..
-        .byte   $22                             ; D2DE 22                       "
-        eor     (L0020,x)                       ; D2DF 41 20                    A 
-        .byte   $02                             ; D2E1 02                       .
-        ora     #$22                            ; D2E2 09 22                    ."
-        eor     (L0020,x)                       ; D2E4 41 20                    A 
-        .byte   $02                             ; D2E6 02                       .
-        sta     $21                             ; D2E7 85 21                    .!
-        sta     ($18,x)                         ; D2E9 81 18                    ..
-        brk                                     ; D2EB 00                       .
-        asl     a                               ; D2EC 0A                       .
-        .byte   $22                             ; D2ED 22                       "
-        eor     (L0020,x)                       ; D2EE 41 20                    A 
-        .byte   $02                             ; D2F0 02                       .
-        .byte   $07                             ; D2F1 07                       .
-        .byte   $22                             ; D2F2 22                       "
-        eor     (L0020,x)                       ; D2F3 41 20                    A 
-        .byte   $02                             ; D2F5 02                       .
-        asl     a                               ; D2F6 0A                       .
-        .byte   $22                             ; D2F7 22                       "
-        eor     (L0020,x)                       ; D2F8 41 20                    A 
-        .byte   $02                             ; D2FA 02                       .
-        dex                                     ; D2FB CA                       .
-        .byte   $22                             ; D2FC 22                       "
-        eor     (L0020,x)                       ; D2FD 41 20                    A 
-        .byte   $02                             ; D2FF 02                       .
-        .byte   $41                             ; D300 41                       A
-LD301:  brk                                     ; D301 00                       .
-        brk                                     ; D302 00                       .
-        brk                                     ; D303 00                       .
-        brk                                     ; D304 00                       .
-        brk                                     ; D305 00                       .
-        brk                                     ; D306 00                       .
-        brk                                     ; D307 00                       .
-        brk                                     ; D308 00                       .
-        brk                                     ; D309 00                       .
-        brk                                     ; D30A 00                       .
-        brk                                     ; D30B 00                       .
-        brk                                     ; D30C 00                       .
-        .byte   $1B                             ; D30D 1B                       .
-        clc                                     ; D30E 18                       .
-        brk                                     ; D30F 00                       .
-        .byte   $07                             ; D310 07                       .
 ; =============================================================================
 ; STAGE LOAD — $D311
 ; Fade out, clear entities/OAM/scroll state, rendering off, init via
@@ -2780,41 +2610,17 @@ LD48D:  lda     $8F7F,y                         ; D48D B9 7F 8F                 
 LD4B1:  rts                                     ; D4B1 60                       `
 
 ; ----------------------------------------------------------------------------
-player_pal_bg:  .byte   $0F                             ; D4B2 0F                       .
-        .byte   $0F                             ; D4B3 0F                       .
-        .byte   $2C                             ; D4B4 2C                       ,
-        .byte   $11                             ; D4B5 11                       .
-player_pal_spr:  .byte   $0F                             ; D4B6 0F                       .
-        .byte   $0F                             ; D4B7 0F                       .
-        jsr     L0F37                           ; D4B8 20 37 0F                  7.
-        .byte   $0F                             ; D4BB 0F                       .
-        jsr     L0F27                           ; D4BC 20 27 0F                  '.
-        .byte   $0F                             ; D4BF 0F                       .
-        .byte   $20                             ; D4C0 20                        
-        rol     a                               ; D4C1 2A                       *
-stage_alt_bank_tbl:  brk                                     ; D4C2 00                       .
-        ora     ($02,x)                         ; D4C3 01 02                    ..
-        .byte   $03                             ; D4C5 03                       .
-        .byte   $04                             ; D4C6 04                       .
-        ora     $06                             ; D4C7 05 06                    ..
-        .byte   $07                             ; D4C9 07                       .
-        php                                     ; D4CA 08                       .
-        ora     #$0A                            ; D4CB 09 0A                    ..
-        php                                     ; D4CD 08                       .
-        .byte   $0C                             ; D4CE 0C                       .
-        ora     $0E0E                           ; D4CF 0D 0E 0E                 ...
-LD4D2:  brk                                     ; D4D2 00                       .
-        .byte   $02                             ; D4D3 02                       .
-        ora     ($05,x)                         ; D4D4 01 05                    ..
-        .byte   $03                             ; D4D6 03                       .
-        asl     $07                             ; D4D7 06 07                    ..
-        .byte   $04                             ; D4D9 04                       .
-        php                                     ; D4DA 08                       .
-        php                                     ; D4DB 08                       .
-        php                                     ; D4DC 08                       .
-        php                                     ; D4DD 08                       .
-        ora     #$09                            ; D4DE 09 09                    ..
-        ora     #$09                            ; D4E0 09 09                    ..
+player_pal_bg:  .byte   $0F,$0F,$2C,$11         ; D4B2  player BG palette row
+; player sprite palette rows (3 x 4: normal, ?, ?)
+player_pal_spr: .byte   $0F,$0F,$20,$37         ; D4B6
+        .byte   $0F,$0F,$20,$27                 ; D4BA
+        .byte   $0F,$0F,$20,$2A                 ; D4BE
+; stage -> alternate art bank $27 (identity except $0B->$08, $0F->$0E)
+stage_alt_bank_tbl: .byte   $00,$01,$02,$03,$04,$05,$06,$07,$08,$09,$0A,$08,$0C,$0D,$0E,$0E ; D4C2  stages $00-$0F
+; stage -> music id (Proto castles share $08, Wily castles $09)
+LD4D2:  .byte   $00,$02,$01,$05,$03,$06,$07,$04,$08,$08,$08,$08,$09,$09,$09,$09 ; D4D2  stages $00-$0F
+
+; ----------------------------------------------------------------------------
 draw_scroll_column:  ldy     $24                             ; D4E2 A4 24                    .$
         jsr     screen_layout_ptr                           ; D4E4 20 A3 D7                  ..
         lda     #$20                            ; D4E7 A9 20                    . 
@@ -3033,30 +2839,15 @@ LD676:  lda     $07D0,y                         ; D676 B9 D0 07                 
         rts                                     ; D69F 60                       `
 
 ; ----------------------------------------------------------------------------
-LD6A0:  beq     LD6B1                           ; D6A0 F0 0F                    ..
-LD6A2:  .byte   $0F                             ; D6A2 0F                       .
-        .byte   $F0                             ; D6A3 F0                       .
-LD6A4:  brk                                     ; D6A4 00                       .
-        .byte   $04                             ; D6A5 04                       .
-        php                                     ; D6A6 08                       .
-        .byte   $0C                             ; D6A7 0C                       .
-LD6A8:  brk                                     ; D6A8 00                       .
-        jsr     L6040                           ; D6A9 20 40 60                  @`
-LD6AC:  .byte   $23                             ; D6AC 23                       #
-        rol     $1F2A                           ; D6AD 2E 2A 1F                 .*.
-LD6B0:  brk                                     ; D6B0 00                       .
-LD6B1:  .byte   $80                             ; D6B1 80                       .
-        brk                                     ; D6B2 00                       .
-        .byte   $80                             ; D6B3 80                       .
-        brk                                     ; D6B4 00                       .
-        .byte   $80                             ; D6B5 80                       .
-        brk                                     ; D6B6 00                       .
-        .byte   $80                             ; D6B7 80                       .
-LD6B8:  jsr     L2120                           ; D6B8 20 20 21                   !
-        and     ($22,x)                         ; D6BB 21 22                    !"
-        .byte   $22                             ; D6BD 22                       "
-        .byte   $23                             ; D6BE 23                       #
-        .byte   $23                             ; D6BF 23                       #
+; --- $D6A0: attribute/quadrant decode tables ---
+LD6A0:  .byte   $F0,$0F,$0F,$F0                 ; D6A0
+LD6A4:  .byte   $00,$04,$08,$0C                 ; D6A4
+LD6A8:  .byte   $00,$20,$40,$60                 ; D6A8
+LD6AC:  .byte   $23,$2E,$2A,$1F                 ; D6AC
+LD6B0:  .byte   $00,$80,$00,$80,$00,$80,$00,$80 ; D6B0
+LD6B8:  .byte   $20,$20,$21,$21,$22,$22,$23,$23 ; D6B8
+LD6A2           := LD6A0 + 2
+
 metatile_strip_decode:  jsr     block_ptr_setup                           ; D6C0 20 58 D7                  X.
         ldy     #$03                            ; D6C3 A0 03                    ..
         sty     $02                             ; D6C5 84 02                    ..
@@ -3180,22 +2971,11 @@ LD773:  lda     #$00                            ; D773 A9 00                    
         rts                                     ; D78A 60                       `
 
 ; ----------------------------------------------------------------------------
-strip_offsets:  brk                                     ; D78B 00                       .
-        .byte   $02                             ; D78C 02                       .
-        php                                     ; D78D 08                       .
-        asl     a                               ; D78E 0A                       .
-attr_quad_masks:  .byte   $FC                             ; D78F FC                       .
-        .byte   $F3                             ; D790 F3                       .
-        .byte   $CF                             ; D791 CF                       .
-        .byte   $3F                             ; D792 3F                       ?
-stage0E_screen_banks:  asl     $0E0E                           ; D793 0E 0E 0E                 ...
-        asl     $0E0E                           ; D796 0E 0E 0E                 ...
-        asl     a:$0E                           ; D799 0E 0E 00                 ...
-        ora     ($02,x)                         ; D79C 01 02                    ..
-        .byte   $03                             ; D79E 03                       .
-        .byte   $04                             ; D79F 04                       .
-        ora     $06                             ; D7A0 05 06                    ..
-        .byte   $07                             ; D7A2 07                       .
+strip_offsets: .byte   $00,$02,$08,$0A          ; D78B  decode-buffer x per strip metatile
+attr_quad_masks: .byte   $FC,$F3,$CF,$3F        ; D78F  attribute quadrant keep-masks
+; boss-rush stage $0E: per-screen alternate art bank ($27)
+stage0E_screen_banks: .byte   $0E,$0E,$0E,$0E,$0E,$0E,$0E,$0E,$00,$01,$02,$03,$04,$05,$06,$07 ; D793  screens $00-$0F
+
 screen_layout_ptr:  lda     $26                             ; D7A3 A5 26                    .&
         cmp     $F6                             ; D7A5 C5 F6                    ..
         beq     LD7AE                           ; D7A7 F0 05                    ..
@@ -3413,27 +3193,11 @@ LD925:  lda     $0680,y                         ; D925 B9 80 06                 
 LD934:  rts                                     ; D934 60                       `
 
 ; ----------------------------------------------------------------------------
-LD935:  beq     LD946                           ; D935 F0 0F                    ..
-        lda     $19                             ; D937 A5 19                    ..
-        ora     $1A                             ; D939 05 1A                    ..
-        bne     LD934                           ; D93B D0 F7                    ..
-        lda     $1D                             ; D93D A5 1D                    ..
-        bpl     LD934                           ; D93F 10 F3                    ..
-        and     #$7F                            ; D941 29 7F                    ).
-        sta     $1D                             ; D943 85 1D                    ..
-        .byte   $29                             ; D945 29                       )
-LD946:  .byte   $3F                             ; D946 3F                       ?
-        sta     $22                             ; D947 85 22                    ."
-        ldy     #$00                            ; D949 A0 00                    ..
-        lda     $1D                             ; D94B A5 1D                    ..
-        and     #$40                            ; D94D 29 40                    )@
-        beq     LD95B                           ; D94F F0 0A                    ..
-        ldy     #$04                            ; D951 A0 04                    ..
-        lda     $29                             ; D953 A5 29                    .)
-        and     #$20                            ; D955 29 20                    ) 
-        beq     LD95B                           ; D957 F0 02                    ..
-        ldy     #$08                            ; D959 A0 08                    ..
-LD95B:  sty     $10                             ; D95B 84 10                    ..
+; --- $D935: nametable draw tables ---
+LD935:  .byte   $F0,$0F,$A5,$19,$05,$1A,$D0,$F7,$A5,$1D,$10,$F3,$29,$7F,$85,$1D ; D935
+        .byte   $29,$3F,$85,$22,$A0,$00,$A5,$1D,$29,$40,$F0,$0A,$A0,$04,$A5,$29 ; D945
+        .byte   $29,$20,$F0,$02,$A0,$08,$84,$10 ; D955
+
 LD95D:  lda     $22                             ; D95D A5 22                    ."
         pha                                     ; D95F 48                       H
         and     #$07                            ; D960 29 07                    ).
@@ -3796,320 +3560,76 @@ LDC20:  ldx     $AB                             ; DC20 A6 AB                    
         rts                                     ; DC25 60                       `
 
 ; ----------------------------------------------------------------------------
-LDC26:  brk                                     ; DC26 00                       .
-        brk                                     ; DC27 00                       .
-        brk                                     ; DC28 00                       .
-        asl     $1B                             ; DC29 06 1B                    ..
-        .byte   $0B                             ; DC2B 0B                       .
-        asl     $1B,x                           ; DC2C 16 1B                    ..
-        .byte   $0B                             ; DC2E 0B                       .
-        rol     $1B                             ; DC2F 26 1B                    &.
-        .byte   $0B                             ; DC31 0B                       .
-        jsr     L1501                           ; DC32 20 01 15                  ..
-        bmi     LDC73                           ; DC35 30 3C                    0<
-        bit     $3030                           ; DC37 2C 30 30                 ,00
-        .byte   $3C                             ; DC3A 3C                       <
-        bmi     LDC6D                           ; DC3B 30 30                    00
-        bmi     LDC5F                           ; DC3D 30 20                    0 
-        ora     ($01,x)                         ; DC3F 01 01                    ..
-        jsr     L111C                           ; DC41 20 1C 11                  ..
-        jsr     L1C01                           ; DC44 20 01 1C                  ..
-        jsr     L2511                           ; DC47 20 11 25                  .%
-        .byte   $0F                             ; DC4A 0F                       .
-        .byte   $14                             ; DC4B 14                       .
-        .byte   $04                             ; DC4C 04                       .
-        .byte   $17                             ; DC4D 17                       .
-        .byte   $14                             ; DC4E 14                       .
-        .byte   $04                             ; DC4F 04                       .
-        .byte   $27                             ; DC50 27                       '
-        .byte   $14                             ; DC51 14                       .
-        .byte   $04                             ; DC52 04                       .
-        and     #$19                            ; DC53 29 19                    ).
-        ora     #$19                            ; DC55 09 19                    ..
-        ora     #$29                            ; DC57 09 29                    .)
-        ora     #$29                            ; DC59 09 29                    .)
-        ora     $1120,y                         ; DC5B 19 20 11                 . .
-        .byte   $01                             ; DC5E 01                       .
-LDC5F:  brk                                     ; DC5F 00                       .
-        brk                                     ; DC60 00                       .
-        brk                                     ; DC61 00                       .
-        brk                                     ; DC62 00                       .
-        brk                                     ; DC63 00                       .
-        brk                                     ; DC64 00                       .
-        brk                                     ; DC65 00                       .
-        brk                                     ; DC66 00                       .
-        brk                                     ; DC67 00                       .
-        brk                                     ; DC68 00                       .
-        brk                                     ; DC69 00                       .
-        brk                                     ; DC6A 00                       .
-        brk                                     ; DC6B 00                       .
-        brk                                     ; DC6C 00                       .
-LDC6D:  brk                                     ; DC6D 00                       .
-        brk                                     ; DC6E 00                       .
-        brk                                     ; DC6F 00                       .
-        brk                                     ; DC70 00                       .
-        brk                                     ; DC71 00                       .
-        brk                                     ; DC72 00                       .
-LDC73:  brk                                     ; DC73 00                       .
-        brk                                     ; DC74 00                       .
-        brk                                     ; DC75 00                       .
-        brk                                     ; DC76 00                       .
-        brk                                     ; DC77 00                       .
-        brk                                     ; DC78 00                       .
-        brk                                     ; DC79 00                       .
-        brk                                     ; DC7A 00                       .
-        brk                                     ; DC7B 00                       .
-        brk                                     ; DC7C 00                       .
-        brk                                     ; DC7D 00                       .
-        brk                                     ; DC7E 00                       .
-        brk                                     ; DC7F 00                       .
-        jsr     L1C2C                           ; DC80 20 2C 1C                  ,.
-        bit     L1C20                           ; DC83 2C 20 1C                 , .
-        jsr     L1110                           ; DC86 20 10 11                  ..
-        bpl     LDC8B                           ; DC89 10 00                    ..
-LDC8B:  ora     (L0000,x)                       ; DC8B 01 00                    ..
-        .byte   $0F                             ; DC8D 0F                       .
-        .byte   $0F                             ; DC8E 0F                       .
-        jsr     L211C                           ; DC8F 20 1C 21                  .!
-        bpl     LDCA0                           ; DC92 10 0C                    ..
-        ora     (L0000),y                       ; DC94 11 00                    ..
-        .byte   $0F                             ; DC96 0F                       .
-        ora     ($10,x)                         ; DC97 01 10                    ..
-        .byte   $1C                             ; DC99 1C                       .
-        .byte   $0C                             ; DC9A 0C                       .
-        brk                                     ; DC9B 00                       .
-        .byte   $0C                             ; DC9C 0C                       .
-        .byte   $0F                             ; DC9D 0F                       .
-        .byte   $0F                             ; DC9E 0F                       .
-        .byte   $0F                             ; DC9F 0F                       .
-LDCA0:  .byte   $0F                             ; DCA0 0F                       .
-        and     ($11,x)                         ; DCA1 21 11                    !.
-        ora     ($11,x)                         ; DCA3 01 11                    ..
-        ora     ($21,x)                         ; DCA5 01 21                    .!
-        ora     ($21,x)                         ; DCA7 01 21                    .!
-        ora     ($11),y                         ; DCA9 11 11                    ..
-        and     ($21),y                         ; DCAB 31 21                    1!
-        and     ($21),y                         ; DCAD 31 21                    1!
-        ora     ($21),y                         ; DCAF 11 21                    .!
-        ora     ($31),y                         ; DCB1 11 31                    .1
-        .byte   $13                             ; DCB3 13                       .
-        ora     ($0F,x)                         ; DCB4 01 0F                    ..
-        .byte   $13                             ; DCB6 13                       .
-        ora     ($0A,x)                         ; DCB7 01 0A                    ..
-        rol     $1B,x                           ; DCB9 36 1B                    6.
-        .byte   $0B                             ; DCBB 0B                       .
-        .byte   $37                             ; DCBC 37                       7
-        clc                                     ; DCBD 18                       .
-        php                                     ; DCBE 08                       .
-        .byte   $27                             ; DCBF 27                       '
-        clc                                     ; DCC0 18                       .
-        php                                     ; DCC1 08                       .
-        .byte   $07                             ; DCC2 07                       .
-        clc                                     ; DCC3 18                       .
-        php                                     ; DCC4 08                       .
-        .byte   $13                             ; DCC5 13                       .
-        ora     ($1A,x)                         ; DCC6 01 1A                    ..
-        .byte   $0F                             ; DCC8 0F                       .
-        and     ($09,x)                         ; DCC9 21 09                    !.
-        asl     $0F                             ; DCCB 06 0F                    ..
-        and     #$30                            ; DCCD 29 30                    )0
-        brk                                     ; DCCF 00                       .
-        ora     $30                             ; DCD0 05 30                    .0
-        brk                                     ; DCD2 00                       .
-        .byte   $0F                             ; DCD3 0F                       .
-        and     ($1C),y                         ; DCD4 31 1C                    1.
-        .byte   $27                             ; DCD6 27                       '
-        and     ($1C),y                         ; DCD7 31 1C                    1.
-        .byte   $0F                             ; DCD9 0F                       .
-        rol     $11                             ; DCDA 26 11                    &.
-        .byte   $0F                             ; DCDC 0F                       .
-        .byte   $27                             ; DCDD 27                       '
-        rol     $06                             ; DCDE 26 06                    &.
-        rol     $06                             ; DCE0 26 06                    &.
-        .byte   $27                             ; DCE2 27                       '
-        asl     $27                             ; DCE3 06 27                    .'
-        rol     $3C                             ; DCE5 26 3C                    &<
-        bit     $2020                           ; DCE7 2C 20 20                 ,  
-        .byte   $3C                             ; DCEA 3C                       <
-        bit     $202C                           ; DCEB 2C 2C 20                 ,, 
-        .byte   $3C                             ; DCEE 3C                       <
-        .byte   $1C                             ; DCEF 1C                       .
-        bpl     LDD1E                           ; DCF0 10 2C                    .,
-        bit     $101C                           ; DCF2 2C 1C 10                 ,..
-        bpl     LDD23                           ; DCF5 10 2C                    .,
-        .byte   $1C                             ; DCF7 1C                       .
-        and     L0004                           ; DCF8 25 04                    %.
-        .byte   $0F                             ; DCFA 0F                       .
-        .byte   $04                             ; DCFB 04                       .
-        .byte   $0F                             ; DCFC 0F                       .
-        and     $0F                             ; DCFD 25 0F                    %.
-LDCFF:  and     L0004                           ; DCFF 25 04                    %.
-LDD01:  brk                                     ; DD01 00                       .
-        asl     $0C                             ; DD02 06 0C                    ..
-        .byte   $12                             ; DD04 12                       .
-        clc                                     ; DD05 18                       .
-        asl     $1E1E,x                         ; DD06 1E 1E 1E                 ...
-        asl     $221E,x                         ; DD09 1E 1E 22                 .."
-        and     #$30                            ; DD0C 29 30                    )0
-        rol     $3D,x                           ; DD0E 36 3D                    6=
-        .byte   $44                             ; DD10 44                       D
-        lsr     a                               ; DD11 4A                       J
-        .byte   $4F                             ; DD12 4F                       O
-        .byte   $54                             ; DD13 54                       T
-        .byte   $5A                             ; DD14 5A                       Z
-        .byte   $5F                             ; DD15 5F                       _
-        adc     $69                             ; DD16 65 69                    ei
-        adc     $7873                           ; DD18 6D 73 78                 msx
-        adc     $8782,x                         ; DD1B 7D 82 87                 }..
-LDD1E:  sty     $9292                           ; DD1E 8C 92 92                 ...
-LDD21:  .byte   $03                             ; DD21 03                       .
-LDD22:  php                                     ; DD22 08                       .
-LDD23:  ora     ($02,x)                         ; DD23 01 02                    ..
-        .byte   $03                             ; DD25 03                       .
-        and     ($03),y                         ; DD26 31 03                    1.
-        php                                     ; DD28 08                       .
-        ora     $06                             ; DD29 05 06                    ..
-        .byte   $07                             ; DD2B 07                       .
-        asl     $03                             ; DD2C 06 03                    ..
-        php                                     ; DD2E 08                       .
-        php                                     ; DD2F 08                       .
-        .byte   $12                             ; DD30 12                       .
-        ora     #$0A                            ; DD31 09 0A                    ..
-        .byte   $03                             ; DD33 03                       .
-        php                                     ; DD34 08                       .
-        .byte   $0C                             ; DD35 0C                       .
-        ora     $0D0E                           ; DD36 0D 0E 0D                 ...
-        .byte   $03                             ; DD39 03                       .
-        php                                     ; DD3A 08                       .
-        ora     #$0A                            ; DD3B 09 0A                    ..
-        php                                     ; DD3D 08                       .
-        .byte   $12                             ; DD3E 12                       .
-        ora     ($0B,x)                         ; DD3F 01 0B                    ..
-        asl     $041F,x                         ; DD41 1E 1F 04                 ...
-        php                                     ; DD44 08                       .
-        jsr     L2221                           ; DD45 20 21 22                  !"
-        plp                                     ; DD48 28                       (
-        brk                                     ; DD49 00                       .
-        .byte   $04                             ; DD4A 04                       .
-        php                                     ; DD4B 08                       .
-        .byte   $23                             ; DD4C 23                       #
-        bit     $25                             ; DD4D 24 25                    $%
-        plp                                     ; DD4F 28                       (
-        brk                                     ; DD50 00                       .
-        .byte   $03                             ; DD51 03                       .
-        php                                     ; DD52 08                       .
-        rol     $27                             ; DD53 26 27                    &'
-        plp                                     ; DD55 28                       (
-        brk                                     ; DD56 00                       .
-        .byte   $04                             ; DD57 04                       .
-        php                                     ; DD58 08                       .
-        plp                                     ; DD59 28                       (
-        .byte   $22                             ; DD5A 22                       "
-        and     (L0020,x)                       ; DD5B 21 20                    ! 
-        brk                                     ; DD5D 00                       .
-        .byte   $04                             ; DD5E 04                       .
-        php                                     ; DD5F 08                       .
-        plp                                     ; DD60 28                       (
-        and     $24                             ; DD61 25 24                    %$
-        .byte   $23                             ; DD63 23                       #
-        brk                                     ; DD64 00                       .
-        .byte   $03                             ; DD65 03                       .
-        php                                     ; DD66 08                       .
-        plp                                     ; DD67 28                       (
-        .byte   $27                             ; DD68 27                       '
-        rol     L0000                           ; DD69 26 00                    &.
-        .byte   $02                             ; DD6B 02                       .
-        asl     $29                             ; DD6C 06 29                    .)
-        rol     a                               ; DD6E 2A                       *
-        .byte   $2B                             ; DD6F 2B                       +
-        .byte   $02                             ; DD70 02                       .
-        .byte   $04                             ; DD71 04                       .
-        bit     $2E2D                           ; DD72 2C 2D 2E                 ,-.
-        .byte   $03                             ; DD75 03                       .
-        php                                     ; DD76 08                       .
-        .byte   $2F                             ; DD77 2F                       /
-        bmi     LDDAF                           ; DD78 30 35                    05
-        bmi     LDD7E                           ; DD7A 30 02                    0.
-        php                                     ; DD7C 08                       .
-        .byte   $32                             ; DD7D 32                       2
-LDD7E:  .byte   $33                             ; DD7E 33                       3
-        .byte   $34                             ; DD7F 34                       4
-        .byte   $03                             ; DD80 03                       .
-        php                                     ; DD81 08                       .
-        .byte   $04                             ; DD82 04                       .
-        .byte   $0B                             ; DD83 0B                       .
-        ora     #$0A                            ; DD84 09 0A                    ..
-        ora     ($08,x)                         ; DD86 01 08                    ..
-        sec                                     ; DD88 38                       8
-        and     $0801,y                         ; DD89 39 01 08                 9..
-        .byte   $3A                             ; DD8C 3A                       :
-        .byte   $3B                             ; DD8D 3B                       ;
-        .byte   $03                             ; DD8E 03                       .
-        php                                     ; DD8F 08                       .
-        ora     #$0A                            ; DD90 09 0A                    ..
-        .byte   $04                             ; DD92 04                       .
-        .byte   $0B                             ; DD93 0B                       .
-        .byte   $02                             ; DD94 02                       .
-        php                                     ; DD95 08                       .
-        .byte   $0F                             ; DD96 0F                       .
-        bpl     LDDAA                           ; DD97 10 11                    ..
-        .byte   $02                             ; DD99 02                       .
-        php                                     ; DD9A 08                       .
-        rol     $37,x                           ; DD9B 36 37                    67
-        .byte   $3C                             ; DD9D 3C                       <
-        .byte   $02                             ; DD9E 02                       .
-        php                                     ; DD9F 08                       .
-        and     $3F3E,x                         ; DDA0 3D 3E 3F                 =>?
-        .byte   $02                             ; DDA3 02                       .
-        php                                     ; DDA4 08                       .
-        rti                                     ; DDA5 40                       @
+; -----------------------------------------------------------------------------
+; PALETTE-CYCLE TABLES (runner LDBD1, slots $05F0-$05F3; started by the
+; spawn engine's >= $C0 commands, $1B:990A+). Program id -> LDD01 record
+; offset; record at LDD21+off = [frame count-1, period-1, then per frame a
+; triplet index into the LDC26 color pool (x3); index $00 ends the program
+; and frees the slot]. Colors go to PAL_BUF+1 and the master copy ($0621+),
+; 3 bytes per step, slot n -> palette row n.
+; -----------------------------------------------------------------------------
+; --- $DC26: color triplet pool (index x3; $49 triplets) ---
+LDC26:  .byte   $00,$00,$00,$06,$1B,$0B,$16,$1B,$0B,$26,$1B,$0B,$20,$01,$15,$30,$3C,$2C,$30,$30,$3C,$30,$30,$30 ; DC26  triplets $00-$07
+        .byte   $20,$01,$01,$20,$1C,$11,$20,$01,$1C,$20,$11,$25,$0F,$14,$04,$17,$14,$04,$27,$14,$04,$29,$19,$09 ; DC3E  triplets $08-$0F
+        .byte   $19,$09,$29,$09,$29,$19,$20,$11,$01,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; DC56  triplets $10-$17
+        .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$20,$2C,$1C,$2C,$20,$1C ; DC6E  triplets $18-$1F
+        .byte   $20,$10,$11,$10,$00,$01,$00,$0F,$0F,$20,$1C,$21,$10,$0C,$11,$00,$0F,$01,$10,$1C,$0C,$00,$0C,$0F ; DC86  triplets $20-$27
+        .byte   $0F,$0F,$0F,$21,$11,$01,$11,$01,$21,$01,$21,$11,$11,$31,$21,$31,$21,$11,$21,$11,$31,$13,$01,$0F ; DC9E  triplets $28-$2F
+        .byte   $13,$01,$0A,$36,$1B,$0B,$37,$18,$08,$27,$18,$08,$07,$18,$08,$13,$01,$1A,$0F,$21,$09,$06,$0F,$29 ; DCB6  triplets $30-$37
+        .byte   $30,$00,$05,$30,$00,$0F,$31,$1C,$27,$31,$1C,$0F,$26,$11,$0F,$27,$26,$06,$26,$06,$27,$06,$27,$26 ; DCCE  triplets $38-$3F
+        .byte   $3C,$2C,$20,$20,$3C,$2C,$2C,$20,$3C,$1C,$10,$2C,$2C,$1C,$10,$10,$2C,$1C,$25,$04,$0F,$04,$0F,$25 ; DCE6  triplets $40-$47
+        .byte   $0F,$25,$04                     ; DCFE  triplets $48-$48
+; --- $DD01: palette program id -> record offset into LDD21 ---
+LDD01:  .byte   $00,$06,$0C,$12,$18,$1E,$1E,$1E,$1E,$1E,$22,$29,$30,$36,$3D,$44 ; DD01  programs $00-$0F
+        .byte   $4A,$4F,$54,$5A,$5F,$65,$69,$6D,$73,$78,$7D,$82,$87,$8C,$92,$92 ; DD11  programs $10-$1F
+; --- $DD21: palette program records [frames-1, period-1, triplet idx...] ---
+LDD21:  .byte   $03,$08,$01,$02,$03,$31         ; DD21  prog $00: frames 4, period 9
+        .byte   $03,$08,$05,$06,$07,$06         ; DD27  prog $01: frames 4, period 9
+        .byte   $03,$08,$08,$12,$09,$0A         ; DD2D  prog $02: frames 4, period 9
+        .byte   $03,$08,$0C,$0D,$0E,$0D         ; DD33  prog $03: frames 4, period 9
+        .byte   $03,$08,$09,$0A,$08,$12         ; DD39  prog $04: frames 4, period 9
+        .byte   $01,$0B,$1E,$1F                 ; DD3F  prog $05/$06/$07/$08/$09: frames 2, period 12
+        .byte   $04,$08,$20,$21,$22,$28,$00     ; DD43  prog $0A: frames 5, period 9
+        .byte   $04,$08,$23,$24,$25,$28,$00     ; DD4A  prog $0B: frames 5, period 9
+        .byte   $03,$08,$26,$27,$28,$00         ; DD51  prog $0C: frames 4, period 9
+        .byte   $04,$08,$28,$22,$21,$20,$00     ; DD57  prog $0D: frames 5, period 9
+        .byte   $04,$08,$28,$25,$24,$23,$00     ; DD5E  prog $0E: frames 5, period 9
+        .byte   $03,$08,$28,$27,$26,$00         ; DD65  prog $0F: frames 4, period 9
+        .byte   $02,$06,$29,$2A,$2B             ; DD6B  prog $10: frames 3, period 7
+        .byte   $02,$04,$2C,$2D,$2E             ; DD70  prog $11: frames 3, period 5
+        .byte   $03,$08,$2F,$30,$35,$30         ; DD75  prog $12: frames 4, period 9
+        .byte   $02,$08,$32,$33,$34             ; DD7B  prog $13: frames 3, period 9
+        .byte   $03,$08,$04,$0B,$09,$0A         ; DD80  prog $14: frames 4, period 9
+        .byte   $01,$08,$38,$39                 ; DD86  prog $15: frames 2, period 9
+        .byte   $01,$08,$3A,$3B                 ; DD8A  prog $16: frames 2, period 9
+        .byte   $03,$08,$09,$0A,$04,$0B         ; DD8E  prog $17: frames 4, period 9
+        .byte   $02,$08,$0F,$10,$11             ; DD94  prog $18: frames 3, period 9
+        .byte   $02,$08,$36,$37,$3C             ; DD99  prog $19: frames 3, period 9
+        .byte   $02,$08,$3D,$3E,$3F             ; DD9E  prog $1A: frames 3, period 9
+        .byte   $02,$08,$40,$41,$42             ; DDA3  prog $1B: frames 3, period 9
+        .byte   $02,$08,$43,$44,$45             ; DDA8  prog $1C: frames 3, period 9
+        .byte   $03,$08,$46,$47,$48,$47         ; DDAD  prog $1D: frames 4, period 9
+LDD22           := LDD21 + 1
+LDD23           := LDD21 + 2
+; -----------------------------------------------------------------------------
+; BACKGROUND CHR-ANIM TABLES (runner at $DB97, slot $05D0-$05D2; started by
+; spawn commands). Program id -> LDDB3 record offset; record at LDDBB+off =
+; [frame count-1, period-1, CHR shadow index ($EA+n = MMC3 R0-R5), then one
+; CHR bank id per frame].
+; -----------------------------------------------------------------------------
+LDDB3:  .byte   $00,$06,$0B,$11,$16,$1C,$21,$26 ; DDB3  program -> record offset
+LDDBB:  .byte   $02,$04,$01,$8E,$FC,$FE         ; DDBB  prog $00: frames 3, period 5, reg $EA+1
+        .byte   $01,$04,$01,$8E,$FC             ; DDC1  prog $01: frames 2, period 5, reg $EA+1
+        .byte   $02,$04,$00,$A4,$70,$72         ; DDC6  prog $02: frames 3, period 5, reg $EA+0
+        .byte   $01,$04,$00,$B0,$6C             ; DDCC  prog $03: frames 2, period 5, reg $EA+0
+        .byte   $02,$04,$00,$A4,$70,$72         ; DDD1  prog $04: frames 3, period 5, reg $EA+0
+        .byte   $01,$10,$01,$9A,$6E             ; DDD7  prog $05: frames 2, period 17, reg $EA+1
+        .byte   $01,$08,$01,$EE,$6A             ; DDDC  prog $06: frames 2, period 9, reg $EA+1
+        .byte   $03,$05,$00,$80,$F4,$F6,$F2     ; DDE1  prog $07: frames 4, period 6, reg $EA+0
+LDDBC           := LDDBB + 1
+LDDBD           := LDDBB + 2
+LDDBE           := LDDBB + 3
 
-; ----------------------------------------------------------------------------
-        eor     ($42,x)                         ; DDA6 41 42                    AB
-        .byte   $02                             ; DDA8 02                       .
-        php                                     ; DDA9 08                       .
-LDDAA:  .byte   $43                             ; DDAA 43                       C
-        .byte   $44                             ; DDAB 44                       D
-        eor     $03                             ; DDAC 45 03                    E.
-        php                                     ; DDAE 08                       .
-LDDAF:  lsr     $47                             ; DDAF 46 47                    FG
-        pha                                     ; DDB1 48                       H
-        .byte   $47                             ; DDB2 47                       G
-LDDB3:  brk                                     ; DDB3 00                       .
-        asl     $0B                             ; DDB4 06 0B                    ..
-        ora     ($16),y                         ; DDB6 11 16                    ..
-        .byte   $1C                             ; DDB8 1C                       .
-        and     ($26,x)                         ; DDB9 21 26                    !&
-LDDBB:  .byte   $02                             ; DDBB 02                       .
-LDDBC:  .byte   $04                             ; DDBC 04                       .
-LDDBD:  .byte   $01                             ; DDBD 01                       .
-LDDBE:  stx     LFEFC                           ; DDBE 8E FC FE                 ...
-        ora     (L0004,x)                       ; DDC1 01 04                    ..
-        ora     ($8E,x)                         ; DDC3 01 8E                    ..
-        .byte   $FC                             ; DDC5 FC                       .
-        .byte   $02                             ; DDC6 02                       .
-        .byte   $04                             ; DDC7 04                       .
-        brk                                     ; DDC8 00                       .
-        ldy     $70                             ; DDC9 A4 70                    .p
-        .byte   $72                             ; DDCB 72                       r
-        ora     (L0004,x)                       ; DDCC 01 04                    ..
-        brk                                     ; DDCE 00                       .
-        bcs     LDE3D                           ; DDCF B0 6C                    .l
-        .byte   $02                             ; DDD1 02                       .
-        .byte   $04                             ; DDD2 04                       .
-        brk                                     ; DDD3 00                       .
-        ldy     $70                             ; DDD4 A4 70                    .p
-        .byte   $72                             ; DDD6 72                       r
-        ora     ($10,x)                         ; DDD7 01 10                    ..
-        ora     ($9A,x)                         ; DDD9 01 9A                    ..
-        ror     $0801                           ; DDDB 6E 01 08                 n..
-        ora     ($EE,x)                         ; DDDE 01 EE                    ..
-        ror     a                               ; DDE0 6A                       j
-        .byte   $03                             ; DDE1 03                       .
-        ora     L0000                           ; DDE2 05 00                    ..
-        .byte   $80                             ; DDE4 80                       .
-        .byte   $F4                             ; DDE5 F4                       .
-        inc     $F2,x                           ; DDE6 F6 F2                    ..
         ldx     #$8F                            ; DDE8 A2 8F                    ..
         txs                                     ; DDEA 9A                       .
         lda     #$40                            ; DDEB A9 40                    .@
@@ -4287,17 +3807,9 @@ LDF47:  jsr     frame_wait                      ; DF47 20 22 FF                 
 LDF4F:  .byte   $80                             ; DF4F 80                       .
         .byte   $F4                             ; DF50 F4                       .
         inc     $F2,x                           ; DF51 F6 F2                    ..
-LDF53:  brk                                     ; DF53 00                       .
-        brk                                     ; DF54 00                       .
-LDF55:  .byte   $FF                             ; DF55 FF                       .
-        .byte   $FF                             ; DF56 FF                       .
-        brk                                     ; DF57 00                       .
-        brk                                     ; DF58 00                       .
-        brk                                     ; DF59 00                       .
-        brk                                     ; DF5A 00                       .
-        brk                                     ; DF5B 00                       .
-        brk                                     ; DF5C 00                       .
-        brk                                     ; DF5D 00                       .
+; --- $DF53: entity render-order table ---
+LDF53:  .byte   $00,$00,$FF,$FF,$00,$00,$00,$00,$00,$00,$00 ; DF53
+
 entity_render_all:  lda     #$FF                            ; DF5E A9 FF                    ..
         sta     $EC                             ; DF60 85 EC                    ..
         sta     $EE                             ; DF62 85 EE                    ..
@@ -4774,10 +4286,9 @@ LE2DE:  stx     $9F                             ; E2DE 86 9F                    
         rts                                     ; E2E0 60                       `
 
 ; ----------------------------------------------------------------------------
-LE2E1:  ora     (L0000,x)                       ; E2E1 01 00                    ..
-        .byte   $02                             ; E2E3 02                       .
-LE2E4:  clc                                     ; E2E4 18                       .
-        bpl     LE30F                           ; E2E5 10 28                    .(
+LE2E1:  .byte   $01,$00,$02                     ; E2E1
+LE2E4:  .byte   $18,$10,$28                     ; E2E4
+
 LE2E7:  ldx     #$00                            ; E2E7 A2 00                    ..
         lda     LE313,x                         ; E2E9 BD 13 E3                 ...
         sec                                     ; E2EC 38                       8
@@ -4801,37 +4312,14 @@ LE30F:  cmp     $9F86,y                         ; E30F D9 86 9F                 
         rts                                     ; E312 60                       `
 
 ; ----------------------------------------------------------------------------
-LE313:  plp                                     ; E313 28                       (
-LE314:  tay                                     ; E314 A8                       .
-LE315:  .byte   $21                             ; E315 21                       !
-LE316:  .byte   $04                             ; E316 04                       .
-        cli                                     ; E317 58                       X
-        tay                                     ; E318 A8                       .
-        and     (L0004,x)                       ; E319 21 04                    !.
-        dey                                     ; E31B 88                       .
-        tay                                     ; E31C A8                       .
-        and     (L0004,x)                       ; E31D 21 04                    !.
-        clv                                     ; E31F B8                       .
-        tay                                     ; E320 A8                       .
-        and     (L0004,x)                       ; E321 21 04                    !.
-        inx                                     ; E323 E8                       .
-        tay                                     ; E324 A8                       .
-        and     (L0004,x)                       ; E325 21 04                    !.
-        plp                                     ; E327 28                       (
-        tay                                     ; E328 A8                       .
-        and     ($F4,x)                         ; E329 21 F4                    !.
-        cli                                     ; E32B 58                       X
-        tay                                     ; E32C A8                       .
-        and     ($F4,x)                         ; E32D 21 F4                    !.
-        dey                                     ; E32F 88                       .
-        tay                                     ; E330 A8                       .
-        and     ($F4,x)                         ; E331 21 F4                    !.
-        clv                                     ; E333 B8                       .
-        tay                                     ; E334 A8                       .
-        and     ($F4,x)                         ; E335 21 F4                    !.
-        inx                                     ; E337 E8                       .
-        tay                                     ; E338 A8                       .
-        and     ($F4,x)                         ; E339 21 F4                    !.
+; --- $E313: HUD/debug sprite records ---
+LE313:  .byte   $28,$A8,$21                     ; E313
+LE316:  .byte   $04,$58,$A8,$21,$04,$88,$A8,$21,$04,$B8,$A8,$21,$04,$E8,$A8,$21 ; E316
+        .byte   $04,$28,$A8,$21,$F4,$58,$A8,$21,$F4,$88,$A8,$21,$F4,$B8,$A8,$21 ; E326
+        .byte   $F4,$E8,$A8,$21,$F4             ; E336
+LE314           := LE313 + 1
+LE315           := LE313 + 2
+
 ; entity type -> animation bank pair ($12/$13, $14/$15, $16/$17)
 anim_bank_tbl:
         .byte   $12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12   ; E33B
@@ -4904,23 +4392,10 @@ LE490:  jsr     frame_wait                      ; E490 20 22 FF                 
         jmp     debug_pad2_loop                           ; E493 4C 3E E4                 L>.
 
 ; ----------------------------------------------------------------------------
-debug_stage_next:  ora     ($02,x)                         ; E496 01 02                    ..
-        .byte   $03                             ; E498 03                       .
-        .byte   $04                             ; E499 04                       .
-        ora     $06                             ; E49A 05 06                    ..
-        .byte   $07                             ; E49C 07                       .
-        php                                     ; E49D 08                       .
-        ora     #$0A                            ; E49E 09 0A                    ..
-        .byte   $0B                             ; E4A0 0B                       .
-        .byte   $0C                             ; E4A1 0C                       .
-        ora     $0F0E                           ; E4A2 0D 0E 0F                 ...
-        brk                                     ; E4A5 00                       .
-LE4A6:  jsr     oam_clear                           ; E4A6 20 8F C3                  ..
-        ldy     #$00                            ; E4A9 A0 00                    ..
-        ldx     #$00                            ; E4AB A2 00                    ..
-        stx     $95                             ; E4AD 86 95                    ..
-        stx     $9F                             ; E4AF 86 9F                    ..
-        stx     $77                             ; E4B1 86 77                    .w
+; --- $E496: debug stage-order list ---
+debug_stage_next: .byte   $01,$02,$03,$04,$05,$06,$07,$08,$09,$0A,$0B,$0C,$0D,$0E,$0F,$00 ; E496
+LE4A6:  .byte   $20,$8F,$C3,$A0,$00,$A2,$00,$86,$95,$86,$9F,$86,$77 ; E4A6
+
 LE4B3:  lda     LE614,x                         ; E4B3 BD 14 E6                 ...
         sta     L0200,y                         ; E4B6 99 00 02                 ...
         lda     LE615,x                         ; E4B9 BD 15 E6                 ...
@@ -5110,103 +4585,18 @@ LE607:  ora     $8D                             ; E607 05 8D                    
         jmp     LE4D4                           ; E611 4C D4 E4                 L..
 
 ; ----------------------------------------------------------------------------
-LE614:  plp                                     ; E614 28                       (
-LE615:  .byte   $80                             ; E615 80                       .
-        plp                                     ; E616 28                       (
-        dey                                     ; E617 88                       .
-        plp                                     ; E618 28                       (
-        tya                                     ; E619 98                       .
-        plp                                     ; E61A 28                       (
-        ldy     #$28                            ; E61B A0 28                    .(
-        bcs     LE647                           ; E61D B0 28                    .(
-        clv                                     ; E61F B8                       .
-        plp                                     ; E620 28                       (
-        iny                                     ; E621 C8                       .
-        plp                                     ; E622 28                       (
-        bne     LE65D                           ; E623 D0 38                    .8
-        .byte   $80                             ; E625 80                       .
-        sec                                     ; E626 38                       8
-        dey                                     ; E627 88                       .
-        sec                                     ; E628 38                       8
-        tya                                     ; E629 98                       .
-        sec                                     ; E62A 38                       8
-        ldy     #$38                            ; E62B A0 38                    .8
-        bcs     LE667                           ; E62D B0 38                    .8
-        clv                                     ; E62F B8                       .
-        sec                                     ; E630 38                       8
-        iny                                     ; E631 C8                       .
-        sec                                     ; E632 38                       8
-        bne     LE67D                           ; E633 D0 48                    .H
-        .byte   $80                             ; E635 80                       .
-        pha                                     ; E636 48                       H
-        dey                                     ; E637 88                       .
-        pha                                     ; E638 48                       H
-        tya                                     ; E639 98                       .
-        pha                                     ; E63A 48                       H
-        ldy     #$48                            ; E63B A0 48                    .H
-        bcs     LE687                           ; E63D B0 48                    .H
-        clv                                     ; E63F B8                       .
-        pha                                     ; E640 48                       H
-        iny                                     ; E641 C8                       .
-        pha                                     ; E642 48                       H
-        bne     LE69D                           ; E643 D0 58                    .X
-        .byte   $80                             ; E645 80                       .
-        cli                                     ; E646 58                       X
-LE647:  dey                                     ; E647 88                       .
-        cli                                     ; E648 58                       X
-        tya                                     ; E649 98                       .
-        cli                                     ; E64A 58                       X
-        ldy     #$58                            ; E64B A0 58                    .X
-        bcs     LE6A7                           ; E64D B0 58                    .X
-        clv                                     ; E64F B8                       .
-        cli                                     ; E650 58                       X
-        iny                                     ; E651 C8                       .
-        cli                                     ; E652 58                       X
-        bne     LE5DD                           ; E653 D0 88                    ..
-        .byte   $80                             ; E655 80                       .
-        dey                                     ; E656 88                       .
-        dey                                     ; E657 88                       .
-        dey                                     ; E658 88                       .
-        tya                                     ; E659 98                       .
-        dey                                     ; E65A 88                       .
-        ldy     #$88                            ; E65B A0 88                    ..
-LE65D:  bcs     LE5E7                           ; E65D B0 88                    ..
-        clv                                     ; E65F B8                       .
-        dey                                     ; E660 88                       .
-        iny                                     ; E661 C8                       .
-        dey                                     ; E662 88                       .
-        bne     LE5FD                           ; E663 D0 98                    ..
-        .byte   $80                             ; E665 80                       .
-        tya                                     ; E666 98                       .
-LE667:  dey                                     ; E667 88                       .
-        tya                                     ; E668 98                       .
-        tya                                     ; E669 98                       .
-        tya                                     ; E66A 98                       .
-        ldy     #$98                            ; E66B A0 98                    ..
-        bcs     LE607                           ; E66D B0 98                    ..
-        clv                                     ; E66F B8                       .
-        tya                                     ; E670 98                       .
-        iny                                     ; E671 C8                       .
-        tya                                     ; E672 98                       .
-        bne     LE6ED                           ; E673 D0 78                    .x
-        .byte   $80                             ; E675 80                       .
-        sei                                     ; E676 78                       x
-        dey                                     ; E677 88                       .
-LE678:  bmi     LE6AA                           ; E678 30 30                    00
-        bmi     LE68B                           ; E67A 30 0F                    0.
-        .byte   $16                             ; E67C 16                       .
-LE67D:  asl     $16,x                           ; E67D 16 16                    ..
-LE67F:  bmi     LE6B2                           ; E67F 30 31                    01
-        .byte   $32                             ; E681 32                       2
-        .byte   $33                             ; E682 33                       3
-        .byte   $34                             ; E683 34                       4
-        and     $36,x                           ; E684 35 36                    56
-        .byte   $37                             ; E686 37                       7
-LE687:  sec                                     ; E687 38                       8
-        and     $4241,y                         ; E688 39 41 42                 9AB
-LE68B:  .byte   $43                             ; E68B 43                       C
-        .byte   $44                             ; E68C 44                       D
-        eor     $46                             ; E68D 45 46                    EF
+; --- $E614: debug text tiles (hex digits at LE67F) ---
+LE614:  .byte   $28,$80,$28,$88,$28,$98,$28,$A0,$28,$B0,$28,$B8,$28,$C8,$28,$D0 ; E614
+        .byte   $38,$80,$38,$88,$38,$98,$38,$A0,$38,$B0,$38,$B8,$38,$C8,$38,$D0 ; E624
+        .byte   $48,$80,$48,$88,$48,$98,$48,$A0,$48,$B0,$48,$B8,$48,$C8,$48,$D0 ; E634
+        .byte   $58,$80,$58,$88,$58,$98,$58,$A0,$58,$B0,$58,$B8,$58,$C8,$58,$D0 ; E644
+        .byte   $88,$80,$88,$88,$88,$98,$88,$A0,$88,$B0,$88,$B8,$88,$C8,$88,$D0 ; E654
+        .byte   $98,$80,$98,$88,$98,$98,$98,$A0,$98,$B0,$98,$B8,$98,$C8,$98,$D0 ; E664
+        .byte   $78,$80,$78,$88                 ; E674
+LE678:  .byte   $30,$30,$30,$0F,$16,$16,$16     ; E678
+LE67F:  .byte   $30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$41,$42,$43,$44,$45,$46 ; E67F
+LE615           := LE614 + 1
+
 LE68F:  lda     #$9C                            ; E68F A9 9C                    ..
         sec                                     ; E691 38                       8
         sbc     $B0                             ; E692 E5 B0                    ..
@@ -5867,150 +5257,20 @@ LEB51:  adc     #$0F                            ; EB51 69 0F                    
 LEB5F:  jmp     LEABD                           ; EB5F 4C BD EA                 L..
 
 ; ----------------------------------------------------------------------------
-speed_px_tbl:  sbc     ($10),y                         ; EB62 F1 10                    ..
-        .byte   $F4                             ; EB64 F4                       .
-        .byte   $0C                             ; EB65 0C                       .
-        bpl     LEB72                           ; EB66 10 0A                    ..
-        brk                                     ; EB68 00                       .
-        inc     $F0,x                           ; EB69 F6 F0                    ..
-        brk                                     ; EB6B 00                       .
-        beq     LEB7E                           ; EB6C F0 10                    ..
-        brk                                     ; EB6E 00                       .
-        brk                                     ; EB6F 00                       .
-        .byte   $F4                             ; EB70 F4                       .
-        .byte   $0C                             ; EB71 0C                       .
-LEB72:  brk                                     ; EB72 00                       .
-        .byte   $0C                             ; EB73 0C                       .
-        .byte   $F4                             ; EB74 F4                       .
-        beq     LEB87                           ; EB75 F0 10                    ..
-        .byte   $F4                             ; EB77 F4                       .
-        .byte   $0C                             ; EB78 0C                       .
-        brk                                     ; EB79 00                       .
-        brk                                     ; EB7A 00                       .
-        beq     LEB8D                           ; EB7B F0 10                    ..
-        .byte   $EC                             ; EB7D EC                       .
-LEB7E:  .byte   $0C                             ; EB7E 0C                       .
-        brk                                     ; EB7F 00                       .
-        sbc     LFC07,y                         ; EB80 F9 07 FC                 ...
-        sed                                     ; EB83 F8                       .
-        .byte   $04                             ; EB84 04                       .
-        php                                     ; EB85 08                       .
-        .byte   $FC                             ; EB86 FC                       .
-LEB87:  sed                                     ; EB87 F8                       .
-        .byte   $04                             ; EB88 04                       .
-        php                                     ; EB89 08                       .
-        .byte   $F4                             ; EB8A F4                       .
-        .byte   $0C                             ; EB8B 0C                       .
-        .byte   $EC                             ; EB8C EC                       .
-LEB8D:  .byte   $14                             ; EB8D 14                       .
-        .byte   $F4                             ; EB8E F4                       .
-        sed                                     ; EB8F F8                       .
-        .byte   $02                             ; EB90 02                       .
-        .byte   $0C                             ; EB91 0C                       .
-        asl     $0C0E                           ; EB92 0E 0E 0C                 ...
-        .byte   $02                             ; EB95 02                       .
-        sed                                     ; EB96 F8                       .
-        .byte   $F4                             ; EB97 F4                       .
-        cpx     LE814                           ; EB98 EC 14 E8                 ...
-        clc                                     ; EB9B 18                       .
-        .byte   $FC                             ; EB9C FC                       .
-        .byte   $04                             ; EB9D 04                       .
-        cpx     #$20                            ; EB9E E0 20                    . 
-        sbc     ($10),y                         ; EBA0 F1 10                    ..
-        inx                                     ; EBA2 E8                       .
-        clc                                     ; EBA3 18                       .
-        .byte   $E2                             ; EBA4 E2                       .
-        asl     $18E8,x                         ; EBA5 1E E8 18                 ...
-        sed                                     ; EBA8 F8                       .
-        php                                     ; EBA9 08                       .
-        .byte   $10                             ; EBAA 10                       .
-LEBAB:  brk                                     ; EBAB 00                       .
-LEBAC:  beq     LEBAE                           ; EBAC F0 00                    ..
-LEBAE:  brk                                     ; EBAE 00                       .
-        inx                                     ; EBAF E8                       .
-        clc                                     ; EBB0 18                       .
-        sed                                     ; EBB1 F8                       .
-        php                                     ; EBB2 08                       .
-        cpx     $1C                             ; EBB3 E4 1C                    ..
-        .byte   $F4                             ; EBB5 F4                       .
-        .byte   $0C                             ; EBB6 0C                       .
-        .byte   $FC                             ; EBB7 FC                       .
-        .byte   $04                             ; EBB8 04                       .
-        bpl     LEBAB                           ; EBB9 10 F0                    ..
-        .byte   $10                             ; EBBB 10                       .
-speed_sub_tbl:  .byte   $FF                             ; EBBC FF                       .
-        .byte   $FF                             ; EBBD FF                       .
-        php                                     ; EBBE 08                       .
-        php                                     ; EBBF 08                       .
-        asl     $1814                           ; EBC0 0E 14 18                 ...
-        .byte   $14                             ; EBC3 14                       .
-        asl     $0800                           ; EBC4 0E 00 08                 ...
-        php                                     ; EBC7 08                       .
-        .byte   $14                             ; EBC8 14                       .
-        .byte   $EC                             ; EBC9 EC                       .
-        .byte   $04                             ; EBCA 04                       .
-LEBCB:  .byte   $04                             ; EBCB 04                       .
-        brk                                     ; EBCC 00                       .
-        .byte   $F4                             ; EBCD F4                       .
-        .byte   $0C                             ; EBCE 0C                       .
-        brk                                     ; EBCF 00                       .
-        brk                                     ; EBD0 00                       .
-        .byte   $F4                             ; EBD1 F4                       .
-        .byte   $0C                             ; EBD2 0C                       .
-        beq     LEBE5                           ; EBD3 F0 10                    ..
-        bpl     LEBCB                           ; EBD5 10 F4                    ..
-        beq     LEBE9                           ; EBD7 F0 10                    ..
-        brk                                     ; EBD9 00                       .
-        brk                                     ; EBDA 00                       .
-        brk                                     ; EBDB 00                       .
-        .byte   $FC                             ; EBDC FC                       .
-        .byte   $04                             ; EBDD 04                       .
-        .byte   $FC                             ; EBDE FC                       .
-        .byte   $04                             ; EBDF 04                       .
-        .byte   $04                             ; EBE0 04                       .
-        .byte   $FC                             ; EBE1 FC                       .
-        .byte   $04                             ; EBE2 04                       .
-        .byte   $FC                             ; EBE3 FC                       .
-        .byte   $FC                             ; EBE4 FC                       .
-LEBE5:  .byte   $FC                             ; EBE5 FC                       .
-        .byte   $FC                             ; EBE6 FC                       .
-        .byte   $FC                             ; EBE7 FC                       .
-        .byte   $02                             ; EBE8 02                       .
-LEBE9:  .byte   $FA                             ; EBE9 FA                       .
-        .byte   $F4                             ; EBEA F4                       .
-        sed                                     ; EBEB F8                       .
-        .byte   $02                             ; EBEC 02                       .
-        inc     $0C08,x                         ; EBED FE 08 0C                 ...
-        asl     $FE                             ; EBF0 06 FE                    ..
-        .byte   $FF                             ; EBF2 FF                       .
-        .byte   $FF                             ; EBF3 FF                       .
-LEBF4:  .byte   $04                             ; EBF4 04                       .
-        .byte   $04                             ; EBF5 04                       .
-LEBF6:  cpx     #$E0                            ; EBF6 E0 E0                    ..
-LEBF8:  .byte   $FA                             ; EBF8 FA                       .
-        .byte   $FA                             ; EBF9 FA                       .
-        php                                     ; EBFA 08                       .
-        php                                     ; EBFB 08                       .
-        brk                                     ; EBFC 00                       .
-        brk                                     ; EBFD 00                       .
-        brk                                     ; EBFE 00                       .
-        brk                                     ; EBFF 00                       .
-LEC00:  .byte   $0C                             ; EC00 0C                       .
-        .byte   $0C                             ; EC01 0C                       .
-        sed                                     ; EC02 F8                       .
-        sed                                     ; EC03 F8                       .
-        beq     LEBF6                           ; EC04 F0 F0                    ..
-        beq     LEBF8                           ; EC06 F0 F0                    ..
-        cpx     #$10                            ; EC08 E0 10                    ..
-        bpl     LEBF4                           ; EC0A 10 E8                    ..
-        inx                                     ; EC0C E8                       .
-        .byte   $FA                             ; EC0D FA                       .
-        .byte   $FA                             ; EC0E FA                       .
-        inc     LF4FE,x                         ; EC0F FE FE F4                 ...
-        .byte   $F4                             ; EC12 F4                       .
-        .byte   $04                             ; EC13 04                       .
-        .byte   $FA                             ; EC14 FA                       .
-        .byte   $FA                             ; EC15 FA                       .
+; --- $EB62: speed presets: px (EB62) / sub-px (EBBC), 90 entries each ---
+speed_px_tbl: .byte   $F1,$10,$F4,$0C,$10,$0A,$00,$F6,$F0,$00,$F0,$10,$00,$00,$F4,$0C ; EB62
+        .byte   $00,$0C,$F4,$F0,$10,$F4,$0C,$00,$00,$F0,$10,$EC,$0C,$00,$F9,$07 ; EB72
+        .byte   $FC,$F8,$04,$08,$FC,$F8,$04,$08,$F4,$0C,$EC,$14,$F4,$F8,$02,$0C ; EB82
+        .byte   $0E,$0E,$0C,$02,$F8,$F4,$EC,$14,$E8,$18,$FC,$04,$E0,$20,$F1,$10 ; EB92
+        .byte   $E8,$18,$E2,$1E,$E8,$18,$F8,$08,$10,$00,$F0,$00,$00,$E8,$18,$F8 ; EBA2
+        .byte   $08,$E4,$1C,$F4,$0C,$FC,$04,$10,$F0,$10 ; EBB2
+speed_sub_tbl: .byte   $FF,$FF,$08,$08,$0E,$14,$18,$14,$0E,$00,$08,$08,$14,$EC,$04,$04 ; EBBC
+        .byte   $00,$F4,$0C,$00,$00,$F4,$0C,$F0,$10,$10,$F4,$F0,$10,$00,$00,$00 ; EBCC
+        .byte   $FC,$04,$FC,$04,$04,$FC,$04,$FC,$FC,$FC,$FC,$FC,$02,$FA,$F4,$F8 ; EBDC
+        .byte   $02,$FE,$08,$0C,$06,$FE,$FF,$FF,$04,$04,$E0,$E0,$FA,$FA,$08,$08 ; EBEC
+        .byte   $00,$00,$00,$00,$0C,$0C,$F8,$F8,$F0,$F0,$F0,$F0,$E0,$10,$10,$E8 ; EBFC
+        .byte   $E8,$FA,$FA,$FE,$FE,$F4,$F4,$04,$FA,$FA ; EC0C
+
 entity_set_facing:
         lda     #$01                            ; EC16 A9 01                    ..
         sta     $0420,x                         ; EC18 9D 20 04                 . .
@@ -6180,42 +5440,11 @@ LED20:  tya                                     ; ED20 98                       
         rts                                     ; ED2A 60                       `
 
 ; ----------------------------------------------------------------------------
-LED2B:  .byte   $04                             ; ED2B 04                       .
-        ora     $06                             ; ED2C 05 06                    ..
-        .byte   $04                             ; ED2E 04                       .
-        php                                     ; ED2F 08                       .
-        .byte   $07                             ; ED30 07                       .
-        asl     L0004                           ; ED31 06 04                    ..
-        .byte   $0C                             ; ED33 0C                       .
-        .byte   $0B                             ; ED34 0B                       .
-        asl     a                               ; ED35 0A                       .
-        .byte   $04                             ; ED36 04                       .
-        php                                     ; ED37 08                       .
-        ora     #$0A                            ; ED38 09 0A                    ..
-        .byte   $04                             ; ED3A 04                       .
-        .byte   $04                             ; ED3B 04                       .
-        .byte   $03                             ; ED3C 03                       .
-        .byte   $02                             ; ED3D 02                       .
-        .byte   $04                             ; ED3E 04                       .
-        brk                                     ; ED3F 00                       .
-        ora     ($02,x)                         ; ED40 01 02                    ..
-        .byte   $04                             ; ED42 04                       .
-        .byte   $0C                             ; ED43 0C                       .
-        ora     $040E                           ; ED44 0D 0E 04                 ...
-        brk                                     ; ED47 00                       .
-        .byte   $0F                             ; ED48 0F                       .
-        .byte   $0E                             ; ED49 0E                       .
-        .byte   $04                             ; ED4A 04                       .
-dir_byte_tbl:  php                                     ; ED4B 08                       .
-        ora     #$09                            ; ED4C 09 09                    ..
-        ora     #$01                            ; ED4E 09 01                    ..
-        ora     $05                             ; ED50 05 05                    ..
-        ora     L0004                           ; ED52 05 04                    ..
-        asl     $06                             ; ED54 06 06                    ..
-        asl     $02                             ; ED56 06 02                    ..
-        asl     a                               ; ED58 0A                       .
-        asl     a                               ; ED59 0A                       .
-        asl     a                               ; ED5A 0A                       .
+; --- $ED2B: aim tables; dir_byte_tbl = 16-dir -> dir-flag byte ---
+LED2B:  .byte   $04,$05,$06,$04,$08,$07,$06,$04,$0C,$0B,$0A,$04,$08,$09,$0A,$04 ; ED2B
+        .byte   $04,$03,$02,$04,$00,$01,$02,$04,$0C,$0D,$0E,$04,$00,$0F,$0E,$04 ; ED3B
+dir_byte_tbl: .byte   $08,$09,$09,$09,$01,$05,$05,$05,$04,$06,$06,$06,$02,$0A,$0A,$0A ; ED4B
+
         ldy     #$00                            ; ED5B A0 00                    ..
         jsr     entity_distance_from_y                           ; ED5D 20 C4 EC                  ..
         sta     L0000                           ; ED60 85 00                    ..
@@ -6719,88 +5948,16 @@ LF0E3:  .byte   $1C                             ; F0E3 1C                       
         .byte   $0C                             ; F0EE 0C                       .
         .byte   $0C                             ; F0EF 0C                       .
         .byte   $0C                             ; F0F0 0C                       .
-LF0F1:  bpl     LF101                           ; F0F1 10 0E                    ..
-        bpl     LF16D                           ; F0F3 10 78                    .x
-        bpl     LF103                           ; F0F5 10 0C                    ..
-        .byte   $0B                             ; F0F7 0B                       .
-        asl     a                               ; F0F8 0A                       .
-        .byte   $12                             ; F0F9 12                       .
-        .byte   $14                             ; F0FA 14                       .
-        asl     $1214                           ; F0FB 0E 14 12                 ...
-        .byte   $14                             ; F0FE 14                       .
-        bpl     LF115                           ; F0FF 10 14                    ..
-LF101:  .byte   $0E                             ; F101 0E                       .
-        .byte   $10                             ; F102 10                       .
-LF103:  bpl     LF113                           ; F103 10 0E                    ..
-        asl     $0C0E                           ; F105 0E 0E 0C                 ...
-        .byte   $12                             ; F108 12                       .
-        asl     $1014                           ; F109 0E 14 10                 ...
-        asl     a                               ; F10C 0A                       .
-        asl     a                               ; F10D 0A                       .
-        sec                                     ; F10E 38                       8
-        bmi     LF139                           ; F10F 30 28                    0(
-        .byte   $0B                             ; F111 0B                       .
-        .byte   $20                             ; F112 20                        
-LF113:  .byte   $14                             ; F113 14                       .
-        .byte   $0B                             ; F114 0B                       .
-LF115:  clc                                     ; F115 18                       .
-        clc                                     ; F116 18                       .
-        pha                                     ; F117 48                       H
-        bmi     LF126                           ; F118 30 0C                    0.
-        sec                                     ; F11A 38                       8
-        plp                                     ; F11B 28                       (
-        bpl     LF146                           ; F11C 10 28                    .(
-        jsr     L1C18                           ; F11E 20 18 1C                  ..
-        asl     $2420                           ; F121 0E 20 24                 . $
-        plp                                     ; F124 28                       (
-        php                                     ; F125 08                       .
-LF126:  php                                     ; F126 08                       .
-        php                                     ; F127 08                       .
-        php                                     ; F128 08                       .
-        php                                     ; F129 08                       .
-        php                                     ; F12A 08                       .
-        php                                     ; F12B 08                       .
-        php                                     ; F12C 08                       .
-        php                                     ; F12D 08                       .
-        php                                     ; F12E 08                       .
-        php                                     ; F12F 08                       .
-        php                                     ; F130 08                       .
-LF131:  asl     a                               ; F131 0A                       .
-        php                                     ; F132 08                       .
-        php                                     ; F133 08                       .
-        .byte   $04                             ; F134 04                       .
-        php                                     ; F135 08                       .
-        asl     a                               ; F136 0A                       .
-        .byte   $04                             ; F137 04                       .
-        .byte   $94                             ; F138 94                       .
-LF139:  asl     a                               ; F139 0A                       .
-        sed                                     ; F13A F8                       .
-        asl     a                               ; F13B 0A                       .
-        asl     a                               ; F13C 0A                       .
-        php                                     ; F13D 08                       .
-        asl     L0000                           ; F13E 06 00                    ..
-        php                                     ; F140 08                       .
-        .byte   $04                             ; F141 04                       .
-        brk                                     ; F142 00                       .
-        .byte   $FC                             ; F143 FC                       .
-        brk                                     ; F144 00                       .
-LF145:  .byte   $05                             ; F145 05                       .
-LF146:  asl     $FC                             ; F146 06 FC                    ..
-        ora     L0000                           ; F148 05 00                    ..
-        .byte   $FC                             ; F14A FC                       .
-        brk                                     ; F14B 00                       .
-        dey                                     ; F14C 88                       .
-        ora     $F4                             ; F14D 05 F4                    ..
-        ora     $05                             ; F14F 05 05                    ..
-        .byte   $04                             ; F151 04                       .
-        .byte   $02                             ; F152 02                       .
-        brk                                     ; F153 00                       .
-        .byte   $04                             ; F154 04                       .
-        asl     $06                             ; F155 06 06                    ..
-        asl     $FC                             ; F157 06 FC                    ..
-LF159:  ora     ($10,x)                         ; F159 01 10                    ..
-        ora     ($12),y                         ; F15B 11 12                    ..
-        ora     ($10),y                         ; F15D 11 10                    ..
+LF0F1:  .byte   $10,$0E,$10,$78,$10,$0C,$0B,$0A,$12,$14,$0E,$14,$12,$14,$10,$14 ; F0F1
+        .byte   $0E,$10,$10,$0E,$0E,$0E,$0C,$12,$0E,$14,$10,$0A,$0A,$38,$30,$28 ; F101
+        .byte   $0B,$20,$14,$0B,$18,$18,$48,$30,$0C,$38,$28,$10,$28,$20,$18,$1C ; F111
+        .byte   $0E,$20,$24,$28,$08,$08,$08,$08,$08,$08,$08,$08,$08,$08,$08,$08 ; F121
+LF131:  .byte   $0A,$08,$08,$04,$08,$0A,$04,$94,$0A,$F8,$0A,$0A,$08,$06,$00,$08 ; F131
+        .byte   $04,$00,$FC,$00                 ; F141
+LF145:  .byte   $05,$06,$FC,$05,$00,$FC,$00,$88,$05,$F4,$05,$05,$04,$02,$00,$04 ; F145
+        .byte   $06,$06,$06,$FC                 ; F155
+LF159:  .byte   $01,$10,$11,$12,$11,$10         ; F159
+
 ; --- $F15F: find free entity slot, return in X (C set = none) ----------------
 find_free_slot_x:
         ldx     #$08                            ; F15F A2 08                    ..
