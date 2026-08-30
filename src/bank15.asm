@@ -7,7 +7,10 @@
 .segment "BANK15"
 
 ; =============================================================================
-; BANK $15 — unclassified (raw dump)
+; BANK $15 — ANIMATION/SPRITE DATA (the $A000 half of pair $14/$15)
+; Continuation records for the pair — descriptors, sprite records and
+; position sets pointed into $Axxx/$Bxxx by the $14 tables. Formats in
+; DATA_REFERENCE.md section 14.
 ; SKELETON — raw ROM bytes, not yet classified as code or data.
 ; =============================================================================
     .byte $03,$D7,$03,$D7,$43,$D6,$43,$4E,$13,$14,$B4,$03,$C6,$03,$C7,$03   ; $A000

@@ -24,7 +24,7 @@ disassembly establishes each table and format.
 10. Damage Tables
 11. Stage Data Format
 12. Spawn Lists
-13. CHR-RAM Streaming Data
+13. CHR Animation
 14. Animation and Sprite Data
 15. Sound Engine Reference
 16. Password System
@@ -86,3 +86,118 @@ Boss-beaten state: bitmap `$6E` (bit = stage `& 7` via mask table
 data bank (identity except `$0B→$08`, `$0F→$0E`; `$00` = Gravity is
 the zero entry the boss director uses to detect the ceiling-entry
 fight).
+
+## 11. Stage Data Format
+
+Each stage's data bank id equals its stage id (`$26`); the bank is
+mapped at `$A000` (`screen_layout_ptr`, `$1E:D7A3`). The `$A000-$A8FF`
+region is *not* stage data — it hosts AI/menu/cutscene code per the
+bank map. Layout (as mapped at `$A000`):
+
+| Range | Contents |
+|---|---|
+| `$A900-$A94E` | Screen → layout index |
+| `$A950-$A967` | Section list: start screen (bits 0-4) + flags (bits 5-7) |
+| `$A968-$A97F` | Per-section attributes (bit 7 = vertical-scroll room) |
+| `$A980/$A981` | BG CHR banks (MMC3 R0/R1 → `$EA/$EB`) |
+| `$A988-$A997` | 16 BG palette bytes |
+| `$A998-$A99B` | Sprite palette-cycle seeds → `$05F0` |
+| `$A9E0+` | Screen links: `[screen, Y band, dest screen, dest section]`, bit 7 ends |
+| `$AA00-$AB7F` | Spawn lists: screen / X / Y arrays (`$A9FF` = -1 base) |
+| `$AB80-$ABFF` | Spawn codes ([section 12](#12-spawn-lists)) |
+| `$AC00-$ACFF` | Per-screen spawn-list start index |
+| `$AD00-$B0FF` | Metatile 2×2 tile ids: TL / BL / TR / BR planes (256 each) |
+| `$B100-$B1FF` | Metatile attribute: palette (bits 0-1) + collision (high nibble) |
+| `$B200-$B5FF` | 32-px block definitions: 4 metatile ids each |
+| `$B600+` | Screen layouts: 64 block ids (8×8), ptr = `$B600 + layout*64` |
+
+Collision comes from the `$B100` high nibble (`$20` solid; `$40`
+ladder — treated as solid by vertical probes; player latches types
+`>= $D0`, spikes, into `$36`).
+
+The **alternate bank** `$27` splits art from screen lists: the screen
+table and layout pointer are read from `$26`'s bank, but block defs
+and metatiles are read with `$27`'s bank mapped (`block_ptr_setup`,
+`$1E:D758`). `stage_alt_bank_tbl` (`$1E:D4C2`) is identity except
+`$0B→$08`, `$0F→$0E`; boss-rush stage `$0E` picks a bank per screen
+(`stage0E_screen_banks`, `$1E:D793`). The menus draw as pseudo-stage
+`$26=$10` with `$27` = `$10` (title), `$0F` (stage select/password),
+`$0B` (story intro) or `$11` (castle maps).
+
+## 12. Spawn Lists
+
+Four parallel arrays per stage ([section 11](#11-stage-data-format)),
+sorted by screen, cursors seeded from `$AC00[screen]` (`spawn_engine`,
+`$1B:988A`). Codes:
+
+- `< $C0` — enemy id: type, sub-type, shape, flags, HP and a speed row
+  come from bank `$1B`'s parallel parameter tables (entry `$1B:9995`);
+  the spawn code is kept in `ent_spawn_idx` (`$0510`), and killed
+  enemies set their bit in the `$0100` no-respawn bitmap.
+- `>= $C0` — palette / CHR-anim command (`$1B:9933+`): slot < `$10`
+  writes a palette command into PAL_BUF, otherwise starts a
+  palette-cycle program slot (`$05F0+`) or the background CHR-anim
+  program (`$05D0`).
+
+## 13. CHR Animation (no CHR-RAM)
+
+MM5 is CHR-ROM; all "animation" is bank cycling. Background CHR-anim
+programs live in the fixed bank (`$1E:DDB3+` step/period/slot tables,
+run from the NMI tail `$1E:DB97`) and rewrite `$EA-$EF` (MMC3 R0-R5
+shadows). Palette-cycle programs (`$1E:DD01+`) run beside them from
+the `$05F0` slots. Sprite CHR is per-animation-frame: each sprite
+record names the CHR bank and which R2-R5 slot it loads
+([section 14](#14-animation-and-sprite-data)).
+
+## 14. Animation and Sprite Data
+
+Anim bank pairs (`anim_bank_tbl` `$1E:E33B`[type] → `$12/$13`,
+`$14/$15`, `$16/$17`; `$17` doubles as the menus bank, pair 3's
+records stay in `$16`). Index tables in the `$8000` half:
+
+| Table | Contents |
+|---|---|
+| `$8600/$8700` | sub-type → anim descriptor pointer lo/hi |
+| `$8000/$8200` | frame id → sprite record pointer lo/hi (normal) |
+| `$8100/$8300` | sprite record pointer lo/hi (h-flipped) |
+| `$8400/$8500` | position-set pointer lo/hi (used at −3) |
+
+Formats (`entity_render_visible`, `$1E:E08F`):
+
+- **Descriptor**: `[frame count (bit 7 flag), frame duration, frame id
+  per phase...]` — `$0570` counts the duration, `$0540` the phase;
+  frame id `$00` despawns/ends.
+- **Sprite record**: `[CHR bank, sprite count, position-set index,
+  then per sprite: tile, attr...]` — byte 3's high bits pick which
+  sprite CHR slot (R2-R5) receives the bank.
+- **Position set**: per-sprite offset pairs added to the entity's
+  screen position; off-screen results hide that sprite.
+
+## 15. Sound Engine Reference
+
+Driver = bank `$18` at `$8000`, data = bank `$19` at `$A000` spilling
+into bank `$1A` (fetched as virtual `$C000-$DFFF`). Entry points
+`$8000` = per-frame update, `$8003` = play id in A (via the fixed
+bank's queue pump, `$1E:FF68`). 76 ids (`snd_song_count` `$18:8A40`),
+directory at `$18:8A43` (hi/lo per entry); an entry's first byte is
+its priority — `$00` = music, nonzero = SFX (b7 uninterruptible,
+b6 chained). Control ops `$F0-$F7`: stop all / stop SFX / stop music /
+pause / resume / fade speed / fade variant / SFX pitch offset.
+Instruments: 8-byte records at `$18:8ADB` (envelope rates + sustain,
+env speed, vibrato, tremolo, duty/noise mode). Track bytes < `$20`
+are opcodes (tempo, gate, octave, transposes, 4 nested loops,
+instrument, vibrato, portamento, duty, end); `>= $20` = length index
+(bits 5-7, straight/dotted) | note (bits 0-4, 0 = rest). Channel
+order noise/tri/pulse2/pulse1; SFX state block `$0700+ch`, music
+`$0728+ch`. Full details in the bank `$18` source header.
+
+## 16. Password System
+
+6 dots on the 6×6 grid (A-F rows × 1-6 columns): exactly 3 red + 3
+gray. The dots split into three groups (tables `$17:90E0+`); each
+group's red-dot cell encodes 3 bits of `$6E` (bosses beaten) and its
+gray-dot cell 3 bits of `$6D` (items — `$FF` grants Beat). When a red
+and gray dot share a cell the gray uses the shifted-row cell list
+(`$17:90FB`). Weapons granted per `$6E` bit via `$17:9111/$9112`
+(energy `$9C` = owned + full). Encode (display) `$17:87B9`, decode
+(validate) `$17:86AB`.

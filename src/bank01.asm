@@ -7,8 +7,14 @@
 .segment "BANK01"
 
 ; =============================================================================
-; BANK $01 (mapped at $8000) — raw da65 disassembly, annotation in progress
+; BANK $01 (mapped at $8000) — PAUSE/WEAPON MENU + stage-load tables
+; The gameplay frame loop maps $01/$08 and calls $8000 when Start is
+; pressed ($1E:DE99): the pause/weapon menu. stage_load also reads CHR
+; and palette-row tables here ($85F1, $854B+) with this bank at $8000.
 ; SKELETON — raw ROM bytes, not yet classified as code or data.
+; Data half (file +$0900 on): stage $01 (Wave Man) stage data —
+; screen table at $A900 with this bank at $A000; format in
+; DATA_REFERENCE.md section 11.
 ; =============================================================================
 L0000           := $0000
 L0010           := $0010

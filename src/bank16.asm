@@ -7,7 +7,15 @@
 .segment "BANK16"
 
 ; =============================================================================
-; BANK $16 — unclassified (raw dump)
+; BANK $16 — ANIMATION/SPRITE DATA (pair $16/$17; partner is the menus bank)
+; Selected per entity type by anim_bank_tbl ($1E:E33B) and mapped as a
+; 16KB pair; the render engine ($1E:E08F) reads, in the $8000 half:
+;   $8000/$8200 sprite-record ptr lo/hi (normal)
+;   $8100/$8300 sprite-record ptr lo/hi (h-flipped)
+;   $8400/$8500 position-set ptr lo/hi (ptr used at -3)
+;   $8600/$8700 sub_type -> anim descriptor ptr lo/hi
+; Formats in DATA_REFERENCE.md section 14. Records fill the rest of
+; the pair — $17 is the menus bank; pair 3's records stay in $16.
 ; SKELETON — raw ROM bytes, not yet classified as code or data.
 ; =============================================================================
     .byte $EE,$EE,$0F,$30,$51,$72,$93,$B4,$D5,$F6,$17,$1C,$21,$26,$31,$3C   ; $8000

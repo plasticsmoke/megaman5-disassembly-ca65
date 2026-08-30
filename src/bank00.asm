@@ -9,6 +9,9 @@
 ; =============================================================================
 ; BANK $00 (mapped at $8000) — raw da65 disassembly, annotation in progress
 ; SKELETON — raw ROM bytes, not yet classified as code or data.
+; Data half (file +$0900 on): stage $00 (Gravity Man) stage data —
+; screen table at $A900 with this bank at $A000; format in
+; DATA_REFERENCE.md section 11.
 ; =============================================================================
 L0000           := $0000
 L0001           := $0001

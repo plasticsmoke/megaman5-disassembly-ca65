@@ -7,7 +7,14 @@
 .segment "BANK0B"
 
 ; =============================================================================
-; BANK $0B — unclassified (raw dump)
+; BANK $0B — STAGE-LOAD SERVICE + PROTO CASTLE 4 STAGE DATA
+; $8000: boss-rush teleporter-room draw (stage $0E screen $03 — door
+; states from the re-beaten bitmask $6B), called from stage_load
+; ($1E:D44D). $814D: stage-load-time service, called for every stage
+; ($1E:D43E) with the stage data bank at $A000.
+; Data half (file +$0900 on): stage $0B (Proto castle 4) stage data —
+; screen table at $A900; format in DATA_REFERENCE.md section 11. Also
+; the block/metatile art bank for the story-intro screens ($27=$0B).
 ; SKELETON — raw ROM bytes, not yet classified as code or data.
 ; =============================================================================
     .byte $A5,$6B,$85,$10,$A5,$AD,$85,$11,$A9,$15,$85,$12,$46,$10,$90,$52   ; $8000

@@ -7,7 +7,13 @@
 .segment "BANK11"
 
 ; =============================================================================
-; BANK $11 — unclassified (raw dump)
+; BANK $11 — CASTLE MAP ART BANK
+; Block defs ($B200+) and metatile tables ($AD00-$B1FF) for the
+; Proto/Wily castle map screens: bank $17 sets $27=$11 and the drawing
+; path (block_ptr_setup $1E:D758) maps the alt bank for block/metatile
+; reads while the screen list stays in bank $10. Never mapped
+; otherwise. Front half ($A000-$A7FF): dense bit table with no known
+; reader — apparently unused filler.
 ; SKELETON — raw ROM bytes, not yet classified as code or data.
 ; =============================================================================
     .byte $FF,$FF,$FF,$FF,$FE,$FF,$FE,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF   ; $A000
