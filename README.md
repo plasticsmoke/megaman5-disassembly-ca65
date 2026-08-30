@@ -9,9 +9,11 @@ menus/title, the ending, the sound driver, and the stage/animation
 data formats are annotated, with the architecture written up in
 ENGINE.md and the data formats in DATA_REFERENCE.md, and the
 documented claims verified against the code by an adversarial audit
-pass. Remaining: deeper per-line annotation where banks are still
-characterized at routine level (stage banks' `$8000` halves, raw
-`.byte` structuring in the data halves).
+pass. All data regions are structured `.byte` tables with section
+banners (stage data, damage tables, animation/sound data, fixed-bank
+tables); code is annotated at routine level or deeper, except the
+banks `$00`/`$01` code halves, which remain raw da65 output
+characterized in their file headers.
 
 Built with [Claude Code](https://claude.com/claude-code) — starting
 from raw disassembler output through label naming, constant
