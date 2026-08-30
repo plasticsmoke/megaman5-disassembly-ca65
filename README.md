@@ -7,9 +7,11 @@ the NES, buildable with cc65's `ca65`/`ld65`.
 characterized: the core engine ($1B-$1D + fixed bank), all stage AI,
 menus/title, the ending, the sound driver, and the stage/animation
 data formats are annotated, with the architecture written up in
-ENGINE.md and the data formats in DATA_REFERENCE.md. Remaining: the
-final adversarial audit pass (and deeper per-line annotation where
-banks are still characterized at routine level).
+ENGINE.md and the data formats in DATA_REFERENCE.md, and the
+documented claims verified against the code by an adversarial audit
+pass. Remaining: deeper per-line annotation where banks are still
+characterized at routine level (stage banks' `$8000` halves, raw
+`.byte` structuring in the data halves).
 
 Built with [Claude Code](https://claude.com/claude-code) — starting
 from raw disassembler output through label naming, constant
@@ -20,9 +22,9 @@ Anyone familiar with Mega Man 5's internals, NES development, or
 MMC3 mapper conventions is welcome to double-check the annotations
 and file corrections or improvements.
 
-For a walkthrough of the game engine, see **[ENGINE.md](ENGINE.md)**
-(skeleton). For data tables, addresses, formats, and ROM hacking
-reference — see **[DATA_REFERENCE.md](DATA_REFERENCE.md)** (skeleton).
+For a walkthrough of the game engine, see **[ENGINE.md](ENGINE.md)**.
+For data tables, addresses, formats, and ROM hacking reference —
+see **[DATA_REFERENCE.md](DATA_REFERENCE.md)**.
 
 ## Building
 

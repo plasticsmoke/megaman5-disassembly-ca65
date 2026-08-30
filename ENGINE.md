@@ -62,7 +62,7 @@ screen edge).
 | Address | Size | Contents |
 |---------|------|----------|
 | `$0000-$00FF` | 256 B | Zero page (see `include/zeropage.inc`) |
-| `$0100-$01FF` | 256 B | Killed-enemy no-respawn bitmap (`$0100`, cleared by `no_respawn_clear`) + task stacks (SP seeded at `$8F`) |
+| `$0100-$01FF` | 256 B | Killed-enemy no-respawn bitmap (`$0100`, cleared by `no_respawn_clear`) + task stacks (per-task SP seeds: `$8F` task 2, `$AF` task 1, `$DF` task 0) |
 | `$0200-$02FF` | 256 B | OAM shadow buffer (DMA'd every NMI; menus park persistent tableaux at `$02C0+`) |
 | `$0300-$05CF` | 720 B | Entity arrays — stride-`$18` struct-of-arrays (DATA_REFERENCE §5) |
 | `$05D0-$05D2` | 3 B | Background CHR-anim program slot (prog/frame/delay) |
@@ -336,7 +336,7 @@ bit 7 = vertical-scroll room). The camera is `scroll_x/hi $FC/$F9`
 (vertical rooms add `$FA/$FB` with `vscroll_flag $46`); crossing
 8-px boundaries streams new nametable columns through the `$0780`
 buffer (`draw_scroll_column $D4E2`, cursor `$24/$25`). Section
-transitions slide 4 px/frame (`$CB60+`), redraw via the column
+transitions slide 4 px/frame (`section_advance $CB5F`), redraw via the column
 streamer, and boss doors gate on the section flags. Screen-link
 records (`$A9E0`) teleport the camera between non-adjacent screens
 (boss-rush doors); `$AC00[screen]` reseeds the spawn cursors after

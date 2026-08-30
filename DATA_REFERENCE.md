@@ -7,8 +7,6 @@ where `base` is the bank's mapped address (`$8000`, `$A000`, or
 `$C000` — see `cfg/nes.cfg`). See ENGINE.md for how these systems
 work.
 
-**SKELETON** — sections below are placeholders, filled in as the
-disassembly establishes each table and format.
 
 ## Table of Contents
 
@@ -78,8 +76,8 @@ stage id.
 | `$0D` | — | endgame Wily scene AI + Wily 2 data |
 | `$0E` | — | ending sequence (`$A000-$A8FF`) + Wily 3 data |
 | `$0F` | ending credits text (`$8000-$8577`) | Wily 4 data |
-| `$10` | *(unreferenced bit table)* | menu/ending pseudo-stage data |
-| `$11` | *(unreferenced bit table)* | castle-map art bank (`$27=$11`) |
+| `$10` | — | *(unreferenced bit table `$A000-$A7FF`)* + menu/ending pseudo-stage data |
+| `$11` | — | *(unreferenced bit table `$A000-$A7FF`)* + castle-map art bank (`$27=$11`) |
 | `$12/$13` | animation pair 1 | (both halves) |
 | `$14/$15` | animation pair 2 | (both halves) |
 | `$16` | animation pair 3 (records stay here) | — |
@@ -436,7 +434,10 @@ Buster charge level in `$5B` (`>= $0E` = full; shot sub_types
 
 Weapon N's per-enemy-type damage table is at `$A800` **in PRG bank
 N** — the weapon id doubles as the bank number (`$1C:809D` maps
-`$32` into `$F6`). Entry = `$A800[ent_type]`; low 7 bits = damage,
+`$32` into `$F6`). One carve-out: with Beat selected (`$32 = $C`),
+only the slot-1 shot (Beat itself) uses bank `$0C` — buster shots
+fired alongside it (slots 2-3) reroute to bank `$00`'s table.
+Entry = `$A800[ent_type]`; low 7 bits = damage,
 bit 7 = special handling (weapons `$1/$9`: instant kill/capture
 classes). Zero = ricochet (shot becomes type `$46`). Buster damage
 comes from the charge level instead (1/2/3, `$1C` tables).
