@@ -60,7 +60,7 @@ stage id.
 
 | Bank | `$8000`-half role | `$A000`-half role |
 |---|---|---|
-| `$00` | per-frame service (`call_bank00_frame`) | Gravity Man stage data |
+| `$00` | section environment service (`call_bank00_frame`; records `$809E`) | Gravity Man stage data |
 | `$01` | pause/weapon menu + stage-load tables | Wave Man stage data |
 | `$02` | — | Wily-boss AI (Big Pets, Circring, Press) + Stone Man data |
 | `$03` | — | Dark Man 4 scene, boss-rush pods + Gyro Man data |
@@ -453,10 +453,9 @@ bank map. Layout (as mapped at `$A000`):
 |---|---|
 | `$A900-$A94E` | Screen → layout index |
 | `$A950-$A967` | Section list: start screen (bits 0-4) + flags (bits 5-7) |
-| `$A968-$A97F` | Per-section attributes (bit 7 = vertical-scroll room) |
+| `$A968-$A97F` | Per-section attributes: bit 7 = vertical-scroll room; bits 0-5 = environment record index (`$00:809E`: palette rows 6-7 retint, R1 CHR swap, palette-set reload) |
 | `$A980/$A981` | BG CHR banks (MMC3 R0/R1 → `$EA/$EB`) |
-| `$A988-$A997` | 16 BG palette bytes |
-| `$A998-$A99B` | Sprite palette-cycle seeds → `$05F0` |
+| `$A988+20n` | Palette sets, 20 bytes each: 16 BG palette bytes + 4 palette-cycle seeds (→ `$05F0`); set 0 loaded by `stage_load`, later sets switched per section by the bank `$00` environment service |
 | `$A9E0+` | Screen links: `[screen, Y band, dest screen, dest section]`, bit 7 ends |
 | `$AA00-$AB7F` | Spawn lists: screen / X / Y arrays (`$A9FF` = -1 base) |
 | `$AB80-$ABFF` | Spawn codes ([section 12](#12-spawn-lists)) |

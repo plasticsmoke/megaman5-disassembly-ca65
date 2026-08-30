@@ -926,11 +926,12 @@ LA647:  jmp     entity_facing_dispatch                           ; A647 4C 65 EA
         .byte   $82,$42,$00,$E1,$00,$03,$00,$08 ; A978
 ; --- $A980: BG CHR banks (MMC3 R0/R1 <- $A980/$A981; rest unreferenced) ---
         .byte   $98,$9A,$20,$00,$28,$00,$00,$20 ; A980
-; --- $A988: BG palette (16 bytes) ---
+; --- $A988: palette sets, 20 bytes each [16 BG palette + 4 palette-cycle
+; seeds]: set n at +20n; set 0 is loaded by stage_load, later sets are
+; switched per section by the bank $00 environment service
+; ($A968 attr bits 0-5 -> $00:809E records, ctl bit 7) ---
         .byte   $0F,$29,$19,$0B,$0F,$27,$17,$0B,$0F,$39,$27,$18,$0F,$24,$14,$03 ; A988
-; --- $A998: sprite palette-cycle seeds -> $05F0 slots ($A998-$A99B read) ---
         .byte   $00,$00,$00,$00,$0F,$3C,$2C,$20 ; A998
-; --- $A9A0: unreferenced ---
         .byte   $0F,$1C,$10,$2C,$0F,$39,$27,$18,$0F,$24,$14,$03,$9B,$9C,$00,$00 ; A9A0
         .byte   $0F,$38,$27,$18,$0F,$27,$19,$0B,$0F,$39,$27,$18,$0F,$24,$14,$03 ; A9B0
         .byte   $00,$00,$00,$00,$00,$00,$00,$10,$88,$88,$00,$24,$02,$01,$80,$00 ; A9C0

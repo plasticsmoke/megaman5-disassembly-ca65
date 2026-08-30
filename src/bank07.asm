@@ -914,11 +914,12 @@ LA608:  .byte   $81,$87,$00                     ; A608  crest shape by phase
         .byte   $80,$BA,$00,$00,$80,$00,$0A,$84 ; A978
 ; --- $A980: BG CHR banks (MMC3 R0/R1 <- $A980/$A981; rest unreferenced) ---
         .byte   $9C,$9E,$00,$10,$20,$28,$80,$00 ; A980
-; --- $A988: BG palette (16 bytes) ---
+; --- $A988: palette sets, 20 bytes each [16 BG palette + 4 palette-cycle
+; seeds]: set n at +20n; set 0 is loaded by stage_load, later sets are
+; switched per section by the bank $00 environment service
+; ($A968 attr bits 0-5 -> $00:809E records, ctl bit 7) ---
         .byte   $0F,$20,$01,$01,$0F,$20,$1C,$11,$0F,$23,$12,$03,$0F,$31,$21,$1C ; A988
-; --- $A998: sprite palette-cycle seeds -> $05F0 slots ($A998-$A99B read) ---
         .byte   $82,$84,$00,$00,$0F,$20,$01,$01 ; A998
-; --- $A9A0: unreferenced ---
         .byte   $0F,$20,$1C,$11,$0F,$23,$12,$03,$0F,$22,$12,$02,$82,$84,$00,$00 ; A9A0
         .byte   $0F,$20,$01,$15,$0F,$20,$1C,$11,$0F,$23,$12,$03,$0F,$35,$25,$15 ; A9B0
         .byte   $94,$97,$00,$00,$0F,$20,$01,$01,$0F,$20,$1C,$11,$0F,$23,$12,$03 ; A9C0

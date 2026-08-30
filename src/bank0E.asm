@@ -837,11 +837,12 @@ LA744:  .byte   $43,$41,$50,$43,$4F,$4D,$FB,$15,$FF,$5F,$FF,$5D,$FF,$7F,$F9,$7F 
         .byte   $00,$00,$00,$00,$00,$00,$00,$00 ; A978
 ; --- $A980: BG CHR banks (MMC3 R0/R1 <- $A980/$A981; rest unreferenced) ---
         .byte   $B8,$B0,$20,$80,$00,$08,$00,$00 ; A980
-; --- $A988: BG palette (16 bytes) ---
+; --- $A988: palette sets, 20 bytes each [16 BG palette + 4 palette-cycle
+; seeds]: set n at +20n; set 0 is loaded by stage_load, later sets are
+; switched per section by the bank $00 environment service
+; ($A968 attr bits 0-5 -> $00:809E records, ctl bit 7) ---
         .byte   $0F,$30,$22,$13,$0F,$30,$27,$07,$0F,$30,$2C,$0C,$0F,$0F,$21,$09 ; A988
-; --- $A998: sprite palette-cycle seeds -> $05F0 slots ($A998-$A99B read) ---
         .byte   $00,$00,$00,$99,$0F,$30,$22,$13 ; A998
-; --- $A9A0: unreferenced ---
         .byte   $0F,$30,$27,$07,$0F,$30,$22,$13,$0F,$30,$25,$15,$00,$00,$00,$00 ; A9A0
         .byte   $00,$20,$08,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A9B0
         .byte   $28,$00,$02,$04,$02,$00,$00,$84,$00,$00,$20,$00,$20,$00,$00,$00 ; A9C0

@@ -332,7 +332,11 @@ meter to `$9C` (`$17:865A`).
 
 Stages are strings of **sections** (list at `$A950` in the stage
 bank: start screen in bits 0-4, flags in 5-7; attributes at `$A968`,
-bit 7 = vertical-scroll room). The camera is `scroll_x/hi $FC/$F9`
+bit 7 = vertical-scroll room, bits 0-5 = the section's environment
+record — bank `$00`'s per-frame service (`call_bank00_frame`) applies
+it: retint BG palette rows 6-7, optionally swap the R1 CHR bank,
+optionally reload a whole 20-byte palette set from `$A988+20n`).
+The camera is `scroll_x/hi $FC/$F9`
 (vertical rooms add `$FA/$FB` with `vscroll_flag $46`); crossing
 8-px boundaries streams new nametable columns through the `$0780`
 buffer (`draw_scroll_column $D4E2`, cursor `$24/$25`). Section
@@ -351,7 +355,8 @@ All graphics are CHR-ROM banks; the NMI rewrites R0-R5 from
   CHR-anim program (`$05D0` slot, tables `$1E:DDB3+`) cycles one
   register on a schedule (waterfalls, conveyors).
 - **Palette cycling**: program slots `$05F0+` (tables `$1E:DD01+`),
-  seeded by stage data and spawn commands.
+  seeded by stage data (the palette sets at `$A988+20n`), spawn
+  commands, and the bank `$00` environment service.
 - **Sprite CHR**: per animation frame — each sprite record names a
   CHR bank and which R2-R5 slot receives it
   ([section 10](#10-animation-and-sprite-rendering)).
@@ -447,5 +452,13 @@ after every game over / weapon get. Details: DATA_REFERENCE §16.
 - **The credits card the fans**: pages 0-7 of the credits are
   "DWN.NO-33 GRAVITY MAN / DESIGNER ..." — the fan-contest winners,
   typed letter-by-letter from bank `$0F`.
+- **The M-tank pays out a 1-UP**: using an M-tank while every owned
+  meter is already full runs bank `$08`'s pickup sweep and, if the
+  screen is clear, grants an extra life (`$01:8183`) — an
+  intentional easter egg in the pause menu.
+- **The pause cursor is a global**: `$50` keeps the equipped
+  weapon's menu slot between stages — `stage_load` indexes the
+  weapon swatch and sprite-CHR tables (`$01:854B/$85F1`) with it
+  directly.
 - **The game never returns from THE END**: the last thing the
   ending does is `jmp` into a two-instruction render loop.

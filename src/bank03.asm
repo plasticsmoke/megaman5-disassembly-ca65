@@ -919,11 +919,12 @@ LA64A:  .byte   $0F,$20,$16,$06                 ; A64A  water giant palette
         .byte   $00,$00,$00,$02,$00,$00,$00,$0A ; A978
 ; --- $A980: BG CHR banks (MMC3 R0/R1 <- $A980/$A981; rest unreferenced) ---
         .byte   $8C,$8E,$00,$00,$00,$00,$00,$00 ; A980
-; --- $A988: BG palette (16 bytes) ---
+; --- $A988: palette sets, 20 bytes each [16 BG palette + 4 palette-cycle
+; seeds]: set n at +20n; set 0 is loaded by stage_load, later sets are
+; switched per section by the bank $00 environment service
+; ($A968 attr bits 0-5 -> $00:809E records, ctl bit 7) ---
         .byte   $21,$30,$28,$0F,$21,$30,$2B,$0F,$21,$30,$27,$0F,$21,$30,$3C,$2C ; A988
-; --- $A998: sprite palette-cycle seeds -> $05F0 slots ($A998-$A99B read) ---
         .byte   $00,$00,$00,$81,$00,$00,$00,$00 ; A998
-; --- $A9A0: unreferenced ---
         .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A9A0
         .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A9B0
         .byte   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; A9C0
