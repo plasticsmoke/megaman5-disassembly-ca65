@@ -3394,7 +3394,14 @@ LDAF8:  .byte   $03                             ; DAF8 03                       
         .byte   $07                             ; DAF9 07                       .
         .byte   $0B                             ; DAFA 0B                       .
         .byte   $0F                             ; DAFB 0F                       .
-        lda     $F5                             ; DAFC A5 F5                    ..
+; -----------------------------------------------------------------------------
+; FULL-SCREEN REDRAW (BANK-SAFE) — $DAFC
+; Saves the R6/R7 shadows, then redraws all 64 nametable columns of the
+; visible screen through LD95D + nametable_flush (used by the pause menu
+; and the bank $17 menus to paint a whole screen from stage/pseudo-stage
+; data). Restores the caller's banks on exit.
+; -----------------------------------------------------------------------------
+redraw_screen_banksafe:  lda     $F5            ; DAFC A5 F5                    ..
         pha                                     ; DAFE 48                       H
         lda     $F6                             ; DAFF A5 F6                    ..
         pha                                     ; DB01 48                       H

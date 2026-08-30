@@ -61,7 +61,6 @@ L6916           := $6916
 L6A6D           := $6A6D
 L6A70           := $6A70
 L8C6C           := $8C6C
-LDAFC           := $DAFC
 LE620           := $E620
 ; ----------------------------------------------------------------------------
 ; --- $A000: STORY INTRO entry. Intro music ($0B), then the scene list;
@@ -487,14 +486,14 @@ LA335:  dec     $0468,x                         ; A335 DE 68 04                 
 LA363:  rts                                     ; A363 60                       `
 
 ; ----------------------------------------------------------------------------
-; --- LA364: draw intro screen A ($23) via LDAFC ($27=$0B while drawing)
+; --- LA364: draw intro screen A ($23) via redraw_screen_banksafe ($27=$0B while drawing)
 ; and fall through to load palette record A.
 LA364:  sta     $23                             ; A364 85 23                    .#
         lda     #$0B                            ; A366 A9 0B                    ..
         sta     $27                             ; A368 85 27                    .'
         lda     #$08                            ; A36A A9 08                    ..
         sta     $10                             ; A36C 85 10                    ..
-        jsr     LDAFC                           ; A36E 20 FC DA                  ..
+        jsr     redraw_screen_banksafe                           ; A36E 20 FC DA                  ..
         lda     $23                             ; A371 A5 23                    .#
 ; --- LA373: palette record loader: LA3FB + A*$12 = 2 CHR banks ($EA/$EB)
 ; + 16 BG colors; sprite rows fixed from LA467.

@@ -15,7 +15,7 @@
 ; and the Proto/Wily castle map interludes (including the post-Proto-4
 ; escape cutscene). Entered at $8000 from the fixed-bank boot/respawn
 ; task ($DE15 maps the $17/$0C pair); returns with $26 = stage to load.
-; Screens are drawn via LDAFC/LDB23 from the menu pseudo-stage ($26=$10,
+; Screens are drawn via redraw_screen_banksafe/LDB23 from the menu pseudo-stage ($26=$10,
 ; whose layout data lives in PRG bank $10).
 ;
 ; Code: $8000-$8B73 (menus) and $91C9-$9821 (castle maps/cutscene).
@@ -128,7 +128,6 @@ L594D           := $594D
 LA000           := $A000
 LCA9F           := $CA9F
 LD216           := $D216
-LDAFC           := $DAFC
 LDB23           := $DB23
 LF391           := $F391
 LFF20           := $FF20
@@ -189,13 +188,13 @@ L8029:  lda     #$F0                            ; 8029 A9 F0                    
         sta     $10                             ; 8053 85 10                    ..
         lda     #$01                            ; 8055 A9 01                    ..
         sta     $23                             ; 8057 85 23                    .#
-        jsr     LDAFC                           ; 8059 20 FC DA                  ..
+        jsr     redraw_screen_banksafe                           ; 8059 20 FC DA                  ..
         dec     L0027                           ; 805C C6 27                    .'
         lda     #$00                            ; 805E A9 00                    ..
         sta     $10                             ; 8060 85 10                    ..
         lda     #$00                            ; 8062 A9 00                    ..
         sta     $23                             ; 8064 85 23                    .#
-        jsr     LDAFC                           ; 8066 20 FC DA                  ..
+        jsr     redraw_screen_banksafe                           ; 8066 20 FC DA                  ..
         ldy     #$4C                            ; 8069 A0 4C                    .L
         jsr     L89FC                           ; 806B 20 FC 89                  ..
         lda     #$02                            ; 806E A9 02                    ..
@@ -273,12 +272,12 @@ L80E1:  jsr     palette_fade_out                           ; 80E1 20 F1 C3      
         sta     $10                             ; 8100 85 10                    ..
         lda     #$02                            ; 8102 A9 02                    ..
         sta     $23                             ; 8104 85 23                    .#
-        jsr     LDAFC                           ; 8106 20 FC DA                  ..
+        jsr     redraw_screen_banksafe                           ; 8106 20 FC DA                  ..
         lda     #$08                            ; 8109 A9 08                    ..
         sta     $10                             ; 810B 85 10                    ..
         lda     #$04                            ; 810D A9 04                    ..
         sta     $23                             ; 810F 85 23                    .#
-        jsr     LDAFC                           ; 8111 20 FC DA                  ..
+        jsr     redraw_screen_banksafe                           ; 8111 20 FC DA                  ..
         ldy     #$26                            ; 8114 A0 26                    .&
         jsr     L89FC                           ; 8116 20 FC 89                  ..
         ldy     #$10                            ; 8119 A0 10                    ..
@@ -469,7 +468,7 @@ L8265:  jsr     disable_rendering                           ; 8265 20 D1 C2     
         sta     $10                             ; 826A 85 10                    ..
         lda     #$03                            ; 826C A9 03                    ..
         sta     $23                             ; 826E 85 23                    .#
-        jsr     LDAFC                           ; 8270 20 FC DA                  ..
+        jsr     redraw_screen_banksafe                           ; 8270 20 FC DA                  ..
         jsr     frame_wait                           ; 8273 20 22 FF                  ".
         jsr     enable_rendering                           ; 8276 20 DB C2                  ..
         lda     #$0E                            ; 8279 A9 0E                    ..
@@ -1006,7 +1005,7 @@ L866A:  jsr     palette_fade_out                           ; 866A 20 F1 C3      
         sta     $05F3                           ; 8699 8D F3 05                 ...
         lda     #$01                            ; 869C A9 01                    ..
         sta     $23                             ; 869E 85 23                    .#
-        jsr     LDAFC                           ; 86A0 20 FC DA                  ..
+        jsr     redraw_screen_banksafe                           ; 86A0 20 FC DA                  ..
         ldy     #$72                            ; 86A3 A0 72                    .r
         jsr     L89FC                           ; 86A5 20 FC 89                  ..
         jmp     enable_rendering                           ; 86A8 4C DB C2                 L..
@@ -1302,12 +1301,12 @@ L8887:  lda     $6E                             ; 8887 A5 6E                    
         sta     $10                             ; 88AF 85 10                    ..
         lda     #$03                            ; 88B1 A9 03                    ..
         sta     $23                             ; 88B3 85 23                    .#
-        jsr     LDAFC                           ; 88B5 20 FC DA                  ..
+        jsr     redraw_screen_banksafe                           ; 88B5 20 FC DA                  ..
         lda     #$08                            ; 88B8 A9 08                    ..
         sta     $10                             ; 88BA 85 10                    ..
         lda     #$04                            ; 88BC A9 04                    ..
         sta     $23                             ; 88BE 85 23                    .#
-        jsr     LDAFC                           ; 88C0 20 FC DA                  ..
+        jsr     redraw_screen_banksafe                           ; 88C0 20 FC DA                  ..
         ldy     #$98                            ; 88C3 A0 98                    ..
         jsr     L89FC                           ; 88C5 20 FC 89                  ..
         lda     #$01                            ; 88C8 A9 01                    ..
@@ -1959,7 +1958,7 @@ L9272:  jsr     palette_fade_out                           ; 9272 20 F1 C3      
         sta     $10                             ; 928B 85 10                    ..
         lda     #$01                            ; 928D A9 01                    ..
         sta     $23                             ; 928F 85 23                    .#
-        jsr     LDAFC                           ; 9291 20 FC DA                  ..
+        jsr     redraw_screen_banksafe                           ; 9291 20 FC DA                  ..
         jsr     enable_rendering                           ; 9294 20 DB C2                  ..
         jsr     frame_wait                           ; 9297 20 22 FF                  ".
         lda     #$0F                            ; 929A A9 0F                    ..
@@ -1999,7 +1998,7 @@ L92CD:  jsr     palette_fade_out                           ; 92CD 20 F1 C3      
         lda     #$00                            ; 92E4 A9 00                    ..
         sta     $10                             ; 92E6 85 10                    ..
         sta     $23                             ; 92E8 85 23                    .#
-        jsr     LDAFC                           ; 92EA 20 FC DA                  ..
+        jsr     redraw_screen_banksafe                           ; 92EA 20 FC DA                  ..
         ldy     #$20                            ; 92ED A0 20                    . 
         lda     #$18                            ; 92EF A9 18                    ..
         jsr     L96CA                           ; 92F1 20 CA 96                  ..

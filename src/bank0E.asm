@@ -77,7 +77,6 @@ L804E           := $804E
 L8400           := $8400
 L910A           := $910A
 L9190           := $9190
-LDAFC           := $DAFC
 LE4E5           := $E4E5
 LE904           := $E904
 LF36F           := $F36F
@@ -114,12 +113,12 @@ LFF24           := $FF24
         lda     #$00                            ; A021 A9 00                    ..
         sta     $F9                             ; A023 85 F9                    ..
         sta     $10                             ; A025 85 10                    ..
-        jsr     LDAFC                           ; A027 20 FC DA                  ..
+        jsr     redraw_screen_banksafe                           ; A027 20 FC DA                  ..
         lda     #$03                            ; A02A A9 03                    ..
         sta     $23                             ; A02C 85 23                    .#
         lda     #$08                            ; A02E A9 08                    ..
         sta     $10                             ; A030 85 10                    ..
-        jsr     LDAFC                           ; A032 20 FC DA                  ..
+        jsr     redraw_screen_banksafe                           ; A032 20 FC DA                  ..
         ldy     #$00                            ; A035 A0 00                    ..
         jsr     LA486                           ; A037 20 86 A4                  ..
         jsr     LA49F                           ; A03A 20 9F A4                  ..
@@ -162,7 +161,7 @@ LA08E:  lda     #$05                            ; A08E A9 05                    
         lda     #$00                            ; A092 A9 00                    ..
         sta     $F9                             ; A094 85 F9                    ..
         sta     $10                             ; A096 85 10                    ..
-        jsr     LDAFC                           ; A098 20 FC DA                  ..
+        jsr     redraw_screen_banksafe                           ; A098 20 FC DA                  ..
         ldy     #$08                            ; A09B A0 08                    ..
 LA09D:  lda     LA56A,y                         ; A09D B9 6A A5                 .j.
         sta     $0780,y                         ; A0A0 99 80 07                 ...

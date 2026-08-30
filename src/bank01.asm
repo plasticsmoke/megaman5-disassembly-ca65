@@ -7,10 +7,12 @@
 .segment "BANK01"
 
 ; =============================================================================
-; BANK $01 (mapped at $8000) — PAUSE/WEAPON MENU + stage-load tables
+; BANK $01 (mapped at $8000) — PAUSE/WEAPON MENU + WAVE MAN STAGE DATA
 ; The gameplay frame loop maps $01/$08 and calls $8000 when Start is
-; pressed ($1E:DE99): the pause/weapon menu. stage_load also reads CHR
-; and palette-row tables here ($85F1, $854B+) with this bank at $8000.
+; pressed ($1E:DE99): the pause/weapon menu (full walkthrough in the
+; routine header below). stage_load also reads the weapon swatch/CHR
+; tables here ($854B/$85F1, indexed by the equipped cursor slot $50)
+; with this bank at $8000. $8800 (rt $A800): Water Wave damage table.
 ; Data half (file +$0900 on): stage $01 (Wave Man) stage data —
 ; screen table at $A900 with this bank at $A000; format in
 ; DATA_REFERENCE.md section 11.
@@ -67,16 +69,59 @@ LA440           := $A440
 LD000           := $D000
 LD423           := $D423
 LD840           := $D840
-LDAFC           := $DAFC
 LE000           := $E000
 LFF24           := $FF24
 ; ----------------------------------------------------------------------------
-        .byte   $A9,$00,$85,$95,$E6,$1B,$20,$F1,$C3,$20,$8F,$C3,$20,$22,$FF,$20 ; 8000
-        .byte   $D1,$C2,$E6,$59,$A5,$27,$8D,$A2,$07,$A5,$26,$8D,$A3,$07,$A5,$FC ; 8010
-        .byte   $8D,$A4,$07,$A5,$FD,$8D,$A5,$07,$A5,$FA,$8D,$A6,$07,$A5,$FB,$8D ; 8020
-        .byte   $A7,$07,$A5,$23,$8D,$A8,$07,$A5,$99,$8D,$A9,$07,$A9,$10,$85,$27 ; 8030
-        .byte   $85,$26,$A4,$2C,$B9,$22,$85,$85,$10,$A9,$00,$85,$FC,$85,$FA,$85 ; 8040
-        .byte   $99,$85,$23,$20,$FC,$DA,$A0,$05 ; 8050
+; =============================================================================
+; PAUSE / WEAPON MENU — $01:8000 (pair $01/$08; entered from the gameplay
+; frame loop, $1E:DE99, on Start with sound $29).
+; Open: fade/blank, save context to $07A2+ (banks $26/$27, scroll, $23,
+; game-mode req, CHR shadows $EA-$EF, master palette) — then switch to
+; pseudo-stage $26=$27=$10, redraw the whole screen from its layout
+; (redraw_screen_banksafe), load menu CHR (L8524) + palette (L852A), wipe
+; entity slots 1-4, and draw the panels: weapon names (L8403 blanks the
+; unowned), energy bars (L8437), MEGAMAN-V letters / BEAT row (L8488),
+; E/M-tank + lives digits (L84E9), cursor row highlight (L8375).
+; $10 holds the PPU-addr OR mask (L8522[mirror_shadow]) selecting the
+; visible nametable; $50 = cursor (bits 0-2 row, bit 3 column).
+; =============================================================================
+        lda     #$00                            ; 8000 A9 00                    ..
+        sta     $95                             ; 8002 85 95                    ..
+        inc     $1B                             ; 8004 E6 1B                    ..
+        jsr     palette_fade_out                           ; 8006 20 F1 C3                  ..
+        jsr     oam_clear                           ; 8009 20 8F C3                  ..
+        jsr     frame_wait                           ; 800C 20 22 FF                  ".
+        jsr     disable_rendering                           ; 800F 20 D1 C2                  ..
+        inc     $59                             ; 8012 E6 59                    .Y
+        lda     $27                             ; 8014 A5 27                    .'
+        sta     $07A2                           ; 8016 8D A2 07                 ...
+        lda     $26                             ; 8019 A5 26                    .&
+        sta     $07A3                           ; 801B 8D A3 07                 ...
+        lda     $FC                             ; 801E A5 FC                    ..
+        sta     $07A4                           ; 8020 8D A4 07                 ...
+        lda     $FD                             ; 8023 A5 FD                    ..
+        sta     $07A5                           ; 8025 8D A5 07                 ...
+        lda     $FA                             ; 8028 A5 FA                    ..
+        sta     $07A6                           ; 802A 8D A6 07                 ...
+        lda     $FB                             ; 802D A5 FB                    ..
+        sta     $07A7                           ; 802F 8D A7 07                 ...
+        lda     $23                             ; 8032 A5 23                    .#
+        sta     $07A8                           ; 8034 8D A8 07                 ...
+        lda     $99                             ; 8037 A5 99                    ..
+        sta     $07A9                           ; 8039 8D A9 07                 ...
+        lda     #$10                            ; 803C A9 10                    ..
+        sta     $27                             ; 803E 85 27                    .'
+        sta     $26                             ; 8040 85 26                    .&
+        ldy     $2C                             ; 8042 A4 2C                    .,
+        lda     L8522,y                         ; 8044 B9 22 85                 .".
+        sta     $10                             ; 8047 85 10                    ..
+        lda     #$00                            ; 8049 A9 00                    ..
+        sta     $FC                             ; 804B 85 FC                    ..
+        sta     $FA                             ; 804D 85 FA                    ..
+        sta     $99                             ; 804F 85 99                    ..
+        sta     $23                             ; 8051 85 23                    .#
+        jsr     redraw_screen_banksafe                           ; 8053 20 FC DA                  ..
+        ldy     #$05                            ; 8056 A0 05                    ..
 L8058:  lda     $EA,y                           ; 8058 B9 EA 00                 ...
         sta     $07AA,y                         ; 805B 99 AA 07                 ...
         lda     L8524,y                         ; 805E B9 24 85                 .$.
@@ -84,18 +129,41 @@ L8058:  lda     $EA,y                           ; 8058 B9 EA 00                 
         dey                                     ; 8064 88                       .
         bpl     L8058                           ; 8065 10 F1                    ..
         ldy     #$1F                            ; 8067 A0 1F                    ..
-        .byte   $B9,$20,$06,$99,$B0,$07,$B9,$2A,$85,$99,$20,$06,$88,$10,$F1,$A0 ; 8069
-        .byte   $04,$20,$FE,$F2,$88,$D0,$FA,$20,$FE,$82,$20,$03,$84,$20,$88,$84 ; 8079
-        .byte   $20,$37,$84,$20,$E9,$84,$A2,$00,$20,$75,$83,$A5,$2C,$85,$FD,$E6 ; 8089
-        .byte   $FD,$20,$22,$FF,$20,$DB,$C2,$20,$EB,$C3 ; 8099
+L8069:  lda     $0620,y                         ; 8069 B9 20 06                 . .
+        sta     $07B0,y                         ; 806C 99 B0 07                 ...
+        lda     L852A,y                         ; 806F B9 2A 85                 .*.
+        sta     $0620,y                         ; 8072 99 20 06                 . .
+        dey                                     ; 8075 88                       .
+        bpl     L8069                           ; 8076 10 F1                    ..
+        ldy     #$04                            ; 8078 A0 04                    ..
+L807A:  jsr     entity_wipe_y                           ; 807A 20 FE F2                  ..
+        dey                                     ; 807D 88                       .
+        bne     L807A                           ; 807E D0 FA                    ..
+        jsr     L82FE                           ; 8080 20 FE 82                  ..
+        jsr     L8403                           ; 8083 20 03 84                  ..
+        jsr     L8488                           ; 8086 20 88 84                  ..
+        jsr     L8437                           ; 8089 20 37 84                  7.
+        jsr     L84E9                           ; 808C 20 E9 84                  ..
+        ldx     #$00                            ; 808F A2 00                    ..
+        jsr     L8375                           ; 8091 20 75 83                  u.
+        lda     $2C                             ; 8094 A5 2C                    .,
+        sta     $FD                             ; 8096 85 FD                    ..
+        inc     $FD                             ; 8098 E6 FD                    ..
+        jsr     frame_wait                           ; 809A 20 22 FF                  ".
+        jsr     enable_rendering                           ; 809D 20 DB C2                  ..
+        jsr     palette_fade_in                           ; 80A0 20 EB C3                  ..
+
+; --- main loop: Start/A ($14 & $90) exits to L8140; d-pad moves the
+; cursor over OWNED weapons only (meter $B0+L8594[cursor] bit 7), with
+; L858A/L858B step/wrap tables; a move plays sound $27 and redraws the
+; old row normal (L834A) + new row highlighted (L8375) ---
 L80A3:  lda     $14                             ; 80A3 A5 14                    ..
         and     #$90                            ; 80A5 29 90                    ).
         beq     L80AC                           ; 80A7 F0 03                    ..
         jmp     L8140                           ; 80A9 4C 40 81                 L@.
-
 ; ----------------------------------------------------------------------------
 L80AC:  lda     $50                             ; 80AC A5 50                    .P
-        sta     L0000                           ; 80AE 85 00                    ..
+        sta     $00                             ; 80AE 85 00                    ..
         lda     $14                             ; 80B0 A5 14                    ..
         and     #$0F                            ; 80B2 29 0F                    ).
         beq     L811F                           ; 80B4 F0 69                    .i
@@ -152,7 +220,7 @@ L8102:  lda     $50                             ; 8102 A5 50                    
         bne     L811B                           ; 8115 D0 04                    ..
         cpx     #$0D                            ; 8117 E0 0D                    ..
         bcs     L80E8                           ; 8119 B0 CD                    ..
-L811B:  ldy     L0000                           ; 811B A4 00                    ..
+L811B:  ldy     $00                             ; 811B A4 00                    ..
         cpy     $50                             ; 811D C4 50                    .P
 L811F:  beq     L8137                           ; 811F F0 16                    ..
         lda     #$27                            ; 8121 A9 27                    .'
@@ -168,8 +236,11 @@ L8126:  jsr     L834A                           ; 8126 20 4A 83                 
 L8137:  jsr     L8309                           ; 8137 20 09 83                  ..
         jsr     frame_wait                           ; 813A 20 22 FF                  ".
         jmp     L80A3                           ; 813D 4C A3 80                 L..
-
 ; ----------------------------------------------------------------------------
+
+; --- select/exit: cursor $07 = E-TANK (count $BD; refill HP unless empty/
+; full, one step per 4 frames with sound $26), cursor $0F = M-TANK (below),
+; anything else = close the menu and switch weapons (L819E) ---
 L8140:  lda     $50                             ; 8140 A5 50                    .P
         cmp     #$0F                            ; 8142 C9 0F                    ..
         beq     L8164                           ; 8144 F0 1E                    ..
@@ -187,8 +258,13 @@ L8140:  lda     $50                             ; 8140 A5 50                    
         jsr     L8235                           ; 815C 20 35 82                  5.
         ldy     #$07                            ; 815F A0 07                    ..
         jmp     L8126                           ; 8161 4C 26 81                 L&.
-
 ; ----------------------------------------------------------------------------
+
+; --- M-TANK (count $BE): sound $24, refill EVERY owned meter (L82BA one
+; step per pass). If every meter is already full: run bank $08's pickup
+; sweep (LA3B0, mapped at $A000 as the pair partner) and, if it reports
+; clear ($02 = 0), grant a 1-UP (lives $BF, capped at 9) — the M-tank
+; easter egg. L82CE redraws the count/lives digits ---
 L8164:  lda     $BE                             ; 8164 A5 BE                    ..
         cmp     #$80                            ; 8166 C9 80                    ..
         beq     L8137                           ; 8168 F0 CD                    ..
@@ -201,7 +277,6 @@ L8171:  lda     $B0,y                           ; 8171 B9 B0 00                 
         beq     L8180                           ; 8178 F0 06                    ..
         jsr     L82BA                           ; 817A 20 BA 82                  ..
         jmp     L8192                           ; 817D 4C 92 81                 L..
-
 ; ----------------------------------------------------------------------------
 L8180:  dey                                     ; 8180 88                       .
         bpl     L8171                           ; 8181 10 EE                    ..
@@ -217,8 +292,13 @@ L8192:  jsr     L82CE                           ; 8192 20 CE 82                 
         sta     $50                             ; 8197 85 50                    .P
         ldy     #$0F                            ; 8199 A0 0F                    ..
         jmp     L8126                           ; 819B 4C 26 81                 L&.
-
 ; ----------------------------------------------------------------------------
+
+; --- close: sound $28, fade out, restore the saved context/CHR/palette,
+; redraw the stage screen, then equip: $32/$2E = L85E1[cursor] (weapon id,
+; |$80 into the HUD state when not the buster), R3 sprite CHR $ED =
+; L85F1[cursor]. If the player is mid-slide (sub_type $B0) and the new
+; weapon isn't Charge Kick ($08), reset the pose to sub_type $10 ---
 L819E:  lda     #$28                            ; 819E A9 28                    .(
         jsr     queue_sound                           ; 81A0 20 5D EC                  ].
         jsr     palette_fade_out                           ; 81A3 20 F1 C3                  ..
@@ -253,8 +333,8 @@ L81E4:  lda     $07B0,y                         ; 81E4 B9 B0 07                 
         bpl     L81E4                           ; 81EB 10 F7                    ..
         ldy     $2C                             ; 81ED A4 2C                    .,
         lda     L8522,y                         ; 81EF B9 22 85                 .".
-        sta     L0010                           ; 81F2 85 10                    ..
-        jsr     LDAFC                           ; 81F4 20 FC DA                  ..
+        sta     $10                             ; 81F2 85 10                    ..
+        jsr     redraw_screen_banksafe                           ; 81F4 20 FC DA                  ..
         jsr     frame_wait                           ; 81F7 20 22 FF                  ".
         ldy     $50                             ; 81FA A4 50                    .P
         lda     L85E1,y                         ; 81FC B9 E1 85                 ...
@@ -283,8 +363,11 @@ L8222:  lda     $0558                           ; 8222 AD 58 05                 
         lda     #$10                            ; 822F A9 10                    ..
         jsr     entity_set_subtype                           ; 8231 20 98 EA                  ..
 L8234:  rts                                     ; 8234 60                       `
-
 ; ----------------------------------------------------------------------------
+
+; --- E-tank refill: build the meter packet (L87D7 template + per-meter
+; PPU addr L87BD/L87CA), digits from $BD/$BE; L8275 loop: ++meter, redraw
+; ticks (L846A), sound $26, wait 4 frames, until $9C (full) ---
 L8235:  ldx     #$12                            ; 8235 A2 12                    ..
 L8237:  lda     L87D7,x                         ; 8237 BD D7 87                 ...
         sta     $0780,x                         ; 823A 9D 80 07                 ...
@@ -340,8 +423,9 @@ L82A6:  dec     $19                             ; 82A6 C6 19                    
         cmp     #$9C                            ; 82B5 C9 9C                    ..
         bne     L8275                           ; 82B7 D0 BC                    ..
         rts                                     ; 82B9 60                       `
-
 ; ----------------------------------------------------------------------------
+
+; --- one refill step for every owned, non-full meter ($B0-$BC) ---
 L82BA:  ldy     #$00                            ; 82BA A0 00                    ..
 L82BC:  lda     $B0,y                           ; 82BC B9 B0 00                 ...
         bpl     L82C8                           ; 82BF 10 07                    ..
@@ -352,8 +436,9 @@ L82C8:  iny                                     ; 82C8 C8                       
         cpy     #$0D                            ; 82C9 C0 0D                    ..
         bne     L82BC                           ; 82CB D0 EF                    ..
         rts                                     ; 82CD 60                       `
-
 ; ----------------------------------------------------------------------------
+
+; --- M-tank use: packet L87EA, --$BE, digits $BE/$BF, flag the flush ---
 L82CE:  ldy     #$08                            ; 82CE A0 08                    ..
 L82D0:  lda     L87EA,y                         ; 82D0 B9 EA 87                 ...
         sta     $0780,y                         ; 82D3 99 80 07                 ...
@@ -374,8 +459,11 @@ L82D0:  lda     L87EA,y                         ; 82D0 B9 EA 87                 
         sta     $0787                           ; 82F6 8D 87 07                 ...
         sty     $19                             ; 82F9 84 19                    ..
         jmp     frame_wait                           ; 82FB 4C 22 FF                 L".
-
 ; ----------------------------------------------------------------------------
+
+; --- cursor sprites: base OAM frame from L8601, then the per-cursor
+; icon records L8621[L8611[cursor]] = [count, R3 CHR bank -> $ED, then
+; Y/tile/attr/X quads]; pad OAM to $023C with $F8 ---
 L82FE:  ldx     #$0F                            ; 82FE A2 0F                    ..
 L8300:  lda     L8601,x                         ; 8300 BD 01 86                 ...
         sta     $0200,x                         ; 8303 9D 00 02                 ...
@@ -384,7 +472,7 @@ L8300:  lda     L8601,x                         ; 8300 BD 01 86                 
 L8309:  ldx     $50                             ; 8309 A6 50                    .P
         ldy     L8611,x                         ; 830B BC 11 86                 ...
         lda     L8621,y                         ; 830E B9 21 86                 .!.
-        sta     L0000                           ; 8311 85 00                    ..
+        sta     $00                             ; 8311 85 00                    ..
         lda     L8622,y                         ; 8313 B9 22 86                 .".
         sta     $ED                             ; 8316 85 ED                    ..
         ldx     #$10                            ; 8318 A2 10                    ..
@@ -404,7 +492,7 @@ L8336:  inx                                     ; 8336 E8                       
         inx                                     ; 8337 E8                       .
         inx                                     ; 8338 E8                       .
         inx                                     ; 8339 E8                       .
-        dec     L0000                           ; 833A C6 00                    ..
+        dec     $00                             ; 833A C6 00                    ..
         bpl     L831A                           ; 833C 10 DC                    ..
         cpx     #$3C                            ; 833E E0 3C                    .<
         beq     L8349                           ; 8340 F0 07                    ..
@@ -412,13 +500,17 @@ L8336:  inx                                     ; 8336 E8                       
         sta     $0200,x                         ; 8344 9D 00 02                 ...
         bne     L8336                           ; 8347 D0 ED                    ..
 L8349:  rts                                     ; 8349 60                       `
-
 ; ----------------------------------------------------------------------------
+
+; --- weapon-name rows: L834A redraws row Y normal; falls into L8375 =
+; draw the CURRENT row with the highlight tile mask (L8722), append the
+; energy-tick row (L87B2 + $88 full / $84|rem tiles), and load the
+; cursor's swatch colors (L854B+cursor*4) into sprite palette row 4 ---
 L834A:  lda     L86B1,y                         ; 834A B9 B1 86                 ...
         tay                                     ; 834D A8                       .
         ldx     #$00                            ; 834E A2 00                    ..
         lda     L86C1,y                         ; 8350 B9 C1 86                 ...
-        ora     L0010                           ; 8353 05 10                    ..
+        ora     $10                             ; 8353 05 10                    ..
         sta     $0780,x                         ; 8355 9D 80 07                 ...
         lda     L86C2,y                         ; 8358 B9 C2 86                 ...
         sta     $0781,x                         ; 835B 9D 81 07                 ...
@@ -438,10 +530,8 @@ L8375:  ldy     $50                             ; 8375 A4 50                    
         lda     L86B1,y                         ; 8377 B9 B1 86                 ...
         tay                                     ; 837A A8                       .
         lda     L86C1,y                         ; 837B B9 C1 86                 ...
-        ora     L0010                           ; 837E 05 10                    ..
-        .byte   $9D                             ; 8380 9D                       .
-L8381:  .byte   $80                             ; 8381 80                       .
-        .byte   $07                             ; 8382 07                       .
+        ora     $10                             ; 837E 05 10                    ..
+        sta     $0780,x                         ; 8380 9D 80 07                 ...
         lda     L86C2,y                         ; 8383 B9 C2 86                 ...
         sta     $0781,x                         ; 8386 9D 81 07                 ...
         lda     L86C3,y                         ; 8389 B9 C3 86                 ...
@@ -469,7 +559,7 @@ L83A4:  lda     L87B2,y                         ; 83A4 B9 B2 87                 
         sta     $01                             ; 83B9 85 01                    ..
         ldx     $02                             ; 83BB A6 02                    ..
         lda     $0783,x                         ; 83BD BD 83 07                 ...
-        ora     L0010                           ; 83C0 05 10                    ..
+        ora     $10                             ; 83C0 05 10                    ..
         sta     $0783,x                         ; 83C2 9D 83 07                 ...
         lda     #$07                            ; 83C5 A9 07                    ..
         sta     $02                             ; 83C7 85 02                    ..
@@ -503,20 +593,22 @@ L83F0:  lda     L854B,y                         ; 83F0 B9 4B 85                 
         cpx     #$03                            ; 83FE E0 03                    ..
         bne     L83F0                           ; 8400 D0 EE                    ..
         rts                                     ; 8402 60                       `
-
 ; ----------------------------------------------------------------------------
+
+; --- blank the name rows of unowned weapons (menu layout pre-draws all
+; 12: L877D blank packets at L879A/L87A6[weapon]) ---
 L8403:  ldy     #$1C                            ; 8403 A0 1C                    ..
 L8405:  lda     L877D,y                         ; 8405 B9 7D 87                 .}.
         sta     $0780,y                         ; 8408 99 80 07                 ...
         dey                                     ; 840B 88                       .
         bpl     L8405                           ; 840C 10 F7                    ..
         ldy     #$0B                            ; 840E A0 0B                    ..
-        sty     L0000                           ; 8410 84 00                    ..
-L8412:  ldy     L0000                           ; 8412 A4 00                    ..
+        sty     $00                             ; 8410 84 00                    ..
+L8412:  ldy     $00                             ; 8412 A4 00                    ..
         lda     $B0,y                           ; 8414 B9 B0 00                 ...
         bmi     L8432                           ; 8417 30 19                    0.
         lda     L879A,y                         ; 8419 B9 9A 87                 ...
-        ora     L0010                           ; 841C 05 10                    ..
+        ora     $10                             ; 841C 05 10                    ..
         sta     $0780                           ; 841E 8D 80 07                 ...
         sta     $078E                           ; 8421 8D 8E 07                 ...
         lda     L87A6,y                         ; 8424 B9 A6 87                 ...
@@ -524,24 +616,25 @@ L8412:  ldy     L0000                           ; 8412 A4 00                    
         ora     #$20                            ; 842A 09 20                    . 
         sta     $078F                           ; 842C 8D 8F 07                 ...
         jsr     nametable_flush                           ; 842F 20 98 C2                  ..
-L8432:  dec     L0000                           ; 8432 C6 00                    ..
+L8432:  dec     $00                             ; 8432 C6 00                    ..
         bpl     L8412                           ; 8434 10 DC                    ..
         rts                                     ; 8436 60                       `
-
 ; ----------------------------------------------------------------------------
+
+; --- energy bars for every owned meter ($B0-$BC): packet L87B2 at
+; L87BD/L87CA[meter], ticks = energy/4 x $88 + remainder | $84 ---
 L8437:  ldy     #$0C                            ; 8437 A0 0C                    ..
-        sty     L0000                           ; 8439 84 00                    ..
-L843B:  ldy     L0000                           ; 843B A4 00                    ..
+        sty     $00                             ; 8439 84 00                    ..
+L843B:  ldy     $00                             ; 843B A4 00                    ..
         lda     $B0,y                           ; 843D B9 B0 00                 ...
         bpl     L844C                           ; 8440 10 0A                    ..
         and     #$1F                            ; 8442 29 1F                    ).
         sta     $01                             ; 8444 85 01                    ..
         jsr     L8451                           ; 8446 20 51 84                  Q.
         jsr     nametable_flush                           ; 8449 20 98 C2                  ..
-L844C:  dec     L0000                           ; 844C C6 00                    ..
+L844C:  dec     $00                             ; 844C C6 00                    ..
         bpl     L843B                           ; 844E 10 EB                    ..
         rts                                     ; 8450 60                       `
-
 ; ----------------------------------------------------------------------------
 L8451:  ldx     #$0A                            ; 8451 A2 0A                    ..
 L8453:  lda     L87B2,x                         ; 8453 BD B2 87                 ...
@@ -549,7 +642,7 @@ L8453:  lda     L87B2,x                         ; 8453 BD B2 87                 
         dex                                     ; 8459 CA                       .
         bpl     L8453                           ; 845A 10 F7                    ..
         lda     L87BD,y                         ; 845C B9 BD 87                 ...
-        ora     L0010                           ; 845F 05 10                    ..
+        ora     $10                             ; 845F 05 10                    ..
         sta     $0780                           ; 8461 8D 80 07                 ...
         lda     L87CA,y                         ; 8464 B9 CA 87                 ...
         sta     $0781                           ; 8467 8D 81 07                 ...
@@ -565,26 +658,28 @@ L846C:  lda     $01                             ; 846C A5 01                    
         cpx     #$07                            ; 847B E0 07                    ..
         bne     L846C                           ; 847D D0 ED                    ..
         rts                                     ; 847F 60                       `
-
 ; ----------------------------------------------------------------------------
 L8480:  lda     $01                             ; 8480 A5 01                    ..
         ora     #$84                            ; 8482 09 84                    ..
         sta     $0783,x                         ; 8484 9D 83 07                 ...
 L8487:  rts                                     ; 8487 60                       `
-
 ; ----------------------------------------------------------------------------
+
+; --- items row: Beat not owned -> recolor the collected MEGAMAN-V
+; letters via attribute packet L85CC (one quadrant per $6D bit); Beat
+; owned ($BC bit 7) -> draw the BEAT row + meter (L85A4/L85B8) ---
 L8488:  lda     $BC                             ; 8488 A5 BC                    ..
         bmi     L84BF                           ; 848A 30 33                    03
         lda     $6D                             ; 848C A5 6D                    .m
         beq     L8487                           ; 848E F0 F7                    ..
-        sta     L0000                           ; 8490 85 00                    ..
+        sta     $00                             ; 8490 85 00                    ..
         ldy     #$07                            ; 8492 A0 07                    ..
 L8494:  lda     L85CC,y                         ; 8494 B9 CC 85                 ...
         sta     $0780,y                         ; 8497 99 80 07                 ...
         dey                                     ; 849A 88                       .
         bpl     L8494                           ; 849B 10 F7                    ..
         ldy     #$00                            ; 849D A0 00                    ..
-L849F:  lsr     L0000                           ; 849F 46 00                    F.
+L849F:  lsr     $00                             ; 849F 46 00                    F.
         bcc     L84B8                           ; 84A1 90 15                    ..
         lda     #$30                            ; 84A3 A9 30                    .0
         sta     $01                             ; 84A5 85 01                    ..
@@ -598,7 +693,7 @@ L84B0:  lda     $0783,x                         ; 84B0 BD 83 07                 
         ora     $01                             ; 84B3 05 01                    ..
         sta     $0783,x                         ; 84B5 9D 83 07                 ...
 L84B8:  iny                                     ; 84B8 C8                       .
-        lda     L0000                           ; 84B9 A5 00                    ..
+        lda     $00                             ; 84B9 A5 00                    ..
         bne     L849F                           ; 84BB D0 E2                    ..
         beq     L84DE                           ; 84BD F0 1F                    ..
 L84BF:  lda     $BC                             ; 84BF A5 BC                    ..
@@ -616,11 +711,12 @@ L84D5:  lda     L85B8,y                         ; 84D5 B9 B8 85                 
         dey                                     ; 84DB 88                       .
         bpl     L84D5                           ; 84DC 10 F7                    ..
 L84DE:  lda     $0780                           ; 84DE AD 80 07                 ...
-        ora     L0010                           ; 84E1 05 10                    ..
+        ora     $10                             ; 84E1 05 10                    ..
         sta     $0780                           ; 84E3 8D 80 07                 ...
         jmp     nametable_flush                           ; 84E6 4C 98 C2                 L..
-
 ; ----------------------------------------------------------------------------
+
+; --- E-tank / M-tank / lives digits (packets L85D4, tiles $B0|count) ---
 L84E9:  ldy     #$0C                            ; 84E9 A0 0C                    ..
 L84EB:  lda     L85D4,y                         ; 84EB B9 D4 85                 ...
         sta     $0780,y                         ; 84EE 99 80 07                 ...
@@ -639,113 +735,70 @@ L84EB:  lda     L85D4,y                         ; 84EB B9 D4 85                 
         ora     #$B0                            ; 850A 09 B0                    ..
         sta     $078B                           ; 850C 8D 8B 07                 ...
         lda     $0784                           ; 850F AD 84 07                 ...
-        ora     L0010                           ; 8512 05 10                    ..
+        ora     $10                             ; 8512 05 10                    ..
         sta     $0784                           ; 8514 8D 84 07                 ...
         lda     $0788                           ; 8517 AD 88 07                 ...
-        ora     L0010                           ; 851A 05 10                    ..
+        ora     $10                             ; 851A 05 10                    ..
         sta     $0788                           ; 851C 8D 88 07                 ...
         jmp     L84DE                           ; 851F 4C DE 84                 L..
-
 ; ----------------------------------------------------------------------------
+
+; --- $8522: PPU-addr hi OR mask per mirror_shadow (visible nametable) ---
 L8522:  .byte   $04,$08                         ; 8522
-L8524:  .byte   $CC,$CE,$00,$06,$00,$00,$0F,$20,$10,$00,$0F,$30,$37,$2C,$0F,$38 ; 8524
-        .byte   $2C,$11,$0F,$20,$27,$18,$0F,$0F,$2C,$11,$0F,$0F,$20,$37,$0F,$0F ; 8534
-        .byte   $00,$00,$0F,$0F,$00,$00,$0F     ; 8544
+; --- $8524: menu CHR banks -> $EA-$EF shadows ---
+L8524:  .byte   $CC,$CE,$00,$06,$00,$00         ; 8524
+; --- $852A: menu master palette (32 bytes -> $0620) ---
+L852A:  .byte   $0F,$20,$10,$00,$0F,$30,$37,$2C,$0F,$38,$2C,$11,$0F,$20,$27,$18 ; 852A
+        .byte   $0F,$0F,$2C,$11,$0F,$0F,$20,$37,$0F,$0F,$00,$00,$0F,$0F,$00,$00 ; 853A
+        .byte   $0F                             ; 854A
+; --- $854B: weapon swatch colors, 4 bytes per cursor slot (3 used -> sprite
+; palette row 4); also read by stage_load ($1E:D40E) to restore the equipped
+; weapon's colors ($50 persists as the equipped cursor slot) ---
 L854B:  .byte   $0F,$2C,$11,$0F,$0F,$20,$11,$0F,$0F,$20,$1A,$0F,$0F,$20,$2C,$0F ; 854B
-        .byte   $0F,$27,$12,$0F,$0F,$2C,$11,$0F,$0F,$2C,$11,$0F,$0F ; 855B
-L8568:  .byte   $2C,$11,$0F,$0F,$20,$07,$0F,$0F,$20,$14,$0F,$0F,$20,$26,$0F,$0F ; 8568
-        .byte   $28,$17,$0F,$0F,$20,$16,$0F,$0F,$20,$16,$0F,$0F,$2C ; 8578
-        .byte   $11,$0F,$0F,$2C,$11             ; 8585
+        .byte   $0F,$27,$12,$0F,$0F,$2C,$11,$0F,$0F,$2C,$11,$0F,$0F,$2C,$11,$0F ; 855B
+        .byte   $0F,$20,$07,$0F,$0F,$20,$14,$0F,$0F,$20,$26,$0F,$0F,$28,$17,$0F ; 856B
+        .byte   $0F,$20,$16,$0F,$0F,$20,$16,$0F,$0F,$2C,$11,$0F,$0F,$2C,$11 ; 857B
+; --- $858A/$858B: cursor step / wrap-correction per d-pad direction ---
 L858A:  .byte   $08                             ; 858A
 L858B:  .byte   $F0,$F8,$10,$01,$F8,$00,$00,$FF,$08 ; 858B
+; --- $8594: cursor -> energy-meter index ($B0-$BC weapons/Beat, $BD E, $BE M) ---
 L8594:  .byte   $00,$01,$02,$03,$04,$05,$0C,$0D,$06,$07,$08,$09,$0A,$0B,$0C,$0E ; 8594
+; --- $85A4/$85B8: BEAT row + meter packets (Beat owned) ---
 L85A4:  .byte   $22,$48,$0F,$00,$00,$8C,$8D,$00,$E1,$E4,$E0,$F0,$00,$00,$00,$00 ; 85A4
         .byte   $00,$00,$00,$FF                 ; 85B4
 L85B8:  .byte   $22,$68,$0F,$00,$00,$9C,$9D,$00,$00,$84,$84,$84,$84,$84,$84,$84 ; 85B8
         .byte   $00,$00,$00,$FF                 ; 85C8
+; --- $85CC: MEGAMAN-V letters attribute packet (recolor per $6D bit) ---
 L85CC:  .byte   $23,$E2,$03,$00,$00,$00,$00,$FF ; 85CC
+; --- $85D4: E-tank / M-tank / lives digit packets ---
 L85D4:  .byte   $23,$46,$00,$00,$23,$4D,$00,$00,$23,$5D,$00,$00,$FF ; 85D4
+; --- $85E1: cursor -> weapon id ($0C = Beat; $00 rows 7/$0F = tanks) ---
 L85E1:  .byte   $00,$01,$02,$03,$04,$05,$0C,$00,$06,$07,$08,$09,$0A,$0B,$0C,$00 ; 85E1
-L85F1:  .byte   $06,$48,$44,$45,$47,$04,$49,$07,$46,$07 ; 85F1
-L85FB:  .byte   $07,$47,$46,$46,$49,$07         ; 85FB
+; --- $85F1: cursor slot -> sprite CHR bank (R3 shadow $ED); also read by
+; stage_load ($1E:D404) ---
+L85F1:  .byte   $06,$48,$44,$45,$47,$04,$49,$07,$46,$07,$07,$47,$46,$46,$49,$07 ; 85F1
+; --- $8601: cursor frame OAM (4 sprites) ---
 L8601:  .byte   $BF,$4C,$00,$D0,$BF,$4C,$40,$D8,$C7,$4D,$01,$D0,$C7,$4D,$41,$D8 ; 8601
+; --- $8611: cursor -> offset into the L8621 icon records ---
 L8611:  .byte   $00,$00,$00,$00,$00,$00,$7A,$00,$00,$00,$00,$00,$26,$54,$7A,$00 ; 8611
+; --- $8621: icon sprite records [count, R3 CHR bank, Y/tile/attr/X quads] ---
 L8621:  .byte   $08                             ; 8621
 L8622:  .byte   $04                             ; 8622
 L8623:  .byte   $C5                             ; 8623
 L8624:  .byte   $08                             ; 8624
 L8625:  .byte   $41                             ; 8625
-L8626:  .byte   $99,$BF,$01,$40                 ; 8626
-
-; ----------------------------------------------------------------------------
-        .byte   $94,$BF,$00,$40                 ; 862A
-
-; ----------------------------------------------------------------------------
-        .byte   $9C                             ; 862E 9C                       .
-        .byte   $C7                             ; 862F C7                       .
-        .byte   $04                             ; 8630 04                       .
-        rti                                     ; 8631 40                       @
-
-; ----------------------------------------------------------------------------
-        bcc     L85FB                           ; 8632 90 C7                    ..
-        .byte   $03                             ; 8634 03                       .
-        rti                                     ; 8635 40                       @
-
-; ----------------------------------------------------------------------------
-        tya                                     ; 8636 98                       .
-        .byte   $C7                             ; 8637 C7                       .
-        .byte   $02                             ; 8638 02                       .
-        rti                                     ; 8639 40                       @
-
-; ----------------------------------------------------------------------------
-        ldy     #$CF                            ; 863A A0 CF                    ..
-        .byte   $07                             ; 863C 07                       .
-        rti                                     ; 863D 40                       @
-
-; ----------------------------------------------------------------------------
-        .byte   $90,$CF,$06,$40,$98,$CF,$05,$40,$A0,$0A,$05,$C5,$78,$41,$9C,$BF ; 863E
-        .byte   $66,$40,$9C,$BF,$65,$40,$A4,$C7,$6B,$40 ; 864E
-
-; ----------------------------------------------------------------------------
-        sty     $6AC7                           ; 8658 8C C7 6A                 ..j
-        rti                                     ; 865B 40                       @
-
-; ----------------------------------------------------------------------------
-        .byte   $94,$C7,$69,$40,$9C,$C7,$68,$41,$A4,$CF,$67,$40 ; 865C
-
-; ----------------------------------------------------------------------------
-        sty     $79CF                           ; 8668 8C CF 79                 ..y
-        rti                                     ; 866B 40                       @
-
-; ----------------------------------------------------------------------------
-        sty     $CF,x                           ; 866C 94 CF                    ..
-        adc     L9C40                           ; 866E 6D 40 9C                 m@.
-        .byte   $CF                             ; 8671 CF                       .
-        jmp     (LA440)                         ; 8672 6C 40 A4                 l@.
-
-; ----------------------------------------------------------------------------
-        .byte   $08,$04,$CF,$79,$41,$A1,$C7,$73,$40 ; 8675
-
-; ----------------------------------------------------------------------------
-        sty     $72C7                           ; 867E 8C C7 72                 ..r
-        rti                                     ; 8681 40                       @
-
-; ----------------------------------------------------------------------------
-        .byte   $94,$C7,$71,$40,$9C,$C7,$70,$40,$A4,$CF,$77,$41,$8C,$CF,$76,$40 ; 8682
-        .byte   $94,$CF,$75,$40,$9C,$CF,$74,$40 ; 8692
-
-; ----------------------------------------------------------------------------
-        .byte   $A4,$04,$49,$CF,$74,$41,$9C,$C7,$66,$40,$94,$C7,$65,$40,$9C,$CF ; 869A
-        .byte   $68,$40                         ; 86AA
-
-; ----------------------------------------------------------------------------
-        sty     $CF,x                           ; 86AC 94 CF                    ..
-        .byte   $67                             ; 86AE 67                       g
-        rti                                     ; 86AF 40                       @
-
-; ----------------------------------------------------------------------------
-        .byte   $9C                             ; 86B0
+L8626:  .byte   $99,$BF,$01,$40,$94,$BF,$00,$40,$9C,$C7,$04,$40,$90,$C7,$03,$40 ; 8626
+        .byte   $98,$C7,$02,$40,$A0,$CF,$07,$40,$90,$CF,$06,$40,$98,$CF,$05,$40 ; 8636
+        .byte   $A0,$0A,$05,$C5,$78,$41,$9C,$BF,$66,$40,$9C,$BF,$65,$40,$A4,$C7 ; 8646
+        .byte   $6B,$40,$8C,$C7,$6A,$40,$94,$C7,$69,$40,$9C,$C7,$68,$41,$A4,$CF ; 8656
+        .byte   $67,$40,$8C,$CF,$79,$40,$94,$CF,$6D,$40,$9C,$CF,$6C,$40,$A4,$08 ; 8666
+        .byte   $04,$CF,$79,$41,$A1,$C7,$73,$40,$8C,$C7,$72,$40,$94,$C7,$71,$40 ; 8676
+        .byte   $9C,$C7,$70,$40,$A4,$CF,$77,$41,$8C,$CF,$76,$40,$94,$CF,$75,$40 ; 8686
+        .byte   $9C,$CF,$74,$40,$A4,$04,$49,$CF,$74,$41,$9C,$C7,$66,$40,$94,$C7 ; 8696
+        .byte   $65,$40,$9C,$CF,$68,$40,$94,$CF,$67,$40,$9C ; 86A6
+; --- $86B1: cursor -> offset into the L86C1 name-row records ---
 L86B1:  .byte   $00,$06,$0C,$12,$18,$1E,$57,$24,$29,$30,$37,$3E,$45,$4C,$57,$53 ; 86B1
+; --- $86C1: weapon name-row packets [PPU hi, lo, len, tiles...] ---
 L86C1:  .byte   $23                             ; 86C1
 L86C2:  .byte   $C9                             ; 86C2
 L86C3:  .byte   $02                             ; 86C3
@@ -755,23 +808,31 @@ L86C4:  .byte   $00,$00,$00,$23,$C9,$02,$00,$00,$00,$23,$D1,$02,$00,$00,$00,$23 
         .byte   $00,$00,$00,$CC,$23,$D4,$03,$00,$00,$00,$CC,$23,$D4,$03,$00,$00 ; 86F4
         .byte   $00,$CC,$23,$DC,$03,$00,$00,$00,$CC,$23,$DC,$03,$00,$00,$00,$CC ; 8704
         .byte   $23,$F2,$00,$F3,$23,$E2,$03,$00,$00,$00,$00,$23,$C9,$02 ; 8714
+; --- $8722: highlight tile OR masks (parallel to L86C1 tiles) ---
 L8722:  .byte   $0A,$0A,$0A,$23,$C9,$02,$A0,$A0,$A0,$23,$D1,$02,$0A,$0A,$0A,$23 ; 8722
         .byte   $D1,$02,$A0,$A0,$A0,$23,$D9,$02,$0A,$0A,$0A,$23,$D9,$02,$A0,$A0 ; 8732
         .byte   $A0,$23,$F0,$01,$08,$02,$23,$CC,$03,$0A,$0A,$0A,$02,$23,$CC,$03 ; 8742
         .byte   $A0,$A0,$A0,$20,$23,$D4,$03,$0A,$0A,$0A,$02,$23,$D4,$03,$A0,$A0 ; 8752
         .byte   $A0,$20,$23,$DC,$03,$0A,$0A,$0A,$02,$23,$DC,$03,$A0,$A0,$A0,$20 ; 8762
         .byte   $23,$F2,$00,$08,$23,$E2,$03,$A0,$A0,$A0,$A0 ; 8772
+; --- $877D: blank-row packet template (unowned weapon names) ---
 L877D:  .byte   $20,$00,$0A,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$20,$00 ; 877D
         .byte   $0A,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$FF ; 878D
+; --- $879A/$87A6: per-weapon name-row PPU addr hi/lo ---
 L879A:  .byte   $20,$20,$21,$21,$21,$21,$20,$20,$21,$21,$21,$21 ; 879A
 L87A6:  .byte   $84,$C4,$04,$44,$84,$C4,$92,$D2,$12,$52,$92,$D2 ; 87A6
+; --- $87B2: energy-bar packet template ---
 L87B2:  .byte   $23,$70,$06,$84,$84,$84,$84,$84,$84,$84,$FF ; 87B2
+; --- $87BD/$87CA: per-meter energy-bar PPU addr hi/lo ---
 L87BD:  .byte   $20,$20,$21,$21,$21,$21,$20,$20,$21,$21,$21,$21,$22 ; 87BD
 L87CA:  .byte   $A8,$E8,$28,$68,$A8,$E8,$B6,$F6,$36,$76,$B6,$F6,$6E ; 87CA
+; --- $87D7: E-tank refill packet template ---
 L87D7:  .byte   $20,$00,$06,$84,$84,$84,$84,$84,$84,$84,$23,$46,$00,$00,$23,$4D ; 87D7
         .byte   $00,$00,$FF                     ; 87E7
+; --- $87EA: M-tank use packet template ---
 L87EA:  .byte   $23,$4D,$00,$00,$23,$5D,$00,$00,$FF,$55,$FF,$DF,$FF,$F7,$FF,$FD ; 87EA
         .byte   $EF,$7F,$FF,$7D,$FF,$55         ; 87FA
+
 ; --- $8800 (rt $A800): DAMAGE TABLE, weapon $1 (Water Wave) ---
 ; $A800[ent_type] via damage_engine $1C:809D; low 7 bits = damage,
 ; bit 7 = special handling; $00 = ricochet. Types $00-$CF.
