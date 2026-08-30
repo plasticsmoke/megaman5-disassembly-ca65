@@ -3,12 +3,13 @@
 A byte-perfect, fully annotated disassembly of *Mega Man 5* (USA) for
 the NES, buildable with cc65's `ca65`/`ld65`.
 
-**Work in progress** — the skeleton builds byte-perfect from raw bank
-dumps; code/data classification, label naming, and annotation are
-underway. The goal matches the sibling projects: every line of 6502
-code carrying an inline comment, every routine a header, and every
-data bank converted to structured `.byte` form with its format
-documented in place.
+**Work in progress** — the build is byte-perfect and every bank is
+characterized: the core engine ($1B-$1D + fixed bank), all stage AI,
+menus/title, the ending, the sound driver, and the stage/animation
+data formats are annotated, with the architecture written up in
+ENGINE.md and the data formats in DATA_REFERENCE.md. Remaining: the
+final adversarial audit pass (and deeper per-line annotation where
+banks are still characterized at routine level).
 
 Built with [Claude Code](https://claude.com/claude-code) — starting
 from raw disassembler output through label naming, constant
