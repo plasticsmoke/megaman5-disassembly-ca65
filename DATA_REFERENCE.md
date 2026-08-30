@@ -87,6 +87,59 @@ data bank (identity except `$0B→$08`, `$0F→$0E`; `$00` = Gravity is
 the zero entry the boss director uses to detect the ceiling-entry
 fight).
 
+## 8. Player States and Sub-types
+
+`player_state $30` dispatches through `$1B:8045/$8069` (36 handlers;
+one header block per state in `src/bank1B.asm`):
+
+| State | Meaning | State | Meaning |
+|---|---|---|---|
+| `$00` | ground | `$0D` | jetski mount |
+| `$01` | air | `$0E` | jetski dock |
+| `$02` | slide | `$0F` | victory orbs |
+| `$03` | ladder | `$10` | teleport-out |
+| `$04` | jetski ride | `$11` | walk-to-mark |
+| `$05` | nop | `$12` | cutscene pose |
+| `$06` | hurt | `$13` | drop-in + restore |
+| `$07` | dead | `$14` | castle clear |
+| `$08` | teleport-in | `$15/$16` | warp depart/arrive |
+| `$09` | carried off | `$17` | rematch won |
+| `$0A` | re-enter top | `$18` | boss defeated |
+| `$0B` | carried path | `$19` | stand frozen |
+| `$0C` | nop | `$1C-$23` | ending choreography |
+
+States `$07/$10/$23` double as the game-flow selector read by the
+bank `$17` hub (death / stage clear / ending).
+
+## 9. Weapons
+
+`cur_weapon $32`; fire dispatch `$1B:9571/$9581`; energy meters
+`$B0+id` (bit 7 = owned, `$9C` = owned + full 28), cost via
+`weapon_deduct $1B:953D`.
+
+| ID | Weapon | ID | Weapon |
+|---|---|---|---|
+| `$0` | Power Buster | `$7` | Gravity Hold |
+| `$1` | Water Wave | `$8` | Charge Kick |
+| `$2` | Gyro Attack | `$9` | Star Crash |
+| `$3` | Crystal Eye | `$A` | Rush Coil |
+| `$4` | Napalm Bomb | `$B` | Rush Jet |
+| `$5` | Super Arrow | `$C` | Beat |
+| `$6` | Power Stone | | |
+
+Buster charge level in `$5B` (`>= $0E` = full; shot sub_types
+`$18/$A8/$A9`). Beat is granted by items mask `$6D = $FF`
+(password or castle progress). Rush/Beat ride via `ride_slot $37`.
+
+## 10. Damage Tables
+
+Weapon N's per-enemy-type damage table is at `$A800` **in PRG bank
+N** — the weapon id doubles as the bank number (`$1C:809D` maps
+`$32` into `$F6`). Entry = `$A800[ent_type]`; low 7 bits = damage,
+bit 7 = special handling (weapons `$1/$9`: instant kill/capture
+classes). Zero = ricochet (shot becomes type `$46`). Buster damage
+comes from the charge level instead (1/2/3, `$1C` tables).
+
 ## 11. Stage Data Format
 
 Each stage's data bank id equals its stage id (`$26`); the bank is
