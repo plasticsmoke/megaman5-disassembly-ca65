@@ -3,21 +3,20 @@
 A byte-perfect, fully annotated disassembly of *Mega Man 5* (USA) for
 the NES, buildable with cc65's `ca65`/`ld65`.
 
-**Work in progress** — the build is byte-perfect and every bank is
-characterized: the core engine ($1B-$1D + fixed bank), all stage AI,
-menus/title, the ending, the sound driver, and the stage/animation
-data formats are annotated, with the architecture written up in
-ENGINE.md and the data formats in DATA_REFERENCE.md, and the
-documented claims verified against the code by an adversarial audit
-pass. All data regions are structured `.byte` tables with section
-banners (stage data, damage tables, animation/sound data, fixed-bank
-tables), and every code bank is annotated — including the bank `$00`
-section-environment service and the bank `$01` pause/weapon menu.
+The build is byte-perfect and every bank is annotated: the core engine
+(`$1B-$1D` + fixed bank), all stage AI, menus/title, the ending, the
+sound driver, the bank `$00` section-environment service and the bank
+`$01` pause/weapon menu, plus the stage/animation/sound data formats.
+All data regions are structured `.byte` tables with section banners
+(stage data, damage tables, animation/sound data, fixed-bank tables).
+The architecture is written up in ENGINE.md and the data formats in
+DATA_REFERENCE.md, with the documented claims verified against the
+code by adversarial audit passes.
 
 Built with [Claude Code](https://claude.com/claude-code) — starting
 from raw disassembler output through label naming, constant
-extraction, code/data verification, annotation, and a from-scratch
-adversarial audit.
+extraction, code/data verification, annotation, and from-scratch
+adversarial audits.
 
 Anyone familiar with Mega Man 5's internals, NES development, or
 MMC3 mapper conventions is welcome to double-check the annotations
@@ -34,8 +33,8 @@ make
 ```
 
 Requires `ca65`/`ld65` and the original ROM as `mm5.nes` in the project
-root (not included; `tools/split_rom.py` extracts `chr/chr.bin` from
-it). The build assembles all banks, links via `cfg/nes.cfg`, and
+root (not included). The build extracts `chr/chr.bin` (the ROM's CHR
+half) from it, assembles all banks, links via `cfg/nes.cfg`, and
 byte-compares the result against `mm5.nes` —
 `BUILD VERIFIED: byte-perfect match!` means the sources exactly
 reproduce the original ROM.
@@ -48,28 +47,27 @@ MM5 returns to CHR-ROM with MMC3 CHR banking (as in MM3):
 
 | banks | contents |
 |---|---|
-| `$00-$0D` | stage banks at `$A000`: AI code `$A000-$A7FF` + one weapon's damage table (`$A800`) + stage data (`$A900+`). Stages: `$00` Gravity, `$01` Wave, `$02` Stone, `$03` Gyro, `$04` Star, `$05` Charge, `$06` Napalm, `$07` Crystal, `$08-$0B` Proto castle 1-4, `$0C-$0D` Wily 1-2. Bank `$00` also hosts a per-frame engine service, `$01` the pause menu, `$0B` stage-load support (all at `$8000`) |
-| `$0E/$0F` | stage `$0E` = Wily 3 (boss rush teleporters + Wily Press) + ending / cutscene flow (`$0E:A000` entry); stage `$0F` = Wily 4 stage data (Wily Machine/Capsule AI in banks `$04`/`$0D`) |
-| `$10/$11` | pseudo-stage screen data: title, menus, cutscenes |
-| `$12/$13` | animation data pair (descriptors at `$8000` + records at `$A000`) |
-| `$14/$15` | animation data pair (probable — same paired-pointer structure) |
-| `$16` | animation data (third anim pair, with `$17`'s `$A000` image) |
-| `$17` | title / menus / stage select + stage→bank directory |
-| `$18/$19` | sound engine (`$8000` update / `$8003` play) + sound data |
-| `$1A` | nametable screen data (menus/cutscenes) |
+| `$00-$0D` | stage banks at `$A000`: AI code `$A000-$A7FF` + one weapon's damage table (`$A800`) + stage data (`$A900+`). Stages: `$00` Gravity, `$01` Wave, `$02` Stone, `$03` Gyro, `$04` Star, `$05` Charge, `$06` Napalm, `$07` Crystal, `$08-$0B` Proto castle 1-4, `$0C-$0D` Wily 1-2. Bank `$00` also hosts the per-section environment service, `$01` the pause menu, `$0B` stage-load support (all at `$8000`) |
+| `$0E/$0F` | stage `$0E` = Wily 3 (boss rush teleporters + Wily Press) + ending / cutscene flow (`$0E:A000` entry); stage `$0F` = Wily 4 stage data + the credits text at `$8000` (Wily Machine/Capsule AI in banks `$04`/`$0D`) |
+| `$10/$11` | pseudo-stage screen data: menus/ending (`$10`) and castle-map art (`$11`), each fronted by an unreferenced 2 KB bit table |
+| `$12/$13` | animation data pair 1 (index tables at `$8000` + records at `$A000`) |
+| `$14/$15` | animation data pair 2 (same structure) |
+| `$16` | animation data pair 3 (`$17` is its formal `$A000` partner; the records all stay in `$16`) |
+| `$17` | game-flow hub: title / menus / stage select / password / castle maps |
+| `$18` | sound driver (`$8000` update / `$8003` play) |
+| `$19/$1A` | sound data (`$1A` is read through a virtual `$C000-$DFFF` window) |
 | `$1B` | player state machine + weapons (`$8000`); spawn engine at `$988A` |
-| `$1C` | behavior engine: per-type AI dispatch (coroutines via behavior PC) |
-| `$1D` | generic enemy AI bank (`$A000`, 123 entity types) |
+| `$1C` | behavior engine, damage engine and shared AI (69 entity types run here) |
+| `$1D` | generic enemy / pickup / effect AI (`$A000`, 54 entity types) |
 | `$1E/$1F` | fixed bank at `$C000-$FFFF` (NMI/IRQ/RESET, scheduler, core engine) |
 | CHR `$00-$1F` | 32 x 8KB CHR-ROM banks (tiles, banked via MMC3 R0-R5) |
 
-*(Provisional — classification in progress; per-bank contents firm up
-as annotation proceeds.)*
+The full per-bank map is DATA_REFERENCE.md section 2.
 
 ## Engine architecture
 
 MM4's engine adapted for CHR-ROM (vectors: NMI `$C000`, Reset `$FE00`,
-IRQ `$C169`). Established so far — see [ENGINE.md](ENGINE.md):
+IRQ `$C169`). In brief — see [ENGINE.md](ENGINE.md):
 
 **Scheduler.** A 4-slot cooperative multitasker (`$FEAB`); tasks yield
 via `frame_wait` (`$FF22`). Task 0 = player (pause menu, gameplay
@@ -100,15 +98,15 @@ gameplay frame runs `$1B:8000` (player/weapons), `$1C:8000`
 ```
 src/
   header.asm                  iNES header (Mapper 4 / MMC3, 256KB PRG + 256KB CHR)
-  bank00-bank1D.asm           swappable 8KB PRG banks — code banks as raw da65
-                              disassembly (annotation in progress), data banks
-                              ($0B, $0F-$16, $19, $1A) as .byte dumps
-  fixed_bank.asm              fixed bank $1E/$1F ($C000-$FFFF), da65 disassembly
-  chr.asm                     CHR ROM (.incbin of chr/chr.bin, extracted from ROM)
+  bank00-bank1D.asm           swappable 8KB PRG banks: annotated code with per-line
+                              address/byte comments; data regions as labelled .byte
+                              tables under section banners
+  fixed_bank.asm              fixed bank $1E/$1F ($C000-$FFFF), annotated
+  chr.asm                     CHR ROM (.incbin of chr/chr.bin, extracted by make)
 include/
   hardware.inc                NES hardware registers (PPU, APU, MMC3)
-  zeropage.inc                zero-page variable definitions (populated during tracing)
-  constants.inc               game constants (populated during tracing)
+  zeropage.inc                zero-page variable definitions
+  constants.inc               entity arrays, button masks, RAM buffers
   fixed_bank.inc              named fixed-bank entry points (cross-bank API)
 cfg/
   nes.cfg                     ld65 linker config (per-bank base addresses)
@@ -132,6 +130,9 @@ Makefile                      build + byte-perfect verification
   record names a CHR bank + 1KB slot (MMC3 R2-R5); first claimant wins,
   later entities needing a different bank in the same slot simply don't
   render that frame.
+- **The M-tank pays out a 1-UP**: using one while every owned meter is
+  already full runs bank `$08`'s pickup sweep and, if the screen is
+  clear, grants an extra life — an easter egg in the pause menu.
 
 ## License
 

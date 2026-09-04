@@ -912,7 +912,7 @@ LA69E:  rts                                     ; A69E 60                       
 LA6D1:  rts                                     ; A6D1 60                       `
 
 ; ----------------------------------------------------------------------------
-; $A6D2-$A7FF: data, TBD (unreferenced in-bank)
+; $A6D2-$A7FF: data, unreferenced in-bank (no reader found)
         .byte   $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF ; A6D2
         .byte   $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF ; A6DA
         .byte   $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF ; A6E2

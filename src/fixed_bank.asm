@@ -7,8 +7,8 @@
 
 ; =============================================================================
 ; FIXED BANK $1E/$1F ($C000-$FFFF) — NMI/IRQ/RESET, task scheduler,
-; bank-switch API, sound queue, core engine. Raw da65 disassembly,
-; annotation in progress.
+; bank-switch API, sound queue, core engine — fully annotated; every
+; data region is a labelled .byte table under a section banner.
 ; =============================================================================
 L0000           := $0000
 L0004           := $0004
@@ -4347,8 +4347,8 @@ anim_bank_tbl:
         .byte   $12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12,$12   ; E42B
  ; -----------------------------------------------------------------------------
 ; DEBUG PAD-2 TASK — $E43B (orphaned in retail)
-; A leftover debug task: pad 2 DOWN toggles gravity_flip + player
-; h-flip; pad 2 A skips to the next stage (debug_stage_next rotate
+; A leftover debug task: pad 2 DOWN toggles gravity_flip + the
+; player's v-flip bit; pad 2 A skips to the next stage (debug_stage_next rotate
 ; table) and restarts the main game task. Unreachable in retail: no
 ; spawn site exists and read_controllers zeroes pad 2 every frame.
 ; -----------------------------------------------------------------------------
@@ -6764,10 +6764,10 @@ LFE6B:  stx     MMC3_BANK_SELECT
         sta     ppuctrl_shadow          ; NMI on, BG pattern $1000
         sta     PPUCTRL
         lda     #$02
-        sta     $BF                     ; (player state init: $BF = 2,
-        lda     #$9C                    ;  $B0/$BA = $9C — cf. MM4 player
-        sta     $B0                     ;  HP full+owned encoding; to be
-        sta     $BA                     ;  confirmed and named)
+        sta     $BF                     ; lives = 2
+        lda     #$9C                    ; HP ($B0) and Rush Coil ($BA) meters
+        sta     $B0                     ;  = $9C (owned + full 28)
+        sta     $BA
 ; =============================================================================
 ; TASK SCHEDULER — $FEAB
 ; Cooperative multitasker, 4 task records (4 bytes each at $80).

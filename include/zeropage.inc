@@ -1,6 +1,6 @@
 ; =============================================================================
 ; Mega Man 5 (U) — Zero Page Variable Definitions
-; Only confirmed variables from NMI/game loop/entity code tracing
+; Variables confirmed from NMI/game loop/entity code tracing
 ; =============================================================================
 ; MM5 shares MM4's engine and most of its RAM layout, but every entry
 ; below is confirmed against MM5 code before being added.

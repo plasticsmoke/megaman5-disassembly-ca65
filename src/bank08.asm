@@ -512,7 +512,8 @@ LA3AD:  rts                                     ; A3AD 60                       
 ; ----------------------------------------------------------------------------
 ; --- $A3B0: sweep slots $08-$17: every enemy whose LA3E8 entry is set is
 ; converted in place to a type $C3 pickup grant (sub $78), counting the
-; conversions in $02 (caller TBD — runs with bank $08 mapped).
+; conversions in $02 (called from the pause menu's M-tank path, $01:8183,
+; with this bank at $A000).
 ; ----------------------------------------------------------------------------
         lda     #$00                            ; A3B0 A9 00                    ..
         sta     $02                             ; A3B2 85 02                    ..
@@ -542,7 +543,7 @@ LA3E2:  inx                                     ; A3E2 E8                       
 
 ; ----------------------------------------------------------------------------
 ; LA3E8: per-type pickup-conversion eligibility for the $A3B0 sweep
-; ($D0 entries); $A4B8-$A7FF data, TBD (unreferenced tail).
+; ($D0 entries); $A4B8-$A7FF data, unreferenced tail (no reader found).
 LA3E8:  .byte   $00,$00,$00,$00,$00,$00,$00,$00 ; A3E8
         .byte   $00,$00,$00,$00,$00,$00,$00,$00 ; A3F0
         .byte   $B6,$B6,$B6,$B6,$00,$B6,$B6,$B6 ; A3F8

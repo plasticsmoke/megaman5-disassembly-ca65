@@ -858,7 +858,7 @@ LA666:  sta     $0612,y                         ; A666 99 12 06                 
         rts                                     ; A671 60                       `
 
 ; ----------------------------------------------------------------------------
-; $A672-$A7FF: data, TBD (unreferenced in-bank)
+; $A672-$A7FF: data, unreferenced in-bank (no reader found)
         .byte   $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF ; A672
         .byte   $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF ; A67A
         .byte   $FF,$FF,$FF,$FF,$FF,$FF,$FF,$7D ; A682

@@ -812,7 +812,7 @@ LA604:  rts                                     ; A604 60                       
 ; ----------------------------------------------------------------------------
 LA605:  .byte   $81,$9B,$9C                     ; A605  spout shape by phase
 LA608:  .byte   $81,$87,$00                     ; A608  crest shape by phase
-; $A60B-$A7FF: data, TBD (unreferenced in-bank)
+; $A60B-$A7FF: data, unreferenced in-bank (no reader found)
         .byte   $4D,$FD,$15,$9F,$55,$F7,$7F,$CF ; A60B
         .byte   $49,$93,$75,$BE,$D5,$F7,$47,$EF ; A613
         .byte   $61,$EE,$74,$DE,$7D,$77,$5F,$DF ; A61B

@@ -1,10 +1,8 @@
 ; =============================================================================
 ; Mega Man 5 (U) — Game Constants
 ; =============================================================================
-; Populated as structures are confirmed. Entity array addresses match
-; MM4's layout where verified (entity_clear_all $C39D touches type,
-; spawn_idx, enemy_hp, bhv_pc_hi, stun at MM4's exact addresses); the
-; remaining arrays are added as MM5 code confirms them.
+; Entity array addresses match MM4's layout, confirmed by the physics,
+; render, collision and behavior-engine code.
 
 ; Entity array base addresses (stride $18, 24 slots: $00-$17)
 ; Slot $00 = player, slots $01+ = weapons/enemies/items
@@ -22,7 +20,7 @@ ent_yvel_sub    := $03D8        ; Y velocity sub-pixel
 ent_yvel        := $03F0        ; Y velocity pixel (terminal fall +7)
 ent_shape       := $0408        ; collision shape (& $3F -> extent tables)
 ent_dir         := $0420        ; direction (bits 0-1 horiz, 2-3 vert)
-ent_spawn_idx   := $0438        ; spawn-list entry index (init $FF)
+ent_spawn_idx   := $0438        ; spawn-list entry index ($FF = none; no-respawn bitmap key)
 ent_enemy_hp    := $0450        ; enemy hit points
 ent_param       := $0468        ; general parameter / timer
 ent_var5        := $0480        ; general purpose (cleared at spawn/wipe)
@@ -31,12 +29,12 @@ ent_angle       := $04B0        ; angle / AI counter
 ent_var1        := $04C8        ; general purpose
 ent_var2        := $04E0        ; general purpose
 ent_var7        := $04F8        ; general purpose
-ent_spawn_code  := $0510        ; spawn-list code (set at spawn)
-ent_flags       := $0528        ; 7=renderable 6=vflip 5=hflip 4=? 3=wide-range 2=no-draw/no-collide
+ent_spawn_code  := $0510        ; spawn code from the $AB80 list (enemy id)
+ent_flags       := $0528        ; 7=renderable 6=vflip 5=hflip 4=behind-BG 3=wide-range 2=no-draw/no-collide
 ent_anim_phase  := $0540        ; animation frame index
 ent_sub_type    := $0558        ; sub-type: anim descriptor index
 ent_var3        := $0570        ; animation tick counter
-ent_bhv_pc_lo   := $0588        ; behavior PC low (assumed from MM4; verify)
+ent_bhv_pc_lo   := $0588        ; behavior PC low (seeded from bhv_pc_lo_tbl)
 ent_bhv_pc_hi   := $05A0        ; behavior PC high (cleared on despawn)
 ent_stun        := $05B8        ; hit-stun countdown / pause-frozen flags
 

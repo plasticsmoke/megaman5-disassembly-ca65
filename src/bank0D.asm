@@ -356,7 +356,7 @@ LA25C:  rts                                     ; A25C 60                       
         jmp     entity_set_subtype                           ; A26C 4C 98 EA                 L..
 
 ; ----------------------------------------------------------------------------
-; $A26F-$A7FF: data, TBD (unreferenced in-bank)
+; $A26F-$A7FF: data, unreferenced in-bank (no reader found)
         .byte   $FF,$BF,$FF,$FB,$FF,$AE,$FF,$AF ; A26F
         .byte   $FF,$BE,$FF,$BF,$FF,$FB,$FF,$FF ; A277
         .byte   $FF,$AF,$FF,$BA,$BF,$AA,$FE,$FA ; A27F

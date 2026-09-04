@@ -191,8 +191,9 @@ spawn into `$08+`.
 Behaviors "morph" an entity by rewriting its behavior PC
 (`$0588/$05A0`) — the standard way an intro shell becomes a boss, a
 death becomes an explosion, a director hands off to the next scene.
-Shape bit 7 = contact damage, bit 6 = shot deflect; stun `$05B8`
-bit 7 freezes the behavior (hit-stun, boss intro).
+Shape bit 7 = contact damage, bit 6 = vulnerable to weapon shots
+(clear: shots ricochet); stun `$05B8` bit 7 freezes the behavior
+(hit-stun, boss intro).
 
 ## 9. Behavior Engine (Entity AI)
 
@@ -234,9 +235,10 @@ gravity-flip-aware mirroring. Formats: DATA_REFERENCE §14.
   per-enemy-type damage bytes live at `$A800` in PRG bank N
   (`$32` → `$F6`). Damage = `$A800[type] & $7F`; bit 7 marks
   special handling (weapons 1/9: instant kill/capture).
-- Zero damage → ricochet: sound `$1E`, the shot becomes type `$46`
-  and flies up-and-back.
-- Buster damage comes from the charge level `$5B` (≥ `$0E` = 3);
+- Zero damage, or shape bit 6 clear → ricochet: sound `$1E`, the shot
+  becomes type `$46` and flies up-and-back (a zero entry on a
+  bit-6-clear target lets the shot pass through instead).
+- Buster damage comes from the charge level `$5B` (1, or 3 at ≥ `$0E`);
   a charged shot that connects downgrades `$A9` → `$A8`.
 - On kill, `death_transform_tbl` (`$1C:87C3`) picks a second form
   (boss death directors, explosions), else generic explosion type
@@ -255,7 +257,7 @@ $E7B7`, `entity_apply_gravity $E9E1` — `yvel` positive = up, gravity
 `$A1`, default `$40`), velocity presets (`entity_speed_preset
 $EAF5`), 8-direction velocity from sine tables
 (`entity_set_dir_velocity $F470`), distance/aiming helpers
-(`$EC76-$ECC4`). Helpers in `$1C`: `$8526` clear behind-BG,
+(`$EC76-$ECC4`). Helpers in `$1C`: `$8526` clear h-flip,
 `$852F/$8538` flip h/v facing, `$84FC` drift keeping flags. In
 `$1D`: `$A089/$A09D` spawn children with type = parent+1, `$A54D`
 self→puff, `$A56C` self→pickup-drop.
@@ -273,7 +275,7 @@ Probes (`tile_collide_horiz $C4A1` / `tile_collide_vert $C5AA`) test
 the leading edge from shape-indexed extent records; results feed
 `coll_results/coll_max/coll_or`. Decode respects the dynamic
 tile-override records (`$06C0`) and the destroyed-block bitmap
-(`$0680`, bit/byte lookup via `$F2B2/$F2C2`).
+(`$0680`, bit masks `$F2B2`, screen-parity offset `$F2C2`).
 
 ## 14. Player State Machine
 
@@ -369,8 +371,9 @@ spawn lists (four parallel arrays: screen `$AA00`, X `$AA80`, Y
 seeded from `$AC00[screen]`. Codes `< $C0` spawn an enemy with
 parameters from bank `$1B`'s tables (type, sub-type, shape, flags,
 HP, speed row — entry `$9995`); codes `>= $C0` are palette /
-CHR-anim commands. `ent_spawn_idx` (`$0510`) ties a kill to its
-list entry in the `$0100` no-respawn bitmap.
+CHR-anim commands. `ent_spawn_idx` (`$0438`) ties a kill to its
+list entry in the `$0100` no-respawn bitmap; the code itself is kept
+in `ent_spawn_code` (`$0510`).
 
 ## 19. Game Flow, Menus and Cutscenes
 

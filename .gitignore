@@ -2,3 +2,4 @@ build/
 tools/
 *.nes
 chr/chr.bin
+.claude/

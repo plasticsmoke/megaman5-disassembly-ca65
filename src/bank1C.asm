@@ -2726,10 +2726,11 @@ L9940:  lda     #$F8                            ; 9940 A9 F8                    
 
 ; ----------------------------------------------------------------------------
 ; =============================================================================
-; BEHAVIOR type $2B — shield walker: shape bit 6 deflects shots from the
-; front; every $78 frames it opens to fire a type $2C shot (preset $57,
-; 2 px/f) and re-guards; hits from behind strip the shield; Gravity Hold
-; ($32 = 7) skips the facing test
+; BEHAVIOR type $2B — shield walker: guards its front — a shot coming
+; from the side it faces clears shape bit 6 (weapon-vulnerable) so it
+; ricochets, one from behind leaves the bit set and connects; every $78
+; frames it opens (bit 6 set) to fire a type $2C shot (preset $57,
+; 2 px/f) and re-guards; Gravity Hold ($32 = 7) skips the facing test
 ; =============================================================================
         lda     #$00                            ; 9950 A9 00                    ..
         sta     $0570,x                         ; 9952 9D 70 05                 .p.

@@ -604,9 +604,9 @@ LA43C:  rts                                     ; A43C 60                       
 ; =============================================================================
 ; BEHAVIOR type $18 — shell-back walker: patrols, turning around at walls
 ; and ledges (sub_type $24 turn anim, flip at its midpoint, back to $23);
-; sets the shot-deflect bit every frame but clears it when an incoming
-; shot's direction opposes its own facing — so shots striking its face
-; connect while shots hitting its armored back bounce off
+; sets shape bit 6 (weapon-vulnerable) every frame but clears it when
+; an incoming shot travels against its facing — so shots striking its
+; face ricochet while shots hitting it from behind connect
 ; =============================================================================
         lda     $0558,x                         ; A43D BD 58 05                 .X.
         cmp     #$24                            ; A440 C9 24                    .$
@@ -1353,9 +1353,9 @@ LA9DF:  rts                                     ; A9DF 60                       
 ; ----------------------------------------------------------------------------
 ; =============================================================================
 ; BEHAVIOR type $59 — flyer nest: stationary, always facing the player;
-; shot-deflect comes from LAAB0[cur_weapon] (only Gravity Hold is
-; repelled); its hurtbox is probed $18 px above the origin (shape $C1,
-; manual damage_engine); keeps up to 2 type $62 homing flyers alive —
+; its body repels every weapon but Gravity Hold (shape bit 6 taken
+; from LAAB0[cur_weapon]); its real hurtbox is probed $18 px above the
+; origin (shape $C1, manual damage_engine call); keeps up to 2 type $62 homing flyers alive —
 ; when fewer exist it plays spawn anim $62 and births one (1 HP, 1
 ; px/frame, parent slot + screen recorded for the tether)
 ; =============================================================================
@@ -1859,9 +1859,10 @@ LADDE:  ldy     #$2A                            ; ADDE A0 2A                    
 ; drops fall through here): sub_type $73 evaporates unless $BE == $80;
 ; on player contact (game modes 0-5) — type $B6 placed pickups first
 ; set their no-respawn bit (LF297), type $57 latches carrier flag $5D —
-; then the per-sub_type tables at LAEB8/LAEC7/LAED6/LAEE5 (+sub_type)
-; supply the effect id (-> $5A), pickup sound, and a handler pointer
-; jumped to after the entity is wiped; an uncollected $B7 drop ticks
+; then the per-sub_type tables pickup_effect/sound/hdlr_lo/hi ($AF2A-
+; $AF65, indexed by sub_type - $72) supply the refill amount (-> $5A),
+; the pickup sound, and a handler ($AEBA-$AF1A) jumped to after the
+; entity is wiped; an uncollected $B7 drop ticks
 ; $0480 down, self-stuns to flicker for its last $3C frames, and
 ; vanishes at zero
 ; =============================================================================
@@ -1891,14 +1892,14 @@ LADFD:  lda     $0528,x                         ; ADFD BD 28 05                 
         bne     LAE22                           ; AE1D D0 03                    ..
 LAE1F:  jsr     LF297                           ; AE1F 20 97 F2                  ..
 LAE22:  ldy     $0558,x                         ; AE22 BC 58 05                 .X.
-        lda     LAEC7,y                         ; AE25 B9 C7 AE                 ...
+        lda     pickup_sound_tbl-$72,y          ; AE25 B9 C7 AE                 ...
         beq     LAE2D                           ; AE28 F0 03                    ..
         jsr     queue_sound                           ; AE2A 20 5D EC                  ].
-LAE2D:  lda     LAEB8,y                         ; AE2D B9 B8 AE                 ...
+LAE2D:  lda     pickup_effect_tbl-$72,y         ; AE2D B9 B8 AE                 ...
         sta     $5A                             ; AE30 85 5A                    .Z
-        lda     LAED6,y                         ; AE32 B9 D6 AE                 ...
+        lda     pickup_hdlr_lo-$72,y            ; AE32 B9 D6 AE                 ...
         sta     L0000                           ; AE35 85 00                    ..
-        lda     LAEE5,y                         ; AE37 B9 E5 AE                 ...
+        lda     pickup_hdlr_hi-$72,y            ; AE37 B9 E5 AE                 ...
         sta     L0001                           ; AE3A 85 01                    ..
         jsr     entity_wipe_x                           ; AE3C 20 C4 F2                  ..
         jmp     (L0000)                         ; AE3F 6C 00 00                 l..
@@ -1962,27 +1963,69 @@ LAE8E:  lda     LAF20,y                         ; AE8E B9 20 AF                 
         lda     #$FF                            ; AEA2 A9 FF                    ..
         sta     $0480,x                         ; AEA4 9D 80 04                 ...
         jsr     entity_stop_y                           ; AEA7 20 1E EA                  ..
-        lda     #$B7                            ; AEAA A9 B7                    ..
-        .byte   $9D                             ; AEAC 9D                       .
-        brk                                     ; AEAD 00                       .
-LAEAE:  .byte   $03                             ; AEAE 03                       .
-        lda     #$CC                            ; AEAF A9 CC                    ..
-        sta     $0588,x                         ; AEB1 9D 88 05                 ...
-        lda     #$AD                            ; AEB4 A9 AD                    ..
-        .byte   $9D                             ; AEB6 9D                       .
-        .byte   $A0                             ; AEB7 A0                       .
-LAEB8:  .byte   $05                             ; AEB8 05                       .
-LAEB9:  rts                                     ; AEB9 60                       `
+        lda     #$B7                            ; AEAA A9 B7
+        sta     $0300,x                         ; AEAC 9D 00 03
+        lda     #$CC                            ; AEAF A9 CC
+        sta     $0588,x                         ; AEB1 9D 88 05
+        lda     #$AD                            ; AEB4 A9 AD
+        sta     $05A0,x                         ; AEB6 9D A0 05
+LAEB9:  rts                                     ; AEB9 60
 
 ; ----------------------------------------------------------------------------
-        .byte   $A5,$BD,$C9,$89,$F0,$F9,$E6,$BD,$D0,$F5,$A5,$BE,$C9 ; AEBA
-LAEC7:  .byte   $89,$F0,$EF,$E6,$BE,$D0,$EB,$A5,$BF,$C9,$09,$F0,$E5,$E6,$BF ; AEC7
-LAED6:  .byte   $D0,$E1,$A2,$00,$F0,$04,$A6,$32,$F0,$1D,$B5,$B0,$C9,$9C,$F0 ; AED6
-LAEE5:  .byte   $17,$F6,$B0,$8A,$48,$A9,$26,$20,$5D,$EC,$20,$63,$F3,$A9,$03,$20 ; AEE5
-        .byte   $24,$FF,$68,$AA,$C6,$5A,$D0,$E3,$A9,$01,$85,$95,$A9,$00,$85,$5A ; AEF5
-        .byte   $A6,$A6,$60                     ; AF05
+; --- PICKUP HANDLERS: entered by jmp ($00) from the grant code above
+; (pickup_hdlr_lo/hi[sub_type]) with the pickup entity already wiped ---
+; E-tank (sub $72): count $BD++ (digit-coded, cap $89 = 9)
+pickup_etank:  lda     $BD                             ; AEBA A5 BD
+        cmp     #$89                            ; AEBC C9 89
+        beq     LAEB9                           ; AEBE F0 F9
+        inc     $BD                             ; AEC0 E6 BD
+        bne     LAEB9                           ; AEC2 D0 F5
+; M-tank (sub $73): count $BE++ (cap $89)
+pickup_mtank:  lda     $BE                             ; AEC4 A5 BE
+        cmp     #$89                            ; AEC6 C9 89
+        beq     LAEB9                           ; AEC8 F0 EF
+        inc     $BE                             ; AECA E6 BE
+        bne     LAEB9                           ; AECC D0 EB
+; 1-UP (sub $78): lives $BF++ (cap 9)
+pickup_1up:  lda     $BF                             ; AECE A5 BF
+        cmp     #$09                            ; AED0 C9 09
+        beq     LAEB9                           ; AED2 F0 E5
+        inc     $BF                             ; AED4 E6 BF
+        bne     LAEB9                           ; AED6 D0 E1
+; health (subs $74/$75): meter $B0 (x = 0)
+pickup_health:  ldx     #$00                            ; AED8 A2 00
+        beq     LAEE0                           ; AEDA F0 04
+; weapon energy (subs $76/$77): the current weapon's meter $B0+$32
+; (nothing while the buster is selected)
+pickup_weapon:  ldx     $32                             ; AEDC A6 32
+        beq     LAEFD                           ; AEDE F0 1D
+; refill loop: one unit every 3 frames with sound $26, $5A units in
+; all (pickup_effect_tbl), stopping at $9C (full)
+LAEE0:  lda     $B0,x                           ; AEE0 B5 B0
+        cmp     #$9C                            ; AEE2 C9 9C
+        beq     LAEFD                           ; AEE4 F0 17
+        inc     $B0,x                           ; AEE6 F6 B0
+        txa                                     ; AEE8 8A
+        pha                                     ; AEE9 48
+        lda     #$26                            ; AEEA A9 26
+        jsr     queue_sound                     ; AEEC 20 5D EC
+        jsr     render_tick_frame               ; AEEF 20 63 F3
+        lda     #$03                            ; AEF2 A9 03
+        jsr     LFF24                           ; AEF4 20 24 FF
+        pla                                     ; AEF7 68
+        tax                                     ; AEF8 AA
+        dec     $5A                             ; AEF9 C6 5A
+        bne     LAEE0                           ; AEFB D0 E3
+LAEFD:  lda     #$01                            ; AEFD A9 01
+        sta     $95                             ; AEFF 85 95    nmi_quick
+        lda     #$00                            ; AF01 A9 00
+        sta     $5A                             ; AF03 85 5A
+        ldx     $A6                             ; AF05 A6 A6    restore the behavior-engine slot cursor
+        rts                                     ; AF07 60
 
 ; ----------------------------------------------------------------------------
+; MEGAMANV letter (subs $79-$80): set its bit in the items mask $6D via
+; bit_masks ($F2B2 = $F239 + $79); all eight -> Beat owned + full ($BC)
         ldy     $0558,x                         ; AF08 BC 58 05                 .X.
         lda     $F239,y                         ; AF0B B9 39 F2                 .9.
         ora     $6D                             ; AF0E 05 6D                    .m
@@ -1994,13 +2037,16 @@ LAEE5:  .byte   $17,$F6,$B0,$8A,$48,$A9,$26,$20,$5D,$EC,$20,$63,$F3,$A9,$03,$20 
 LAF1A:  rts                                     ; AF1A 60                       `
 
 ; ----------------------------------------------------------------------------
-LAF1B:  .byte   $0E,$0A,$08,$03,$02             ; AF1B
-LAF20:  .byte   $77,$74,$75,$78,$76             ; AF20
-LAF25:  .byte   $13,$23,$13,$23,$23,$00,$00,$0A,$02,$0A,$02,$00,$00,$00,$00,$00 ; AF25
-        .byte   $00,$00,$00,$00,$24,$24,$00,$00,$00,$00,$24,$24,$24,$24,$24,$24 ; AF35
-        .byte   $24,$24,$24,$BA,$C4,$D8,$D8,$DC,$DC,$CE,$08,$08,$08,$08,$08,$08 ; AF45
-        .byte   $08,$08,$AE,$AE,$AE,$AE,$AE,$AE,$AE,$AF,$AF,$AF,$AF,$AF,$AF,$AF ; AF55
-        .byte   $AF                             ; AF65
+LAF1B:  .byte   $0E,$0A,$08,$03,$02             ; AF1B  drop roll thresholds (checked from idx 4 down)
+LAF20:  .byte   $77,$74,$75,$78,$76             ; AF20  drop sub_types: weapon S / health L / health S / 1-UP / weapon L
+LAF25:  .byte   $13,$23,$13,$23,$23             ; AF25  drop fall-speed idx
+; --- pickup tables: one entry per sub_type $72-$80 (E-tank, M-tank,
+; health L/S, weapon L/S, 1-UP, then the eight MEGAMANV letters); the
+; grant code indexes them as table-$72 + sub_type ---
+pickup_effect_tbl: .byte   $00,$00,$0A,$02,$0A,$02,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; AF2A  refill units -> $5A
+pickup_sound_tbl: .byte   $24,$24,$00,$00,$00,$00,$24,$24,$24,$24,$24,$24,$24,$24,$24 ; AF39  pickup sound ($24; 0 = the refill loop ticks $26)
+pickup_hdlr_lo: .byte   $BA,$C4,$D8,$D8,$DC,$DC,$CE,$08,$08,$08,$08,$08,$08,$08,$08 ; AF48  handler ptr lo ($AEBA/$AEC4/$AED8/$AEDC/$AECE/$AF08)
+pickup_hdlr_hi: .byte   $AE,$AE,$AE,$AE,$AE,$AE,$AE,$AF,$AF,$AF,$AF,$AF,$AF,$AF,$AF ; AF57  handler ptr hi
 ; =============================================================================
 ; BEHAVIOR type $70 — P.BUSTER SHOT (all charge tiers; sub_types
 ; $36/$37 normal, $A8/$A9 charged)

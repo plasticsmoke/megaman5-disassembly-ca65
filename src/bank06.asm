@@ -832,7 +832,7 @@ LA61F:  rts                                     ; A61F 60                       
 LA647:  jmp     entity_facing_dispatch                           ; A647 4C 65 EA                 Le.
 
 ; ----------------------------------------------------------------------------
-; $A64A-$A7FF: data, TBD (unreferenced in-bank)
+; $A64A-$A7FF: data, unreferenced in-bank (no reader found)
         .byte   $FA,$D4,$FF,$1D,$FD,$6D,$F9,$75 ; A64A
         .byte   $FA,$7F,$F9,$FC,$DF,$5D,$9B,$7D ; A652
         .byte   $E7,$65,$F7,$BB,$CD,$9F,$FF,$D4 ; A65A

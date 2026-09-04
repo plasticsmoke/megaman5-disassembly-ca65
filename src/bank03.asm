@@ -825,7 +825,7 @@ LA648:  rts                                     ; A648 60                       
 LA64A:  .byte   $0F,$20,$16,$06                 ; A64A  water giant palette
         .byte   $0F,$20,$23,$13                 ; A64E
         .byte   $0F,$20,$2B,$1B                 ; A652
-; $A656-$A7FF: data, TBD (unreferenced in-bank; likely BG strip data
+; $A656-$A7FF: data, unreferenced in-bank (no reader found; likely BG strip data
 ; for the type $44 water giant's split screen)
         .byte   $FF,$15,$DF,$D7,$FF,$FD,$FF,$D5 ; A656
         .byte   $FF,$5D,$FF,$D5,$FF,$7F,$FF,$D7 ; A65E

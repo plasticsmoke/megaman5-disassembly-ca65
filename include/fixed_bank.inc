@@ -32,7 +32,7 @@ entity_set_subtype  := $EA98  ; set sub-type,X + reset anim counters
 entity_init_pos     := $EAA4  ; copy position X->Y, init Y entity fields
 entity_init_subtype_y := $EAE9 ; set sub-type for slot Y directly
 entity_set_facing   := $EC16  ; face entity toward player (dir bits 0-1)
-entity_flip_direction := $EC4A ; reverse horiz: XOR dir bits 0-1 + flags bit 6
+entity_flip_direction := $EC4A ; reverse horiz: XOR dir bits 0-1 + flags bit 5 (hflip)
 
 ; --- Entity Physics / Movement ---
 entity_move_right_collide := $E8E6 ; rightward move + tile collision

@@ -69,6 +69,11 @@ build/%.o: %.asm
 # CHR object depends on the extracted binary
 build/src/chr.o: chr/chr.bin
 
+# Extract the CHR ROM (the last 256KB) from the reference ROM
+chr/chr.bin: $(ROM_REF)
+	@mkdir -p $(dir $@)
+	tail -c 262144 $(ROM_REF) > $@
+
 verify: $(ROM_OUT)
 	@cmp $(ROM_OUT) $(ROM_REF) && echo "BUILD VERIFIED: byte-perfect match!" || (echo "BUILD FAILED: ROM mismatch"; exit 1)
 

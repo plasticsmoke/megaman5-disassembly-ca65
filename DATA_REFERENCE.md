@@ -126,9 +126,9 @@ base + N. The layout matches MM4's engine verbatim:
 | `$03C0` | `ent_xvel` | X velocity pixel |
 | `$03D8` | `ent_yvel_sub` | Y velocity sub-pixel |
 | `$03F0` | `ent_yvel` | Y velocity pixel (positive = up) |
-| `$0408` | `ent_shape` | `& $3F` hitbox index; `$40` shot-deflect; `$80` contact damage |
+| `$0408` | `ent_shape` | `& $3F` hitbox index; `$40` weapon-vulnerable (clear = shots ricochet); `$80` contact damage |
 | `$0420` | `ent_dir` | Bits 0-1 horizontal (1 R / 2 L), 2-3 vertical |
-| `$0438` | — | Spawn-list linkage |
+| `$0438` | `ent_spawn_idx` | Spawn-list entry index (`$FF` = none; keys the `$0100` no-respawn bitmap) |
 | `$0450` | `ent_enemy_hp` | Enemy HP (damage engine) |
 | `$0468` | `ent_param` | General parameter/timer |
 | `$0480` | `ent_var5` | AI state/counter |
@@ -136,9 +136,9 @@ base + N. The layout matches MM4's engine verbatim:
 | `$04B0` | `ent_angle` | 16-dir angle / AI counter |
 | `$04C8` | `ent_var1` | General |
 | `$04E0` | `ent_var2` | General |
-| `$04F8` | — | General |
-| `$0510` | `ent_spawn_code` | Spawn code (no-respawn bitmap key) |
-| `$0528` | `ent_flags` | 7 renderable, 6 hflip, 5 behind-BG, 4 camera-relative, 3 wide range, 2 inert, 0-1 platform type |
+| `$04F8` | `ent_var7` | General |
+| `$0510` | `ent_spawn_code` | Spawn code (enemy id from the `$AB80` list) |
+| `$0528` | `ent_flags` | 7 renderable, 6 vflip, 5 hflip, 4 behind-BG priority, 3 wide despawn range, 2 no-draw/no-collide, 0-1 platform type |
 | `$0540` | `ent_anim_phase` | Animation phase |
 | `$0558` | `ent_sub_type` | Sub-type (selects the anim descriptor) |
 | `$0570` | `ent_var3` | Anim sub-frame counter |
@@ -196,7 +196,7 @@ bank source.
 | `$28` | `$1C` | gravity dripper (Gravity Man stage) |
 | `$29` | `$1C` | drop |
 | `$2A` | `$1C` | pod |
-| `$2B` | `$1C` | shield walker: shape bit 6 deflects shots from the front |
+| `$2B` | `$1C` | shield walker: shots from the front ricochet (shape bit 6 cleared), shots from behind connect |
 | `$2C/$37/$58/$65/$9B` | `$1C` | horizontal mover |
 | `$2D` | `$1C` | released payload of the type $2A pod |
 | `$2E` | `$1C` | drift lift: the spawn code (&7) picks its 8-way heading and run length (L96D4) |
@@ -440,7 +440,7 @@ fired alongside it (slots 2-3) reroute to bank `$00`'s table.
 Entry = `$A800[ent_type]`; low 7 bits = damage,
 bit 7 = special handling (weapons `$1/$9`: instant kill/capture
 classes). Zero = ricochet (shot becomes type `$46`). Buster damage
-comes from the charge level instead (1/2/3, `$1C` tables).
+comes from the charge level instead (1, or 3 at full charge `$5B >= $0E`).
 
 ## 11. Stage Data Format
 
@@ -486,8 +486,9 @@ sorted by screen, cursors seeded from `$AC00[screen]` (`spawn_engine`,
 
 - `< $C0` — enemy id: type, sub-type, shape, flags, HP and a speed row
   come from bank `$1B`'s parallel parameter tables (entry `$1B:9995`);
-  the spawn code is kept in `ent_spawn_idx` (`$0510`), and killed
-  enemies set their bit in the `$0100` no-respawn bitmap.
+  the list index is kept in `ent_spawn_idx` (`$0438`) and the code in
+  `ent_spawn_code` (`$0510`); killed enemies set their index's bit in
+  the `$0100` no-respawn bitmap.
 - `>= $C0` — palette / CHR-anim command (`$1B:9933+`): slot < `$10`
   writes a palette command into PAL_BUF, otherwise starts a
   palette-cycle program slot (`$05F0+`) or the background CHR-anim
@@ -567,7 +568,7 @@ and gray dot share a cell the gray uses the shifted-row cell list
 | `$DD01+` | Palette-cycle programs (slots `$05F0`) |
 | `$DDB3+` | Background CHR-anim programs (slot `$05D0`) |
 | `$E33B` | `anim_bank_tbl` (entity type → animation pair) |
-| `$F2B2/$F2C2` | Bit/byte mask tables (stage bits, block bitmaps) |
+| `$F2B2/$F2BA` | Bit mask / inverse-mask tables (stage bits, block bitmaps); `$F2C2` screen-parity offsets |
 | `$C827/$C902` | Collision probe extent records (h/v shapes) |
 
 Bank `$1C` companions: `bhv_bank_tbl $86C3`, `bhv_pc_lo/hi_tbl
